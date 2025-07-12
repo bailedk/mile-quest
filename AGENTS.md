@@ -514,6 +514,35 @@ Each agent must:
 - Update documentation as work progresses
 - Use consistent markdown formatting
 
+### 📁 New Documentation Structure (2025-01-12)
+
+**Important**: We now use a versioned documentation system. Each agent's folder follows this structure:
+
+```
+docs/agents/[agent-number]-[agent-name]/
+├── current/          # 📌 ALWAYS USE THIS FOR CURRENT STATE
+│   ├── README.md     # Agent overview and status
+│   └── [active docs] # Current documentation
+├── versions/         # 📚 Historical versions
+│   ├── v1.0/        # Original version
+│   └── v2.0/        # Updated version
+├── working/          # 🚧 Draft changes
+├── STATE.json        # Version and status tracking
+├── CHANGELOG.md      # Change history
+└── QUICK-REFERENCE.md # One-page summary
+```
+
+**Key Files for Context**:
+- `/CLAUDE.md` - Primary context file for Claude Code (start here!)
+- `/docs/MANIFEST.md` - Index of all documentation
+- `/docs/GUIDELINES.md` - How to update documentation
+
+**When Working on Mile Quest**:
+1. Always check `CLAUDE.md` first for current project state
+2. Look in agent's `current/` folder for active documentation
+3. Check `STATE.json` for version information
+4. Follow `GUIDELINES.md` for making updates
+
 ### Cross-Agent Communication
 
 - Each agent reads relevant documentation from dependency agents before starting

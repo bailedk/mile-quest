@@ -1,0 +1,97 @@
+{
+  "agent": "UI/UX Design",
+  "agentNumber": 2,
+  "currentVersion": "2.0",
+  "previousVersion": "1.0",
+  "status": "complete",
+  "lastUpdated": "2025-01-12",
+  "lastModifiedBy": "UI/UX Design Agent",
+  "description": "User interface design, user experience flows, and design system",
+  "activeDocuments": [
+    {
+      "name": "mvp-wireframes.md",
+      "description": "Simplified screens for MVP launch",
+      "version": "2.0"
+    },
+    {
+      "name": "mvp-design-summary.md",
+      "description": "Key changes for MVP alignment",
+      "version": "2.0"
+    },
+    {
+      "name": "design-review-v2.md",
+      "description": "Response to simplified architecture",
+      "version": "2.0"
+    },
+    {
+      "name": "ui-architecture-alignment.md",
+      "description": "Technical integration with MVP architecture",
+      "version": "2.0"
+    },
+    {
+      "name": "design-system.md",
+      "description": "Component library and design tokens",
+      "version": "2.0"
+    },
+    {
+      "name": "user-journeys.md",
+      "description": "User flow documentation",
+      "version": "1.0"
+    },
+    {
+      "name": "accessibility.md",
+      "description": "WCAG 2.1 AA compliance guidelines",
+      "version": "1.0"
+    }
+  ],
+  "supersededDocuments": [
+    {
+      "name": "wireframes.md",
+      "description": "Original complex wireframes with all features",
+      "version": "1.0",
+      "location": "versions/v1.0/"
+    },
+    {
+      "name": "gamification.md",
+      "description": "Full gamification system (simplified for MVP)",
+      "version": "1.0",
+      "location": "versions/v1.0/"
+    },
+    {
+      "name": "notifications.md",
+      "description": "Complex notification patterns (deferred)",
+      "version": "1.0",
+      "location": "versions/v1.0/"
+    }
+  ],
+  "keyDecisions": {
+    "onboarding": "Simplified to <2 minutes (team name + goal only)",
+    "features": "Progressive rollout over 4 weeks",
+    "offline": "Activity logging only (not full offline)",
+    "performance": "Optimistic UI updates everywhere",
+    "dataViz": "Simple progress bars (no complex charts)",
+    "maps": "Deferred to post-MVP"
+  },
+  "dependencies": {
+    "provides": ["Screen designs", "User flows", "Design system", "Accessibility requirements"],
+    "requires": ["Architecture constraints", "API capabilities", "Performance budgets"]
+  },
+  "weeklyRollout": {
+    "week1": ["Team creation", "Activity logging", "Basic progress"],
+    "week2": ["Simple achievements", "Photo upload", "Basic stats"],
+    "week3": ["Leaderboards", "Push notifications"],
+    "week4": ["Advanced analytics", "Full achievements"]
+  },
+  "successMetrics": {
+    "onboarding": "<2 minutes",
+    "activityLogging": "<15 seconds",
+    "pageLoad": "<4 seconds (realistic)",
+    "apiResponseFeel": "<500ms with optimistic UI"
+  },
+  "nextReview": "When implementation begins",
+  "openQuestions": [
+    "Should we add haptic feedback for mobile web?",
+    "When to introduce dark mode?",
+    "How to handle team size limits in UI?"
+  ]
+}

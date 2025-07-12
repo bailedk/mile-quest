@@ -1,0 +1,68 @@
+{
+  "agent": "Architecture",
+  "agentNumber": 1,
+  "currentVersion": "2.0",
+  "previousVersion": "1.0",
+  "status": "complete",
+  "lastUpdated": "2025-01-12",
+  "lastModifiedBy": "Architecture Agent + Review Agent",
+  "description": "System architecture and technical infrastructure design",
+  "activeDocuments": [
+    {
+      "name": "mvp-architecture.md",
+      "description": "Simplified MVP architecture ($70/month)",
+      "version": "2.0"
+    },
+    {
+      "name": "infrastructure-diagram-mvp.md",
+      "description": "Current infrastructure visualization",
+      "version": "2.0"
+    },
+    {
+      "name": "architecture-decisions-v2.md",
+      "description": "Evaluation of Review Agent recommendations",
+      "version": "2.0"
+    },
+    {
+      "name": "summary-v2.md",
+      "description": "Post-review architecture summary",
+      "version": "2.0"
+    }
+  ],
+  "supersededDocuments": [
+    {
+      "name": "aws-architecture.md",
+      "description": "Original Aurora/ElastiCache architecture",
+      "version": "1.0",
+      "location": "versions/v1.0/"
+    },
+    {
+      "name": "infrastructure-diagram.md",
+      "description": "Original complex infrastructure",
+      "version": "1.0",
+      "location": "versions/v1.0/"
+    }
+  ],
+  "keyDecisions": {
+    "database": "RDS PostgreSQL Multi-AZ (was Aurora Serverless v2)",
+    "webSockets": "Pusher managed service (was custom Lambda)",
+    "caching": "CloudFront only (was ElastiCache + CloudFront)",
+    "api": "REST with field filtering (GraphQL deferred)",
+    "hosting": "Vercel for frontend (was S3 + CloudFront)"
+  },
+  "dependencies": {
+    "provides": ["Infrastructure constraints", "API design", "Cost targets"],
+    "requires": []
+  },
+  "migrationTriggers": {
+    "rdsToAurora": ">10k users OR >100 req/sec",
+    "pusherToIot": ">1000 concurrent connections",
+    "addElastiCache": ">50 req/sec OR DB CPU >70%",
+    "addGraphQL": ">60% mobile traffic"
+  },
+  "nextReview": "When Data Model Agent completes",
+  "openQuestions": [
+    "Should we use Amplify instead of Vercel for tighter AWS integration?",
+    "When should we implement API versioning?"
+  ]
+}
