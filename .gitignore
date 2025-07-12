@@ -1,0 +1,233 @@
+# Mile Quest - Gitignore
+# Based on: Next.js, Node.js, AWS CDK, Turborepo, TypeScript
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+.vitest/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Production
+*.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS
+.DS_Store
+*.pem
+Thumbs.db
+
+# IDEs and editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# AWS
+.aws-sam/
+cdk.out/
+cdk.context.json
+*.zip
+samconfig.toml
+.aws-credentials
+
+# AWS CDK asset staging directory
+.cdk.staging/
+
+# AWS Lambda
+packaged.yaml
+packaged-template.yaml
+
+# LocalStack
+.localstack/
+volume/
+
+# Turborepo
+.turbo/
+
+# PWA
+public/sw.js
+public/workbox-*.js
+public/worker-*.js
+public/sw.js.map
+public/workbox-*.js.map
+public/worker-*.js.map
+
+# Certificates (for local HTTPS development)
+certificates/
+*.cert
+*.key
+
+# Logs
+logs/
+*.log
+logs.txt
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+postgres-data/
+mysql-data/
+
+# Redis dump
+dump.rdb
+
+# Backup files
+*.backup
+*.bak
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Build artifacts
+*.pid
+*.seed
+*.pid.lock
+
+# Bundler directories
+.cache/
+.parcel-cache/
+
+# Serverless directories
+.serverless/
+.webpack/
+
+# Terraform (if used alongside CDK)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Python (for CDK)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.tar.gz
+*.rar
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Monorepo
+packages/*/dist/
+packages/*/build/
+packages/*/.next/
+apps/*/dist/
+apps/*/build/
+apps/*/.next/
+
+# Storybook
+storybook-static/
+.storybook/out/
+
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+
+# Prisma
+prisma/migrations/dev/
+
+# Generated files
+generated/
+*.generated.*
+
+# Bundle analysis
+.bundle-stats/
+.lighthouse/
+analyze/
+
+# Security
+.env.vault
+.env.me
+
+# Sentry
+.sentryclirc
+
+# Misc
+.eslintcache
+.stylelintcache
+.prettiercache
