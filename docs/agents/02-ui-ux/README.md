@@ -4,6 +4,8 @@
 
 This documentation contains all UI/UX design decisions, patterns, and specifications for Mile Quest - a mobile-first team walking challenge platform. Our design approach prioritizes intuitive user experiences, accessibility, and engagement through thoughtful visual design and interaction patterns.
 
+**Version 2.0 Update**: Documentation has been updated to align with the simplified MVP architecture, including adjustments for Pusher WebSockets, RDS PostgreSQL, optimistic UI updates, and progressive feature rollout.
+
 ## Design Philosophy
 
 ### Core Principles
@@ -24,56 +26,19 @@ This documentation contains all UI/UX design decisions, patterns, and specificat
 
 ## Documentation Structure
 
-### 1. [User Journey Maps](user-journeys.md)
-Detailed user flows covering:
-- New user onboarding
-- Team creation and management
-- Daily activity logging
-- Progress tracking
-- Social interactions
+### Core Documents (v1)
+1. **[User Journey Maps](user-journeys.md)** - Original comprehensive user flows
+2. **[Wireframes](wireframes.md)** - Original full-feature wireframes
+3. **[Design System](design-system.md)** - Complete component library
+4. **[Data Visualization](data-visualization.md)** - Progress tracking designs
+5. **[Gamification Elements](gamification.md)** - Full achievement system
+6. **[Accessibility Guidelines](accessibility.md)** - WCAG 2.1 AA compliance
+7. **[Notification Patterns](notifications.md)** - Communication design
 
-### 2. [Wireframes](wireframes.md)
-Low-fidelity designs for:
-- Core mobile screens
-- Responsive breakpoints
-- Key interaction states
-- Navigation patterns
-
-### 3. [Design System](design-system.md)
-Comprehensive component library including:
-- Color palette and theming
-- Typography scale
-- Spacing system
-- Component specifications
-- Animation guidelines
-
-### 4. [Data Visualization](data-visualization.md)
-Progress tracking designs:
-- Distance progress bars
-- Team leaderboards
-- Personal achievement charts
-- Map-based visualizations
-
-### 5. [Gamification Elements](gamification.md)
-Engagement features:
-- Achievement badges
-- Milestone celebrations
-- Streak indicators
-- Team challenges
-
-### 6. [Accessibility Guidelines](accessibility.md)
-WCAG 2.1 AA implementation:
-- Color contrast requirements
-- Touch target sizes
-- Screen reader support
-- Keyboard navigation
-
-### 7. [Notification Patterns](notifications.md)
-Communication design:
-- Push notification templates
-- In-app messaging
-- Achievement announcements
-- Team updates
+### MVP Updates (v2)
+8. **[Design Review v2](design-review-v2.md)** - Response to simplified architecture
+9. **[MVP Wireframes](mvp-wireframes.md)** - Simplified screens for faster launch
+10. **[UI Architecture Alignment](ui-architecture-alignment.md)** - Technical integration guide
 
 ## Key Design Decisions
 
