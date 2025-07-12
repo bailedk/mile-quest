@@ -69,15 +69,19 @@ This document outlines the complete technology stack for Mile Quest, optimized f
 
 ## DevOps & Infrastructure
 
+### Frontend Hosting
+- **AWS Amplify** - Next.js hosting with SSR support
+- **Amplify CLI** - Local development and deployment
+- **Amplify Console** - Git-based CI/CD
+
 ### Infrastructure as Code
 - **AWS CDK v2** - TypeScript infrastructure
 - **AWS SAM** - Local Lambda development
-- **Docker** - Containerization
+- **Docker** - Containerization (for local dev)
 
 ### CI/CD
-- **GitHub Actions** - Primary CI/CD
-- **AWS CodeBuild** - Build runner
-- **AWS CodePipeline** - Deployment orchestration
+- **Amplify Console** - Frontend auto-deployment
+- **GitHub Actions** - Backend and integration tests
 - **Husky** - Git hooks
 - **Commitizen** - Commit standards
 
@@ -185,6 +189,7 @@ packages/
 - Built-in optimizations
 - Strong TypeScript support
 - Great PWA support
+- First-class support in AWS Amplify
 
 ### Why Aurora Serverless?
 - PostGIS support for geospatial

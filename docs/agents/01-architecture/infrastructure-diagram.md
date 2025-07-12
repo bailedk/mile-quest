@@ -16,8 +16,8 @@ graph TB
     end
     
     subgraph "Application Layer"
-        S3W[S3: Web Assets]
-        S3A[S3: Admin Assets]
+        AMP[Amplify Hosting<br/>Next.js SSR]
+        AMPA[Amplify Admin<br/>Admin Dashboard]
         APIG[API Gateway<br/>REST + WebSocket]
         ALB[Application Load Balancer<br/>for WebSocket scaling]
     end
@@ -54,9 +54,10 @@ graph TB
     A --> R53
     R53 --> CF
     CF --> WAF
-    WAF --> S3W
-    WAF --> S3A
+    WAF --> AMP
+    WAF --> AMPA
     WAF --> APIG
+    AMP --> APIG
     APIG --> ALB
     APIG --> LAPI
     ALB --> LWS
@@ -88,35 +89,37 @@ graph LR
         R53[Route 53]
     end
     
+    subgraph "Amplify Platform"
+        AMP_PROD[Amplify App<br/>Production]
+        AMP_STAGE[Amplify App<br/>Staging]
+        AMP_PR[Amplify App<br/>PR Previews]
+    end
+    
     subgraph "Content Delivery"
-        CF[CloudFront]
+        CF[CloudFront<br/>Managed by Amplify]
         SHIELD[AWS Shield]
         WAF[AWS WAF]
     end
     
-    subgraph "Origins"
-        S3_PROD[S3: Production<br/>mile-quest-web-prod]
-        S3_STAGE[S3: Staging<br/>mile-quest-web-stage]
-        S3_ASSETS[S3: Assets<br/>mile-quest-assets]
-    end
-    
-    subgraph "Build & Deploy"
-        GH[GitHub Actions]
-        CB[CodeBuild]
-        CP[CodePipeline]
+    subgraph "Source Control"
+        GH[GitHub Repo]
+        MAIN[main branch]
+        STAGE[staging branch]
+        PR[Pull Requests]
     end
     
     DOMAIN --> R53
-    R53 --> CF
+    R53 --> AMP_PROD
+    AMP_PROD --> CF
     CF --> SHIELD
     SHIELD --> WAF
-    WAF --> S3_PROD
-    WAF --> S3_STAGE
-    WAF --> S3_ASSETS
-    GH --> CB
-    CB --> CP
-    CP --> S3_PROD
-    CP --> S3_STAGE
+    
+    GH --> MAIN
+    GH --> STAGE
+    GH --> PR
+    MAIN --> AMP_PROD
+    STAGE --> AMP_STAGE
+    PR --> AMP_PR
 ```
 
 ### API Architecture

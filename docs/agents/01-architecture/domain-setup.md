@@ -32,22 +32,29 @@ aws acm request-certificate \
 
 ### Production Environment
 ```
-# A Record - Main site
-mile-quest.com → CloudFront Distribution
+# Amplify Managed DNS (Recommended)
+mile-quest.com → Amplify App (auto-configured)
+www.mile-quest.com → Amplify App (auto-configured)
 
-# AAAA Record - IPv6
-mile-quest.com → CloudFront Distribution (IPv6)
-
-# CNAME Records
-www.mile-quest.com → mile-quest.com
+# API Endpoints
 api.mile-quest.com → API Gateway Custom Domain
 ws.mile-quest.com → WebSocket API Gateway
+
+# Note: Amplify automatically handles:
+# - A/AAAA records
+# - SSL certificates
+# - CloudFront distribution
+# - www redirect
 ```
 
 ### Development Environments
 ```
-dev.mile-quest.com → Development CloudFront
-staging.mile-quest.com → Staging CloudFront
+# Amplify Branch Deployments
+dev.mile-quest.com → Amplify Dev Branch
+staging.mile-quest.com → Amplify Staging Branch
+
+# PR Preview URLs (auto-generated)
+pr-123.d1234567.amplifyapp.com → Pull Request #123
 ```
 
 ### Email Configuration

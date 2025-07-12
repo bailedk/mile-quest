@@ -6,11 +6,14 @@ Cost-optimized, serverless-first architecture leveraging AWS usage-based pricing
 ## Core AWS Services Selection
 
 ### Frontend Hosting
-- **AWS Amplify Hosting** or **S3 + CloudFront**
-  - Pay per GB stored and transferred
-  - Free tier: 5GB storage, 15GB transfer/month
-  - Global CDN included
-  - Automatic SSL with mile-quest.com
+- **AWS Amplify Hosting** (Primary Choice)
+  - Git-based deployments (like Vercel)
+  - Automatic builds on push
+  - Preview URLs for pull requests
+  - Server-side rendering support
+  - Pay per build minute + hosting
+  - Free tier: 1000 build minutes/month, 15GB transfer/month
+  - Integrated with Route 53 for mile-quest.com
 
 ### Backend Services
 - **AWS Lambda** (Serverless Functions)
@@ -85,26 +88,26 @@ Cost-optimized, serverless-first architecture leveraging AWS usage-based pricing
 ## Estimated Monthly Costs
 
 ### MVP Phase (< 100 users)
+- Amplify Hosting: ~$5 (build minutes + hosting)
 - Lambda: $0 (within free tier)
 - API Gateway: $0 (within free tier)
 - Aurora Serverless: ~$30 (assuming 8 hours/day usage)
-- S3/CloudFront: ~$5
 - Total: **~$35/month**
 
 ### Growth Phase (1,000 users)
+- Amplify Hosting: ~$20 (increased builds + traffic)
 - Lambda: ~$20
 - API Gateway: ~$10
 - Aurora Serverless: ~$100
 - ElastiCache: ~$30
-- S3/CloudFront: ~$20
 - Total: **~$180/month**
 
 ### Scale Phase (10,000 users)
+- Amplify Hosting: ~$100 (multiple environments + high traffic)
 - Lambda: ~$200
 - API Gateway: ~$100
 - Aurora Serverless: ~$400
 - ElastiCache: ~$100
-- S3/CloudFront: ~$100
 - Total: **~$900/month**
 
 ## Domain Configuration
@@ -128,24 +131,29 @@ Cost-optimized, serverless-first architecture leveraging AWS usage-based pricing
 └────────┬────────┘
          │
 ┌────────▼────────┐
+│  AWS Amplify    │
+│  (Next.js SSR)  │
+└────────┬────────┘
+         │
+┌────────▼────────┐
 │   CloudFront    │
 │   (CDN + SSL)   │
 └─┬──────────────┬┘
   │              │
-┌─▼──────┐    ┌─▼──────────┐
-│   S3   │    │API Gateway │
-│(Static)│    │(REST + WS) │
-└────────┘    └─┬──────────┘
-                │
-         ┌──────▼──────┐
-         │   Lambda    │
-         │ Functions   │
-         └─┬────────┬──┘
-           │        │
-    ┌──────▼──┐  ┌─▼────────┐
-    │ Aurora  │  │ElastiCache│
-    │Serverless  │   Redis   │
-    └─────────┘  └──────────┘
+┌─▼──────────┐  ┌─▼──────────┐
+│  Amplify   │  │API Gateway │
+│  Hosting   │  │(REST + WS) │
+└────────────┘  └─┬──────────┘
+                  │
+           ┌──────▼──────┐
+           │   Lambda    │
+           │ Functions   │
+           └─┬────────┬──┘
+             │        │
+      ┌──────▼──┐  ┌─▼────────┐
+      │ Aurora  │  │ElastiCache│
+      │Serverless  │   Redis   │
+      └─────────┘  └──────────┘
 ```
 
 ## Monorepo Deployment Strategy
@@ -154,20 +162,21 @@ Cost-optimized, serverless-first architecture leveraging AWS usage-based pricing
 ```
 mile-quest/
 ├── apps/
-│   ├── web/          → Amplify/S3
+│   ├── web/          → Amplify Hosting
 │   ├── api/          → Lambda functions
-│   └── admin/        → Amplify/S3
+│   └── admin/        → Amplify Hosting (separate app)
 ├── packages/
-│   └── shared/       → Lambda layers
+│   └── shared/       → NPM workspace packages
 └── infrastructure/
     └── cdk/          → AWS CDK IaC
 ```
 
-### CI/CD with AWS
-- **CodeBuild** for monorepo builds
-- **CodePipeline** for deployments
-- **Lambda Layers** for shared code
-- **Amplify** auto-deploy for frontend
+### CI/CD with Amplify
+- **Amplify Console** for automatic deployments
+- **Monorepo support** with app-specific build settings
+- **Preview URLs** for every pull request
+- **Environment variables** per branch
+- **Custom build specifications** for Next.js
 
 ## Security Considerations
 
