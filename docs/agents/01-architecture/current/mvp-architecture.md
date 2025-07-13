@@ -37,7 +37,7 @@ Based on the Review Agent's recommendations and our evaluation, this document pr
                     ┌───────────┴───────────┐
                     │                       │
             ┌───────▼────────┐     ┌───────▼────────┐
-            │    Vercel      │     │  API Gateway   │
+            │  AWS Amplify   │     │  API Gateway   │
             │  (Next.js SSR) │     │   (REST API)   │
             └────────────────┘     └───────┬────────┘
                                            │
@@ -48,16 +48,15 @@ Based on the Review Agent's recommendations and our evaluation, this document pr
                                            │
                 ┌──────────────────────────┴───────────────────┐
                 │                                              │
-        ┌───────▼────────┐  ┌─────────▼────────┐  ┌──────────▼────────┐
-        │  RDS PostgreSQL│  │    DynamoDB      │  │        S3         │
-        │   (Multi-AZ)   │  │ (Sessions, Hot)  │  │ (Images, Static)  │
-        └────────────────┘  └──────────────────┘  └───────────────────┘
-                                                              │
-        ┌────────────────┐  ┌─────────────────┐             │
-        │    Cognito     │  │     Pusher      │  ┌──────────▼────────┐
-        │ (Auth + Social)│  │  (WebSockets)   │  │   Rekognition     │
-        └────────────────┘  └─────────────────┘  │ (Image Moderation)│
-                                                  └───────────────────┘
+        ┌───────▼────────┐  ┌─────────▼────────┐
+        │  RDS PostgreSQL│  │    DynamoDB      │
+        │   (Multi-AZ)   │  │ (Sessions, Hot)  │
+        └────────────────┘  └──────────────────┘
+                                                  
+        ┌────────────────┐  ┌─────────────────┐
+        │    Cognito     │  │     Pusher      │
+        │ (Auth + Social)│  │  (WebSockets)   │
+        └────────────────┘  └─────────────────┘
 ```
 
 ## Service Configuration
@@ -117,17 +116,6 @@ cors:
                    └─> Update team members
 ```
 
-### Image Upload Flow
-```
-1. User selects image
-   └─> Request presigned URL
-   
-2. Direct upload to S3
-   └─> Trigger Lambda
-       └─> Rekognition check
-           └─> Sharp resize
-               └─> Update activity record
-```
 
 ## Cost Breakdown
 
@@ -138,10 +126,11 @@ cors:
 | Lambda | $10 | ~1M requests |
 | API Gateway | $3.50 | $3.50 per million |
 | DynamoDB | $5 | On-demand pricing |
-| S3 + CloudFront | $10 | 100GB storage + transfer |
+| CloudFront | $5 | CDN transfer |
+| AWS Amplify | $17 | Build minutes + bandwidth |
 | Pusher | $0 | Free tier (200 connections) |
 | Cognito | $0 | First 50k users free |
-| **Total** | **$68.50** | Under $70/month |
+| **Total** | **$80.50** | ~$80/month |
 
 ### Scaling Costs
 - 1,000 users: ~$70/month
@@ -240,7 +229,6 @@ const offlineQueue = {
 - Cognito for authentication
 - API key for service-to-service
 - Basic rate limiting
-- Automated image moderation
 
 ### Deferred Security
 - WAF rules (Phase 2)
@@ -248,6 +236,7 @@ const offlineQueue = {
 - Encryption at rest
 - Audit logging
 - Penetration testing
+- Content moderation (when photos added)
 
 ## Monitoring
 
@@ -284,8 +273,8 @@ jobs:
       - run: npm test
       - run: npm run build
       
-      # Deploy frontend to Vercel
-      - uses: vercel/actions@v20
+      # Deploy frontend to AWS Amplify
+      - run: amplify publish --branch ${{ github.ref_name }}
       
       # Deploy Lambda functions
       - run: npx serverless deploy

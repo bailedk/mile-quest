@@ -19,6 +19,11 @@
       "version": "2.0"
     },
     {
+      "name": "tech-stack-mvp.md",
+      "description": "Current technology stack and decisions",
+      "version": "2.0"
+    },
+    {
       "name": "architecture-decisions-v2.md",
       "description": "Evaluation of Review Agent recommendations",
       "version": "2.0"
@@ -48,7 +53,7 @@
     "webSockets": "Pusher managed service (was custom Lambda)",
     "caching": "CloudFront only (was ElastiCache + CloudFront)",
     "api": "REST with field filtering (GraphQL deferred)",
-    "hosting": "Vercel for frontend (was S3 + CloudFront)"
+    "hosting": "AWS Amplify for frontend (native AWS integration)"
   },
   "dependencies": {
     "provides": ["Infrastructure constraints", "API design", "Cost targets"],
@@ -62,7 +67,7 @@
   },
   "nextReview": "When Data Model Agent completes",
   "openQuestions": [
-    "Should we use Amplify instead of Vercel for tighter AWS integration?",
-    "When should we implement API versioning?"
+    "When should we implement API versioning?",
+    "Should we add AWS WAF for additional security?"
   ]
 }

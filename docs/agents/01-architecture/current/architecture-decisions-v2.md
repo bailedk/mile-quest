@@ -122,14 +122,14 @@ Critical for serverless architecture. Implementation:
 - Harder to add later
 - Users expect photo features
 
-**Architecture Decision**: **REJECT**
+**Architecture Decision**: **ACCEPT - DEFERRED TO PHASE 2**
 
-Photos are crucial for engagement. Modified approach:
-- Implement basic photo upload from day 1
-- Use AWS Rekognition for automated moderation
-- Limit to 1 photo per activity initially
-- Simple S3 presigned URL upload
-- Sharp Lambda for resizing only
+After consideration, deferring photos to Phase 2:
+- Simplifies MVP launch and reduces complexity
+- Allows focus on core walking/tracking features
+- Can validate user demand before building
+- Add S3 + Rekognition when requested
+- Saves ~$10/month and development time
 
 ### 6. Hybrid Offline Strategy
 
@@ -277,7 +277,7 @@ Services:
 - Cognito with social auth
 - SES for emails
 - CloudWatch for monitoring
-- Rekognition for image moderation
+- Content moderation (deferred to Phase 2)
 ```
 
 ### Cost Estimate (Revised)
@@ -328,7 +328,7 @@ Clear metrics for scaling up:
 - RDS PostgreSQL setup
 - Basic Lambda + API Gateway
 - Cognito with Google auth
-- S3 image upload pipeline
+- Image upload pipeline (deferred to Phase 2)
 
 ### Week 3-4: Core Features
 - Team CRUD operations

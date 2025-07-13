@@ -32,11 +32,11 @@ After careful evaluation of the Review & Enhancement Agent's recommendations, I'
 
 ## Changes Modified or Rejected
 
-### 1. Image Upload (REJECTED)
+### 1. Image Upload (DEFERRED)
 - **Recommendation**: Defer image pipeline
-- **Decision**: Keep basic image upload
-- **Rationale**: Critical for user engagement
-- **Approach**: Simple S3 presigned URLs + Rekognition
+- **Decision**: Remove from MVP, add in Phase 2
+- **Rationale**: Simplify MVP launch, validate core features first
+- **Approach**: Add S3 + Rekognition when users request it
 
 ### 2. Offline Support (MODIFIED)
 - **Recommendation**: Read-only offline

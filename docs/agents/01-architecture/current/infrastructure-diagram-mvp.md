@@ -14,7 +14,7 @@ graph TB
     end
     
     subgraph "Frontend"
-        VERCEL[Vercel<br/>Next.js App]
+        AMPLIFY[AWS Amplify<br/>Next.js SSR/SSG]
     end
     
     subgraph "API Layer"
@@ -32,29 +32,23 @@ graph TB
     subgraph "Data Layer"
         RDS[RDS PostgreSQL<br/>Multi-AZ]
         DDB[DynamoDB<br/>Sessions & Hot Data]
-        S3[S3: Images]
     end
     
     subgraph "External Services"
         COG[Cognito<br/>Auth]
         PUSHER[Pusher<br/>WebSockets]
-        REK[Rekognition<br/>Image Moderation]
     end
     
     U --> R53
     R53 --> CF
-    CF --> VERCEL
-    VERCEL --> APIG
+    CF --> AMPLIFY
+    AMPLIFY --> APIG
     APIG --> LAUTH
     APIG --> LAPI
     LAUTH --> COG
     LAPI --> RDS
     LAPI --> DDB
-    LAPI --> S3
     LAPI --> PUSHER
-    S3 --> REK
-    REK --> LJOB
-    LJOB --> RDS
 ```
 
 ## Simplified Data Flow
@@ -83,10 +77,9 @@ graph LR
 
 ```mermaid
 graph TB
-    subgraph "Fixed Costs (~$50/month)"
+    subgraph "Fixed Costs (~$45/month)"
         RDS[RDS PostgreSQL<br/>t3.micro Multi-AZ<br/>$40/month]
         R53[Route 53<br/>$0.50/month]
-        S3[S3 Storage<br/>~$5/month]
         DDB[DynamoDB<br/>On-Demand<br/>~$5/month]
     end
     
@@ -94,16 +87,16 @@ graph TB
         LAMBDA[Lambda<br/>~$10/month]
         APIG[API Gateway<br/>~$3.50/month]
         CF[CloudFront<br/>~$5/month]
+        AMPLIFY[AWS Amplify<br/>~$17/month]
     end
     
     subgraph "Free Tier"
         COG[Cognito<br/>50k users free]
         PUSHER[Pusher<br/>200 connections free]
-        VERCEL[Vercel<br/>Hobby plan free]
-        REK[Rekognition<br/>5k images free]
+        AMPLIFY[AWS Amplify<br/>Free tier: 1000 build mins]
     end
     
-    subgraph "Total: ~$70/month"
+    subgraph "Total: ~$80/month"
     end
 ```
 
@@ -114,7 +107,7 @@ graph LR
     subgraph "Simple CI/CD"
         GH[GitHub]
         GA[GitHub Actions]
-        VERCEL[Vercel<br/>Auto-Deploy]
+        AMPLIFY[AWS Amplify<br/>Git Deploy]
         SAM[AWS SAM<br/>Deploy]
     end
     
@@ -125,7 +118,7 @@ graph LR
     end
     
     GH --> GA
-    GA --> VERCEL
+    GA --> AMPLIFY
     GA --> SAM
     SAM --> DEV
     SAM --> STAGE
@@ -137,7 +130,7 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Basic Security"
-        HTTPS[HTTPS Everywhere<br/>CloudFront + Vercel]
+        HTTPS[HTTPS Everywhere<br/>CloudFront + Amplify]
         COG[Cognito<br/>Email + Google Auth]
         APIK[API Keys<br/>Service-to-Service]
     end
@@ -151,7 +144,6 @@ graph TB
     subgraph "Application Security"
         RATE[Rate Limiting<br/>API Gateway]
         VAL[Input Validation<br/>Lambda]
-        MOD[Image Moderation<br/>Rekognition]
     end
     
     HTTPS --> COG
@@ -159,31 +151,8 @@ graph TB
     RDS_E --> SSL
     S3_E --> SSL
     RATE --> VAL
-    VAL --> MOD
 ```
 
-## Image Upload Flow (MVP)
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant App
-    participant API
-    participant Lambda
-    participant S3
-    participant Rekognition
-    
-    User->>App: Select Image
-    App->>API: Request Presigned URL
-    API->>Lambda: Generate URL
-    Lambda->>App: Return Presigned URL
-    App->>S3: Direct Upload
-    S3->>Lambda: Trigger Processing
-    Lambda->>Rekognition: Check Content
-    Rekognition->>Lambda: Safe/Unsafe
-    Lambda->>S3: Resize & Save
-    Lambda->>API: Update Activity
-```
 
 ## Offline Support Architecture (MVP)
 
@@ -292,12 +261,12 @@ graph LR
 | API | REST + GraphQL planned | REST only | Simpler |
 | Monitoring | X-Ray + Full Stack | Basic CloudWatch | 90% |
 | Security | WAF + Shield | Basic rate limiting | $100/mo |
-| Frontend | S3 + CloudFront | Vercel | Faster deploys |
+| Frontend | S3 + CloudFront | AWS Amplify | Native AWS integration |
 
 ## Total MVP Infrastructure
 
 - **Services Used**: 10 (vs 20+ in original)
-- **Monthly Cost**: ~$70 (vs $250-600)
+- **Monthly Cost**: ~$80 (vs $250-600)
 - **Setup Time**: 1 week (vs 3-4 weeks)
 - **Maintenance**: Minimal (mostly managed services)
 

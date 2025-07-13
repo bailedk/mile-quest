@@ -18,9 +18,11 @@ This manifest provides a comprehensive index of all project documentation, indic
 |----------|--------|---------|----------|---------|
 | MVP Architecture | 📌 Current | 2.0 | `01-architecture/current/mvp-architecture.md` | Simplified $70/mo architecture |
 | Infrastructure Diagram MVP | 📌 Current | 2.0 | `01-architecture/current/infrastructure-diagram-mvp.md` | Current infrastructure visualization |
+| Tech Stack MVP | 📌 Current | 2.0 | `01-architecture/current/tech-stack-mvp.md` | Current technology choices |
 | Architecture Decisions | 📌 Current | 2.0 | `01-architecture/current/architecture-decisions-v2.md` | Rationale for simplifications |
 | Original Architecture | 📚 Historical | 1.0 | `01-architecture/versions/v1.0/aws-architecture.md` | Initial Aurora/ElastiCache design |
 | Original Infrastructure | 📚 Historical | 1.0 | `01-architecture/versions/v1.0/infrastructure-diagram.md` | Complex infrastructure diagram |
+| Original Tech Stack | 📚 Historical | 1.0 | `01-architecture/versions/v1.0/tech-stack.md` | Original technology choices |
 
 ### 2. UI/UX Design Agent
 | Document | Status | Version | Location | Purpose |
