@@ -137,6 +137,23 @@ cors:
 - 10,000 users: ~$150/month
 - 100,000 users: ~$500/month (time to migrate)
 
+## Critical Pattern: External Service Abstraction
+
+**All external services MUST be abstracted behind interfaces**. This is non-negotiable for:
+- WebSockets (Pusher → API Gateway)
+- Authentication (Cognito → Auth0/Supabase)
+- Email (SES → SendGrid/Postmark)
+- Maps (Mapbox → Google Maps)
+- Analytics (GA4 → Mixpanel/Amplitude)
+
+Benefits:
+- No vendor lock-in
+- Easy provider switching
+- Simplified testing
+- Cost optimization flexibility
+
+See `external-service-abstraction-pattern.md` for implementation guide.
+
 ## Development Simplifications
 
 ### 1. Authentication

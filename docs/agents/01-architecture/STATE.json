@@ -53,7 +53,8 @@
     "webSockets": "Pusher managed service (was custom Lambda)",
     "caching": "CloudFront only (was ElastiCache + CloudFront)",
     "api": "REST with field filtering (GraphQL deferred)",
-    "hosting": "AWS Amplify for frontend (native AWS integration)"
+    "hosting": "AWS Amplify for frontend (native AWS integration)",
+    "externalServices": "All external services must use abstraction pattern"
   },
   "dependencies": {
     "provides": ["Infrastructure constraints", "API design", "Cost targets"],

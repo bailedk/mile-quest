@@ -255,6 +255,24 @@ Use cost-effective approach:
 - S3 data lake for analysis
 - Add Amplitude at 1000 MAU
 
+## Critical Architecture Pattern: External Service Abstraction
+
+**Mandatory Requirement**: All external services MUST be abstracted behind service interfaces. This includes:
+- Authentication (Cognito)
+- WebSockets (Pusher)
+- Email (SES)
+- Maps (Mapbox)
+- Analytics (GA4)
+- Any future external dependencies
+
+**Rationale**: 
+- Prevents vendor lock-in
+- Enables cost optimization as we scale
+- Simplifies testing with mock implementations
+- Allows zero-downtime provider migrations
+
+See `external-service-abstraction-pattern.md` for implementation details.
+
 ## Updated Architecture Summary
 
 ### MVP Architecture (Revised)
