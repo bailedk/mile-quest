@@ -1,0 +1,91 @@
+{
+  "agent": "Data Model",
+  "agentNumber": 3,
+  "currentVersion": "1.0",
+  "status": "complete",
+  "startedDate": "2025-01-13",
+  "lastUpdated": "2025-01-13",
+  "lastModifiedBy": "Data Model Agent",
+  "description": "Database schema design and data modeling for Mile Quest",
+  "activeDocuments": [
+    {
+      "name": "core-entities.md",
+      "description": "Definition of all database entities and relationships",
+      "version": "1.0"
+    },
+    {
+      "name": "prisma-schema.md",
+      "description": "Complete Prisma schema implementation",
+      "version": "1.0"
+    },
+    {
+      "name": "data-access-patterns.md",
+      "description": "Query patterns, optimization, and caching strategies",
+      "version": "1.0"
+    },
+    {
+      "name": "entity-relationship-diagram.md",
+      "description": "Visual ERD showing all relationships",
+      "version": "1.0"
+    },
+    {
+      "name": "data-model-summary.md",
+      "description": "Summary of decisions and implementation plan",
+      "version": "1.0"
+    }
+  ],
+  "dependencies": {
+    "requires": [
+      {
+        "agent": "Architecture",
+        "deliverables": ["Database technology", "Scalability requirements"]
+      },
+      {
+        "agent": "UI/UX",
+        "deliverables": ["Feature requirements", "User flows"]
+      }
+    ],
+    "provides": [
+      "Database schema",
+      "Data access patterns",
+      "Migration strategy"
+    ]
+  },
+  "decisions": {
+    "primaryKeys": "UUID for all tables",
+    "softDeletes": "Yes, for User and Team entities",
+    "jsonFields": "For route data and achievement criteria",
+    "aggregation": "Separate tables for UserStats and TeamProgress",
+    "orm": "Prisma for type safety",
+    "timezone": "Store all times in UTC",
+    "auditLog": "Deferred to Phase 2"
+  },
+  "openQuestions": [],
+  "resolvedQuestions": [
+    {
+      "question": "Should we use UUID or ULID for primary keys?",
+      "answer": "UUID - better PostgreSQL support and tooling"
+    },
+    {
+      "question": "How to handle timezone for activity timestamps?",
+      "answer": "Store in UTC, convert in application layer"
+    },
+    {
+      "question": "Should we implement soft deletes?",
+      "answer": "Yes, for User and Team entities only"
+    },
+    {
+      "question": "What level of audit logging is needed?",
+      "answer": "Basic via updatedAt timestamps, full audit log in Phase 2"
+    }
+  ],
+  "risks": [
+    "Schema changes after launch could be complex",
+    "Performance at scale needs careful planning"
+  ],
+  "nextSteps": [
+    "Define core entities",
+    "Create ERD",
+    "Implement Prisma schema"
+  ]
+}
