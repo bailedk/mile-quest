@@ -164,18 +164,23 @@ const pool = new Pool({
 });
 ```
 
-### 3. Real-time Updates
+### 3. Real-time Updates (Abstracted)
 ```javascript
-// Pusher client
-import Pusher from 'pusher-js';
+// WebSocket abstraction - works with any provider
+import { createWebSocketService } from '@/services/websocket/factory';
 
-const pusher = new Pusher(process.env.PUSHER_KEY, {
-  cluster: 'us2',
-  encrypted: true
-});
+const ws = createWebSocketService();
+await ws.connect(userId, authToken);
 
 // Subscribe to team channel
-const channel = pusher.subscribe(`team-${teamId}`);
+await ws.subscribe(`team-${teamId}`);
+ws.on('activity-logged', (data) => {
+  updateTeamProgress(data);
+});
+
+// Provider swappable via environment variable
+// NEXT_PUBLIC_WEBSOCKET_PROVIDER=pusher (now)
+// NEXT_PUBLIC_WEBSOCKET_PROVIDER=api-gateway (future)
 ```
 
 ### 4. Offline Support

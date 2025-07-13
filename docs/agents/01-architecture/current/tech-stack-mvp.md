@@ -94,10 +94,12 @@ This document outlines the simplified technology stack for Mile Quest MVP, optim
   - JWT token management
 
 ### External Services
-- **Pusher** - WebSocket management
+- **Pusher** - WebSocket management (abstracted for future migration)
   - Free: 200 connections, 500k messages/day
   - Channels for team communication
   - Presence for online status
+  - Abstracted behind WebSocketService interface
+  - Migration path to API Gateway WebSocket when >$100/month
 
 ## Development Stack
 

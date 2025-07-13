@@ -50,13 +50,17 @@ I agree with starting with RDS PostgreSQL for MVP, but with these provisions:
 - Limited customization
 - Costs scale linearly with users
 
-**Architecture Decision**: **ACCEPT**
+**Architecture Decision**: **ACCEPT WITH ABSTRACTION**
 
 This is a pragmatic choice for MVP. Implementation approach:
 - Use Pusher for MVP (generous free tier)
-- Abstract WebSocket logic behind interface
-- Plan migration path to AWS IoT Core or self-hosted for scale
-- Budget threshold: Switch at 1000 concurrent connections
+- **Implement WebSocketService abstraction layer**
+  - Provider-agnostic interface
+  - Swappable implementations via environment variable
+  - Mock service for testing
+- Plan migration path to API Gateway WebSocket (not IoT Core)
+- Budget threshold: Switch when Pusher costs exceed $100/month
+- Zero code changes required in components during migration
 
 ### 3. Skip ElastiCache Initially
 
