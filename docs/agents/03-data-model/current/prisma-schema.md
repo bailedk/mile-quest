@@ -159,6 +159,7 @@ model Activity {
   notes       String?
   source      ActivitySource @default(MANUAL)
   externalId  String?
+  isPrivate   Boolean        @default(false) // User can hide from leaderboards
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -173,6 +174,7 @@ model Activity {
   @@index([teamId])
   @@index([teamGoalId])
   @@index([startTime])
+  @@index([isPrivate]) // For filtering private activities
   @@map("activities")
 }
 

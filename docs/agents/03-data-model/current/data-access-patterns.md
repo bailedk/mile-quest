@@ -68,7 +68,8 @@ const dashboardData = await prisma.user.findUnique({
 const teamFeed = await prisma.activity.findMany({
   where: {
     teamId: teamId,
-    teamGoalId: goalId // optional filter
+    teamGoalId: goalId, // optional filter
+    isPrivate: false // Only show public activities in feed
   },
   include: {
     user: {
@@ -87,6 +88,7 @@ const teamFeed = await prisma.activity.findMany({
 
 **Optimization**:
 - Index on `(teamId, startTime DESC)`
+- Index on `isPrivate` for filtering
 - Cursor-based pagination
 - Limit includes to necessary fields
 
@@ -95,14 +97,15 @@ const teamFeed = await prisma.activity.findMany({
 
 **Query Pattern**:
 ```sql
--- Raw SQL for performance
+-- Raw SQL for performance (respecting privacy)
 SELECT 
   u.id,
   u.name,
   u.avatar_url,
-  COALESCE(SUM(a.distance), 0) as total_distance,
-  COUNT(DISTINCT DATE(a.start_time)) as active_days,
-  COALESCE(AVG(a.distance), 0) as avg_distance
+  COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) as total_distance,
+  COUNT(DISTINCT CASE WHEN a.is_private = false THEN DATE(a.start_time) END) as active_days,
+  COALESCE(AVG(CASE WHEN a.is_private = false THEN a.distance END), 0) as avg_distance,
+  EXISTS(SELECT 1 FROM activities WHERE user_id = u.id AND team_id = $1 AND is_private = true) as has_private_activities
 FROM users u
 INNER JOIN team_members tm ON tm.user_id = u.id
 LEFT JOIN activities a ON a.user_id = u.id 
@@ -258,6 +261,474 @@ async function addTeamMember(teamId: string, userId: string, role: TeamRole) {
       }
     });
   });
+}
+```
+
+## Team Goal Aggregation Best Practices
+
+### Overview
+Team goal progress is aggregated in real-time during activity creation to ensure data consistency and immediate user feedback. This section details the implementation approach.
+
+### Aggregation Strategy
+
+#### 1. Real-time Updates (Recommended Approach)
+Aggregate data immediately when activities are created, updated, or deleted:
+
+```typescript
+async function createActivity(data: CreateActivityInput) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Create the activity (with privacy preference)
+    const activity = await tx.activity.create({ 
+      data: {
+        ...data,
+        isPrivate: data.isPrivate || false // User's privacy preference
+      }
+    });
+
+    // 2. Update user stats
+    await tx.userStats.upsert({
+      where: { userId: activity.userId },
+      create: {
+        userId: activity.userId,
+        totalDistance: activity.distance,
+        totalActivities: 1,
+        totalDuration: activity.duration,
+        lastActivityAt: activity.startTime
+      },
+      update: {
+        totalDistance: { increment: activity.distance },
+        totalActivities: { increment: 1 },
+        totalDuration: { increment: activity.duration },
+        lastActivityAt: activity.startTime
+      }
+    });
+
+    // 3. Update team progress if activity is linked to a goal
+    if (activity.teamGoalId) {
+      const progress = await tx.teamProgress.upsert({
+        where: { teamGoalId: activity.teamGoalId },
+        create: {
+          teamGoalId: activity.teamGoalId,
+          totalDistance: activity.distance,
+          totalActivities: 1,
+          totalDuration: activity.duration,
+          lastActivityAt: activity.startTime
+        },
+        update: {
+          totalDistance: { increment: activity.distance },
+          totalActivities: { increment: 1 },
+          totalDuration: { increment: activity.duration },
+          lastActivityAt: activity.startTime
+        }
+      });
+
+      // 4. Update segment progress
+      await updateSegmentProgress(tx, activity.teamGoalId, progress.totalDistance);
+
+      // 5. Check for goal completion
+      const goal = await tx.teamGoal.findUnique({
+        where: { id: activity.teamGoalId },
+        select: { targetDistance: true, status: true }
+      });
+
+      if (goal.status === 'ACTIVE' && progress.totalDistance >= goal.targetDistance) {
+        await tx.teamGoal.update({
+          where: { id: activity.teamGoalId },
+          data: { 
+            status: 'COMPLETED',
+            completedAt: new Date()
+          }
+        });
+        
+        // Queue notifications for team members
+        await queueGoalCompletionNotifications(activity.teamGoalId);
+      }
+    }
+
+    return activity;
+  });
+}
+```
+
+#### 2. Segment Progress Calculation
+Update which segment of the route the team has reached:
+
+```typescript
+async function updateSegmentProgress(
+  tx: PrismaTransaction, 
+  teamGoalId: string, 
+  totalDistance: number
+) {
+  const goal = await tx.teamGoal.findUnique({
+    where: { id: teamGoalId },
+    select: { routeData: true }
+  });
+
+  const routeData = goal.routeData as RouteData;
+  const segments = routeData.segments;
+  
+  let remainingDistance = totalDistance;
+  let currentSegmentIndex = 0;
+  let segmentProgress = 0;
+
+  // Find current position on route
+  for (let i = 0; i < segments.length; i++) {
+    if (remainingDistance <= segments[i].distance) {
+      currentSegmentIndex = i;
+      segmentProgress = remainingDistance;
+      break;
+    }
+    remainingDistance -= segments[i].distance;
+    currentSegmentIndex = i + 1;
+  }
+
+  // Update progress tracking
+  await tx.teamProgress.update({
+    where: { teamGoalId },
+    data: {
+      currentSegmentIndex,
+      segmentProgress
+    }
+  });
+}
+```
+
+### Handling Edge Cases
+
+#### 1. Activity Updates
+When activities are edited, adjust the aggregates:
+
+```typescript
+async function updateActivity(activityId: string, updates: UpdateActivityInput) {
+  return await prisma.$transaction(async (tx) => {
+    // Get the original activity
+    const original = await tx.activity.findUnique({
+      where: { id: activityId },
+      select: { distance: true, duration: true, teamGoalId: true, userId: true }
+    });
+
+    // Calculate differences
+    const distanceDiff = (updates.distance || original.distance) - original.distance;
+    const durationDiff = (updates.duration || original.duration) - original.duration;
+
+    // Update the activity
+    const updated = await tx.activity.update({
+      where: { id: activityId },
+      data: updates
+    });
+
+    // Update aggregates if values changed
+    if (distanceDiff !== 0 || durationDiff !== 0) {
+      // Update user stats
+      await tx.userStats.update({
+        where: { userId: original.userId },
+        data: {
+          totalDistance: { increment: distanceDiff },
+          totalDuration: { increment: durationDiff }
+        }
+      });
+
+      // Update team progress if linked to goal
+      if (original.teamGoalId) {
+        const progress = await tx.teamProgress.update({
+          where: { teamGoalId: original.teamGoalId },
+          data: {
+            totalDistance: { increment: distanceDiff },
+            totalDuration: { increment: durationDiff }
+          }
+        });
+
+        // Recalculate segment progress
+        await updateSegmentProgress(tx, original.teamGoalId, progress.totalDistance);
+      }
+    }
+
+    return updated;
+  });
+}
+```
+
+#### 2. Activity Deletion
+Handle aggregate updates when activities are removed:
+
+```typescript
+async function deleteActivity(activityId: string) {
+  return await prisma.$transaction(async (tx) => {
+    const activity = await tx.activity.findUnique({
+      where: { id: activityId },
+      select: { distance: true, duration: true, teamGoalId: true, userId: true }
+    });
+
+    // Delete the activity
+    await tx.activity.delete({ where: { id: activityId } });
+
+    // Update user stats
+    await tx.userStats.update({
+      where: { userId: activity.userId },
+      data: {
+        totalDistance: { decrement: activity.distance },
+        totalActivities: { decrement: 1 },
+        totalDuration: { decrement: activity.duration }
+      }
+    });
+
+    // Update team progress
+    if (activity.teamGoalId) {
+      const progress = await tx.teamProgress.update({
+        where: { teamGoalId: activity.teamGoalId },
+        data: {
+          totalDistance: { decrement: activity.distance },
+          totalActivities: { decrement: 1 },
+          totalDuration: { decrement: activity.duration }
+        }
+      });
+
+      await updateSegmentProgress(tx, activity.teamGoalId, progress.totalDistance);
+    }
+  });
+}
+```
+
+### Data Reconciliation
+
+#### 1. Periodic Verification
+Run a nightly job to ensure aggregate accuracy:
+
+```typescript
+async function reconcileTeamProgress() {
+  const goals = await prisma.teamGoal.findMany({
+    where: { status: 'ACTIVE' }
+  });
+
+  for (const goal of goals) {
+    await prisma.$transaction(async (tx) => {
+      // Calculate actual totals from activities
+      const actual = await tx.activity.aggregate({
+        where: { teamGoalId: goal.id },
+        _sum: { distance: true, duration: true },
+        _count: true
+      });
+
+      // Get current recorded progress
+      const recorded = await tx.teamProgress.findUnique({
+        where: { teamGoalId: goal.id }
+      });
+
+      // Check for discrepancies
+      const distanceDiff = Math.abs((actual._sum.distance || 0) - recorded.totalDistance);
+      const countDiff = Math.abs(actual._count - recorded.totalActivities);
+
+      // If significant difference found (>0.1 miles or count mismatch)
+      if (distanceDiff > 0.1 || countDiff > 0) {
+        console.warn(`Discrepancy found for goal ${goal.id}:`, {
+          recordedDistance: recorded.totalDistance,
+          actualDistance: actual._sum.distance,
+          recordedCount: recorded.totalActivities,
+          actualCount: actual._count
+        });
+
+        // Update to correct values
+        await tx.teamProgress.update({
+          where: { teamGoalId: goal.id },
+          data: {
+            totalDistance: actual._sum.distance || 0,
+            totalActivities: actual._count,
+            totalDuration: actual._sum.duration || 0
+          }
+        });
+
+        // Recalculate segment progress
+        await updateSegmentProgress(tx, goal.id, actual._sum.distance || 0);
+      }
+    });
+  }
+}
+```
+
+#### 2. Individual Progress Calculation
+When needed, calculate individual contributions without storing them:
+
+```typescript
+async function getIndividualProgress(userId: string, teamGoalId: string) {
+  const result = await prisma.activity.aggregate({
+    where: {
+      userId,
+      teamGoalId
+    },
+    _sum: {
+      distance: true,
+      duration: true
+    },
+    _count: true
+  });
+
+  return {
+    totalDistance: result._sum.distance || 0,
+    totalActivities: result._count,
+    totalDuration: result._sum.duration || 0
+  };
+}
+
+// For team leaderboard with individual progress (privacy-aware)
+async function getTeamLeaderboard(teamId: string, teamGoalId?: string) {
+  const members = await prisma.$queryRaw`
+    SELECT 
+      u.id,
+      u.name,
+      u.avatar_url,
+      COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) as total_distance,
+      COUNT(CASE WHEN a.is_private = false THEN a.id END) as activity_count,
+      COALESCE(AVG(CASE WHEN a.is_private = false THEN a.distance END), 0) as avg_distance,
+      EXISTS(SELECT 1 FROM activities WHERE user_id = u.id AND team_id = ${teamId} AND is_private = true) as has_private_activities
+    FROM users u
+    INNER JOIN team_members tm ON tm.user_id = u.id
+    LEFT JOIN activities a ON a.user_id = u.id 
+      AND a.team_id = ${teamId}
+      ${teamGoalId ? Prisma.sql`AND a.team_goal_id = ${teamGoalId}` : Prisma.empty}
+    WHERE tm.team_id = ${teamId}
+      AND tm.left_at IS NULL
+    GROUP BY u.id, u.name, u.avatar_url
+    ORDER BY total_distance DESC
+  `;
+
+  return members;
+}
+```
+
+### Privacy Considerations
+
+#### 1. Privacy Principles
+- **Private activities always count toward team goals** - Users can contribute without being on leaderboards
+- **User stats respect privacy** - Private activities are excluded from public stats
+- **Team progress includes all activities** - Both private and public count toward goals
+- **Activity feed excludes private activities** - Only public activities shown in feeds
+
+#### 2. Querying User's Own Data
+Users can always see their complete data including private activities:
+
+```typescript
+async function getUserCompleteStats(userId: string) {
+  const stats = await prisma.activity.aggregate({
+    where: { userId },
+    _sum: { distance: true, duration: true },
+    _count: true
+  });
+
+  const publicStats = await prisma.activity.aggregate({
+    where: { userId, isPrivate: false },
+    _sum: { distance: true, duration: true },
+    _count: true
+  });
+
+  return {
+    total: {
+      distance: stats._sum.distance || 0,
+      activities: stats._count,
+      duration: stats._sum.duration || 0
+    },
+    public: {
+      distance: publicStats._sum.distance || 0,
+      activities: publicStats._count,
+      duration: publicStats._sum.duration || 0
+    },
+    private: {
+      distance: (stats._sum.distance || 0) - (publicStats._sum.distance || 0),
+      activities: stats._count - publicStats._count,
+      duration: (stats._sum.duration || 0) - (publicStats._sum.duration || 0)
+    }
+  };
+}
+```
+
+#### 3. Privacy-Aware Activity Feed
+Show privacy indicators without revealing details:
+
+```typescript
+async function getTeamActivityFeed(teamId: string, viewerId: string) {
+  // Get public activities
+  const publicActivities = await prisma.activity.findMany({
+    where: {
+      teamId,
+      isPrivate: false
+    },
+    include: {
+      user: {
+        select: { id: true, name: true, avatarUrl: true }
+      }
+    },
+    orderBy: { startTime: 'desc' },
+    take: 20
+  });
+
+  // Get viewer's private activities
+  const viewerPrivateActivities = await prisma.activity.findMany({
+    where: {
+      teamId,
+      userId: viewerId,
+      isPrivate: true
+    },
+    orderBy: { startTime: 'desc' },
+    take: 20
+  });
+
+  // Merge and sort by startTime
+  const allActivities = [...publicActivities, ...viewerPrivateActivities]
+    .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
+    .slice(0, 20);
+
+  return allActivities;
+}
+```
+
+#### 4. Privacy Toggle Implementation
+Allow users to change privacy settings on existing activities:
+
+```typescript
+async function toggleActivityPrivacy(activityId: string, userId: string) {
+  // Verify ownership
+  const activity = await prisma.activity.findFirst({
+    where: { id: activityId, userId }
+  });
+
+  if (!activity) {
+    throw new Error('Activity not found or unauthorized');
+  }
+
+  // Toggle privacy
+  return await prisma.activity.update({
+    where: { id: activityId },
+    data: { isPrivate: !activity.isPrivate }
+  });
+}
+
+// Bulk privacy update
+async function updatePrivacySettings(userId: string, makePrivate: boolean) {
+  return await prisma.activity.updateMany({
+    where: { userId },
+    data: { isPrivate: makePrivate }
+  });
+}
+```
+
+### Performance Considerations
+
+1. **Transaction Size**: Keep transactions small and focused
+2. **Batch Updates**: For bulk imports, consider batching updates
+3. **Async Processing**: Queue non-critical updates (achievements, notifications)
+4. **Index Usage**: Ensure proper indexes on teamGoalId and userId
+
+### Monitoring Aggregation Health
+
+```typescript
+// Add metrics for monitoring
+async function trackAggregationMetrics(operation: string, duration: number) {
+  // Log to monitoring service
+  metrics.histogram('aggregation.duration', duration, { operation });
+  
+  if (duration > 1000) {
+    // Alert on slow aggregations
+    console.error(`Slow aggregation detected: ${operation} took ${duration}ms`);
+  }
 }
 ```
 

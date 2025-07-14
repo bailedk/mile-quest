@@ -120,6 +120,7 @@ Individual walking/running activities logged by users.
 - `notes` (String?) - Optional activity notes
 - `source` (Enum: MANUAL, STRAVA, APPLE_HEALTH, GOOGLE_FIT)
 - `externalId` (String?) - ID from external source
+- `isPrivate` (Boolean) - Hide from leaderboards/individual stats (default: false)
 - `createdAt` (DateTime)
 - `updatedAt` (DateTime)
 
@@ -128,6 +129,7 @@ Individual walking/running activities logged by users.
 - Index on `teamId`
 - Index on `teamGoalId`
 - Index on `startTime`
+- Index on `isPrivate`
 - Unique on `source` + `externalId` (for deduplication)
 
 ### 6. TeamProgress

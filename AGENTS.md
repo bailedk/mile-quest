@@ -7,14 +7,15 @@
 | 1. Architecture | ✅ Complete | 100% | 2025-01-12 |
 | 2. UI/UX Design | ✅ Complete | 100% | 2025-01-12 |
 | 3. Data Model | 🔄 Pending | 0% | - |
-| 4. Map Integration | 🔄 Pending | 0% | - |
-| 5. Security & Privacy | 🔄 Pending | 0% | - |
-| 6. Mobile Optimization | 🔄 Pending | 0% | - |
-| 7. Integration | 🔄 Pending | 0% | - |
-| 8. Analytics & Gamification | 🔄 Pending | 0% | - |
-| 9. Testing & QA | 🔄 Pending | 0% | - |
-| 10. DevOps | 🔄 Pending | 0% | - |
-| 11. Review & Enhancement | ✅ Complete | 100% | 2025-01-12 |
+| 4. API Designer | 🔄 Pending | 0% | - |
+| 5. Map Integration | 🔄 Pending | 0% | - |
+| 6. Security & Privacy | 🔄 Pending | 0% | - |
+| 7. Mobile Optimization | 🔄 Pending | 0% | - |
+| 8. Integration | 🔄 Pending | 0% | - |
+| 9. Analytics & Gamification | 🔄 Pending | 0% | - |
+| 10. Testing & QA | 🔄 Pending | 0% | - |
+| 11. DevOps | 🔄 Pending | 0% | - |
+| 12. Review & Enhancement | ✅ Complete | 100% | 2025-01-12 |
 
 ## Project Overview
 
@@ -131,7 +132,48 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 4. Map Integration Agent 🔄 PENDING
+### 4. API Designer Agent 🔄 PENDING
+
+**Status**: Not Started
+
+**Purpose**: Design and document all API contracts, ensuring consistency and developer experience.
+
+**Tasks**:
+- [ ] Create comprehensive OpenAPI 3.0 specification
+- [ ] Design RESTful endpoints following best practices
+- [ ] Define request/response schemas with validation rules
+- [ ] Document authentication flows and security headers
+- [ ] Plan API versioning strategy
+- [ ] Design standardized error response format
+- [ ] Create pagination and filtering patterns
+- [ ] Document rate limiting and throttling rules
+- [ ] Plan GraphQL migration path for Phase 2
+
+**Key API Endpoints to Design**:
+- Authentication (register, login, refresh, logout)
+- Users (profile, preferences, stats)
+- Teams (CRUD, members, invites)
+- Activities (create, update, sync, privacy)
+- Goals (create, progress, milestones)
+- Leaderboards (team, global, filtered)
+- Achievements (list, earn, progress)
+- Notifications (preferences, history)
+
+**Outputs**:
+- OpenAPI 3.0 specification (YAML/JSON)
+- Postman collection for testing
+- TypeScript interfaces for frontend
+- API client SDK templates
+- API documentation site
+- Migration guide to GraphQL
+- Performance guidelines
+- Security best practices
+
+**Dependencies**: Architecture Agent ✅, Data Model Agent 🔄
+
+---
+
+### 5. Map Integration Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -166,7 +208,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 5. Security & Privacy Agent 🔄 PENDING
+### 6. Security & Privacy Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -202,7 +244,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 6. Mobile Optimization Agent 🔄 PENDING
+### 7. Mobile Optimization Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -237,7 +279,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 7. Integration Agent 🔄 PENDING
+### 8. Integration Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -268,11 +310,11 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 - Sync strategy document
 - Error handling procedures
 
-**Dependencies**: Architecture Agent ✅, Security Agent 🔄
+**Dependencies**: Architecture Agent ✅, Security & Privacy Agent 🔄
 
 ---
 
-### 8. Analytics & Gamification Agent 🔄 PENDING
+### 9. Analytics & Gamification Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -308,7 +350,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 9. Testing & QA Agent 🔄 PENDING
+### 10. Testing & QA Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -343,7 +385,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 10. DevOps Agent 🔄 PENDING
+### 11. DevOps Agent 🔄 PENDING
 
 **Status**: Not Started
 
@@ -378,7 +420,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
-### 11. Review & Enhancement Agent ✅ COMPLETE
+### 12. Review & Enhancement Agent ✅ COMPLETE
 
 **Status**: Review Phase Complete (2025-01-12)
 
@@ -417,7 +459,8 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 1. **Architecture Agent** defines system architecture ✅
 2. **UI/UX Design Agent** creates initial designs ✅
 3. **Data Model Agent** designs core schemas
-4. **DevOps Agent** sets up development environment
+4. **API Designer Agent** creates API contracts
+5. **DevOps Agent** sets up development environment
 
 ### Phase 2: Core Development (Weeks 4-8)
 1. **Map Integration Agent** implements mapping features
@@ -462,42 +505,48 @@ mile-quest/
 │       │   ├── schema.md              # Database schema
 │       │   ├── migrations/            # Migration scripts
 │       │   └── erd.md                 # Entity relationship diagrams
-│       ├── 04-map-integration/
+│       ├── 04-api-designer/
+│       │   ├── README.md              # API design overview
+│       │   ├── openapi-spec.yaml     # OpenAPI 3.0 specification
+│       │   ├── endpoints/             # Endpoint documentation
+│       │   ├── schemas/               # Request/response schemas
+│       │   └── examples/              # Example requests
+│       ├── 05-map-integration/
 │       │   ├── README.md              # Mapping overview
 │       │   ├── api-integration.md     # Map API details
 │       │   ├── calculations.md        # Distance algorithms
 │       │   └── performance.md         # Optimization notes
-│       ├── 05-security/
+│       ├── 06-security/
 │       │   ├── README.md              # Security overview
 │       │   ├── authentication.md      # Auth implementation
 │       │   ├── permissions.md         # Permission matrix
 │       │   └── compliance.md          # Privacy compliance
-│       ├── 06-mobile-optimization/
+│       ├── 07-mobile-optimization/
 │       │   ├── README.md              # Mobile strategy
 │       │   ├── pwa-implementation.md  # PWA details
 │       │   ├── offline-strategy.md    # Offline functionality
 │       │   └── performance.md         # Mobile performance
-│       ├── 07-integration/
+│       ├── 08-integration/
 │       │   ├── README.md              # Integration overview
 │       │   ├── fitness-apis.md        # Fitness tracker APIs
 │       │   ├── webhooks.md            # Webhook design
 │       │   └── sync-strategy.md       # Data synchronization
-│       ├── 08-analytics-gamification/
+│       ├── 09-analytics-gamification/
 │       │   ├── README.md              # Analytics overview
 │       │   ├── achievements.md        # Achievement system
 │       │   ├── leaderboards.md        # Leaderboard design
 │       │   └── metrics.md             # Analytics metrics
-│       ├── 09-testing-qa/
+│       ├── 10-testing-qa/
 │       │   ├── README.md              # Testing strategy
 │       │   ├── test-plans.md          # Test specifications
 │       │   ├── automation.md          # Automation framework
 │       │   └── reports/               # Test reports
-│       ├── 10-devops/
+│       ├── 11-devops/
 │       │   ├── README.md              # DevOps overview
 │       │   ├── ci-cd.md               # Pipeline configuration
 │       │   ├── infrastructure.md      # Infrastructure setup
 │       │   └── monitoring.md          # Monitoring strategy
-│       └── 11-review-enhancement/
+│       └── 12-review-enhancement/
 │           ├── README.md              # Review methodology
 │           ├── architecture-review.md # Architecture evaluation
 │           ├── ui-ux-review.md        # UI/UX evaluation

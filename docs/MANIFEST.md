@@ -40,48 +40,56 @@ This manifest provides a comprehensive index of all project documentation, indic
 | ERD | ⏳ Planned | - | `03-data-model/current/erd.md` | Entity relationship diagram |
 | Migration Strategy | ⏳ Planned | - | `03-data-model/current/migrations.md` | Database migration approach |
 
-### 4. Map Integration Agent
+### 4. API Designer Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Map Integration | ⏳ Planned | - | `04-map-integration/current/design.md` | Mapping service integration |
+| OpenAPI Specification | ⏳ Planned | - | `04-api-designer/current/openapi-spec.yaml` | Complete API specification |
+| Endpoint Documentation | ⏳ Planned | - | `04-api-designer/current/endpoints/` | Detailed endpoint docs |
+| TypeScript Types | ⏳ Planned | - | `04-api-designer/current/types/` | Frontend type definitions |
+| API Examples | ⏳ Planned | - | `04-api-designer/current/examples/` | Request/response examples |
 
-### 5. Security & Privacy Agent
+### 5. Map Integration Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Security Architecture | ⏳ Planned | - | `05-security/current/architecture.md` | Security design |
-| Authentication Flow | ⏳ Planned | - | `05-security/current/authentication.md` | Cognito implementation |
+| Map Integration | ⏳ Planned | - | `05-map-integration/current/design.md` | Mapping service integration |
 
-### 6. Mobile Optimization Agent
+### 6. Security & Privacy Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| PWA Strategy | ⏳ Planned | - | `06-mobile-optimization/current/pwa.md` | Progressive web app design |
+| Security Architecture | ⏳ Planned | - | `06-security/current/architecture.md` | Security design |
+| Authentication Flow | ⏳ Planned | - | `06-security/current/authentication.md` | Cognito implementation |
 
-### 7. Integration Agent
+### 7. Mobile Optimization Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Fitness APIs | ⏳ Planned | - | `07-integration/current/fitness-apis.md` | External API integrations |
+| PWA Strategy | ⏳ Planned | - | `07-mobile-optimization/current/pwa.md` | Progressive web app design |
 
-### 8. Analytics & Gamification Agent
+### 8. Integration Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Achievement System | ⏳ Planned | - | `08-analytics-gamification/current/achievements.md` | Gamification design |
+| Fitness APIs | ⏳ Planned | - | `08-integration/current/fitness-apis.md` | External API integrations |
 
-### 9. Testing & QA Agent
+### 9. Analytics & Gamification Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Test Strategy | ⏳ Planned | - | `09-testing-qa/current/strategy.md` | Testing approach |
+| Achievement System | ⏳ Planned | - | `09-analytics-gamification/current/achievements.md` | Gamification design |
 
-### 10. DevOps Agent
+### 10. Testing & QA Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| CI/CD Pipeline | ⏳ Planned | - | `10-devops/current/pipeline.md` | Deployment automation |
+| Test Strategy | ⏳ Planned | - | `10-testing-qa/current/strategy.md` | Testing approach |
 
-### 11. Review & Enhancement Agent
+### 11. DevOps Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Recommendations | 📌 Current | 1.0 | `11-review-enhancement/recommendations-summary.md` | Simplification recommendations |
-| Architecture Review | 📌 Current | 1.0 | `11-review-enhancement/architecture-review.md` | Architecture evaluation |
-| UI/UX Review | 📌 Current | 1.0 | `11-review-enhancement/ui-ux-review.md` | Design evaluation |
+| CI/CD Pipeline | ⏳ Planned | - | `11-devops/current/pipeline.md` | Deployment automation |
+
+### 12. Review & Enhancement Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Recommendations | 📌 Current | 1.0 | `12-review-enhancement/recommendations-summary.md` | Simplification recommendations |
+| Architecture Review | 📌 Current | 1.0 | `12-review-enhancement/architecture-review.md` | Architecture evaluation |
+| UI/UX Review | 📌 Current | 1.0 | `12-review-enhancement/ui-ux-review.md` | Design evaluation |
 
 ## Cross-Cutting Documentation
 
@@ -98,6 +106,8 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### Architecture Dependencies
 - UI/UX Design → Architecture (for technical constraints)
 - Data Model → Architecture (for database choices)
+- API Designer → Architecture (for REST/GraphQL decisions)
+- API Designer → Data Model (for entity schemas)
 - All Agents → Architecture (for infrastructure)
 
 ### UI/UX Dependencies
