@@ -36,9 +36,11 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### 3. Data Model Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Database Schema | ⏳ Planned | - | `03-data-model/current/schema.md` | PostgreSQL schema design |
-| ERD | ⏳ Planned | - | `03-data-model/current/erd.md` | Entity relationship diagram |
-| Migration Strategy | ⏳ Planned | - | `03-data-model/current/migrations.md` | Database migration approach |
+| Core Entities | 📌 Current | 1.0 | `03-data-model/current/core-entities.md` | Entity definitions and relationships |
+| Prisma Schema | 📌 Current | 1.0 | `03-data-model/current/prisma-schema.md` | Complete Prisma ORM schema |
+| Data Access Patterns | 📌 Current | 1.0 | `03-data-model/current/data-access-patterns.md` | Query optimization and caching |
+| ERD | 📌 Current | 1.0 | `03-data-model/current/entity-relationship-diagram.md` | Visual database relationships |
+| Data Model Summary | 📌 Current | 1.0 | `03-data-model/current/data-model-summary.md` | Key decisions and implementation |
 
 ### 4. API Designer Agent
 | Document | Status | Version | Location | Purpose |
