@@ -4,13 +4,12 @@
 
 Mile Quest is a mobile-first team walking challenge platform where teams set geographic goals and track collective walking distances. This document provides context and guidelines for Claude Code to effectively work on this project.
 
-## 📍 Current Project State
+## 📍 How to Navigate This Project
 
-**Project Phase**: MVP Foundation Complete (Architecture, UI/UX, Data Model)
-**Active Development**: Ready for API Designer Agent (Agent #4)
-**Architecture Version**: 2.0 (Simplified MVP)
-**UI/UX Version**: 2.0 (MVP Aligned)
-**Data Model Version**: 1.0 (Complete with privacy features)
+**For Current Status**: Check AGENTS.md
+**For Documentation Index**: Check docs/MANIFEST.md  
+**For Specific Agent Work**: Check docs/agents/[number]-[name]/current/
+**For Guidelines**: Check docs/GUIDELINES.md
 
 ## 🗂️ Documentation Structure
 
@@ -31,43 +30,74 @@ docs/agents/[agent-number]-[agent-name]/
 
 ### 🚨 Important: Always check `current/` folder for the active documentation!
 
-## 📋 Active Documentation by Agent
+## 📋 Where to Find Agent Documentation
 
-### 1. Architecture Agent (✅ Complete)
-- **Current Version**: 2.0 (MVP Simplified)
-- **Primary Docs**: 
-  - `current/mvp-architecture.md` - Simplified $70/month architecture
-  - `current/infrastructure-diagram-mvp.md` - Current infrastructure
-- **Superseded**: Original Aurora/ElastiCache architecture in versions/v1.0/
+- **01-architecture/** - System design, tech stack, infrastructure
+- **02-ui-ux/** - Wireframes, design system, user journeys
+- **03-data-model/** - Database schema, entities, access patterns
+- **04-api-designer/** - API contracts, endpoints, types
+- **05-map-integration/** - Mapping features and route calculations
+- **06-security/** - Authentication, authorization, privacy
+- **07-mobile-optimization/** - PWA, offline, performance
+- **08-integration/** - External APIs, webhooks, sync
+- **09-analytics-gamification/** - Achievements, leaderboards, metrics
+- **10-testing-qa/** - Test strategies, automation, quality
+- **11-devops/** - CI/CD, deployment, monitoring
+- **12-review-enhancement/** - Cross-agent reviews and improvements
 
-### 2. UI/UX Design Agent (✅ Complete)  
-- **Current Version**: 2.0 (MVP Aligned)
-- **Primary Docs**:
-  - `current/mvp-wireframes.md` - Simplified screens
-  - `current/design-system.md` - Component library
-  - `current/ui-architecture-alignment.md` - Technical integration
-- **Superseded**: Complex features moved to versions/v1.0/
+## 🤖 How Agents Should Operate
 
-### 3. Data Model Agent (✅ Complete)
-- **Current Version**: 1.0 (Complete)
-- **Primary Docs**:
-  - `current/prisma-schema.md` - Complete Prisma ORM schema
-  - `current/data-access-patterns.md` - Query optimization & privacy
-  - `current/entity-relationship-diagram.md` - Visual ERD
-- **Key Features**: Privacy controls, real-time aggregation
+### Agent Responsibilities
 
-### 11. Review & Enhancement Agent (✅ Complete)
-- **Purpose**: Reviews and improves other agents' work
-- **Key Docs**: `recommendations-summary.md`
+Each agent MUST:
+
+1. **Update Their Own Documentation**
+   - Work in their designated folder under `/docs/agents/[number]-[name]/`
+   - Update STATE.json with progress and decisions
+   - Create/update CHANGELOG.md with deliverables
+   - Keep current/ folder with active documentation
+
+2. **Update Project-Wide Status Files**
+   - ✅ Update AGENTS.md when starting and completing work
+   - ✅ Update MANIFEST.md when adding new documents
+   - ✅ Mark dependencies as complete/pending
+
+3. **Make Recommendations for Other Agents**
+   - Document suggestions in a `recommendations.md` file
+   - Note integration points and dependencies
+   - Flag potential conflicts or improvements
+   - Example: "API Designer recommends Security Agent implement rate limiting"
+
+4. **Document Dependencies**
+   - List what you need from other agents in STATE.json
+   - List what you provide to other agents
+   - Update when dependencies are satisfied
+   - Alert if blocked by missing dependencies
+
+### Agent Workflow
+
+**When Starting:**
+1. Update AGENTS.md - Mark your agent as "🚧 In Progress"
+2. Check dependencies - Ensure required agents are complete
+3. Read dependent documentation - Review all current/ folders you need
+4. Create working/ folder - Start drafts there
+5. Update STATE.json - Track your progress
+
+**When Completing:**
+1. Move docs from working/ to current/
+2. Update AGENTS.md - Mark as "✅ Complete" with date
+3. Update MANIFEST.md - Change doc status to "📌 Current"
+4. Create CHANGELOG.md - List all deliverables
+5. Write recommendations.md - Suggestions for other agents
 
 ## 🛠️ Working on Mile Quest
 
 ### When Starting a Task
 
-1. **Check CLAUDE.md** (this file) for current state
-2. **Read docs/MANIFEST.md** for documentation index
-3. **Check relevant agent's current/ folder**
-4. **Review STATE.json** for version info
+1. **Check CLAUDE.md** (this file) for documentation structure
+2. **Read AGENTS.md** for current project status
+3. **Check docs/MANIFEST.md** for documentation index
+4. **Review relevant agent folders** for context
 5. **Follow docs/GUIDELINES.md** for updates
 
 ### When Making Updates
@@ -91,50 +121,50 @@ docs/agents/[agent-number]-[agent-name]/
 - **Major Updates** (2.0 → 3.0): Significant changes, new approach
 - **Always preserve old versions** in versions/ folder
 
-## 🏗️ Current Architecture Summary
+## 📚 Key Documentation References
 
-### MVP Stack (Current)
-- **Frontend**: Next.js on Vercel
-- **API**: AWS Lambda + API Gateway
-- **Database**: RDS PostgreSQL Multi-AZ ($40/month)
-- **WebSockets**: Pusher (managed service)
-- **Auth**: Cognito with Google Sign-In
-- **Storage**: S3 with CloudFront CDN
-- **Total Cost**: ~$70/month
+### Architecture Documentation
+- **MVP Architecture**: `docs/agents/01-architecture/current/mvp-architecture.md`
+- **Infrastructure**: `docs/agents/01-architecture/current/infrastructure-diagram-mvp.md`
+- **Tech Stack**: `docs/agents/01-architecture/current/tech-stack-mvp.md`
+- **Service Patterns**: `docs/agents/01-architecture/current/external-service-abstraction-pattern.md`
 
-### Key Constraints
-- No Aurora Serverless (yet) - using RDS PostgreSQL
-- No ElastiCache (yet) - CloudFront only
-- No custom WebSockets - Pusher managed service
-- REST API only - No GraphQL (yet)
-- Basic offline - Activity logging only
+### UI/UX Documentation  
+- **Wireframes**: `docs/agents/02-ui-ux/current/mvp-wireframes.md`
+- **Design System**: `docs/agents/02-ui-ux/current/design-system.md`
+- **User Journeys**: `docs/agents/02-ui-ux/current/user-journeys.md`
 
-### Migration Triggers
-- RDS → Aurora: >10k users or >100 req/sec
-- Pusher → AWS IoT: >1000 concurrent connections
-- Add ElastiCache: >50 req/sec
-- Add GraphQL: >60% mobile traffic
+### Data Model Documentation
+- **Schema**: `docs/agents/03-data-model/current/prisma-schema.md`
+- **Entities**: `docs/agents/03-data-model/current/core-entities.md`
+- **Access Patterns**: `docs/agents/03-data-model/current/data-access-patterns.md`
 
-## 🎨 Current UI/UX Summary
+## 🔐 Critical Patterns to Follow
 
-### MVP Features (Week 1)
-- Simple onboarding (<2 minutes)
-- Team creation/joining
-- Activity logging (offline capable)
-- Basic progress tracking
-- Team activity feed
+### External Service Abstraction (MANDATORY)
+All external services MUST be abstracted behind interfaces:
+```typescript
+// ❌ BAD: Direct usage
+import Pusher from 'pusher-js';
 
-### Progressive Rollout
-- Week 2: Achievements, photos, stats
-- Week 3: Leaderboards, notifications
-- Week 4: Advanced analytics
+// ✅ GOOD: Abstracted
+import { WebSocketService } from '@/services/websocket';
+```
 
-### Design Constraints
-- Mobile-first (375x667px baseline)
-- Optimistic UI updates everywhere
-- 44px minimum touch targets
-- WCAG 2.1 AA compliance
-- Connection-aware UI
+This applies to: Cognito, Pusher, SES, Mapbox, Analytics, etc.
+See: `docs/agents/01-architecture/current/external-service-abstraction-pattern.md`
+
+### Privacy-Aware Queries
+Always respect the `isPrivate` flag on activities:
+```typescript
+// Public leaderboards exclude private activities
+WHERE isPrivate = false
+
+// Team totals include ALL activities (private + public)
+SUM(distance) // No privacy filter for team goals
+```
+
+See: `docs/agents/03-data-model/current/data-access-patterns.md#privacy-considerations`
 
 ## 📝 Quick Commands
 
@@ -165,6 +195,10 @@ cat docs/GUIDELINES.md
 3. **Don't add complex features** - follow progressive rollout
 4. **Don't skip STATE.json updates** - version tracking is critical
 5. **Don't create files outside agent structure** - maintain organization
+6. **Don't directly use external services** - always use abstraction layer
+7. **Don't expose private activities** - respect isPrivate flag
+8. **Don't forget to update AGENTS.md** - track your progress
+9. **Don't forget to update MANIFEST.md** - index new documents
 
 ## 🔄 Regular Maintenance
 
@@ -190,4 +224,4 @@ When working on Mile Quest:
 
 **Remember**: This is a living document. Update it whenever the project state changes significantly.
 
-Last Updated: 2025-01-12
+Last Updated: 2025-01-14
