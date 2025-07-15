@@ -6,10 +6,11 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ## 📍 Current Project State
 
-**Project Phase**: MVP Architecture & Design Complete
-**Active Development**: Starting Data Model Agent (Agent #3)
+**Project Phase**: MVP Foundation Complete (Architecture, UI/UX, Data Model)
+**Active Development**: Ready for API Designer Agent (Agent #4)
 **Architecture Version**: 2.0 (Simplified MVP)
 **UI/UX Version**: 2.0 (MVP Aligned)
+**Data Model Version**: 1.0 (Complete with privacy features)
 
 ## 🗂️ Documentation Structure
 
@@ -47,10 +48,13 @@ docs/agents/[agent-number]-[agent-name]/
   - `current/ui-architecture-alignment.md` - Technical integration
 - **Superseded**: Complex features moved to versions/v1.0/
 
-### 3. Data Model Agent (🚧 Next Up)
-- **Current Version**: Not started
-- **Expected Docs**: Schema, ERD, migrations
-- **Dependencies**: Must align with MVP architecture
+### 3. Data Model Agent (✅ Complete)
+- **Current Version**: 1.0 (Complete)
+- **Primary Docs**:
+  - `current/prisma-schema.md` - Complete Prisma ORM schema
+  - `current/data-access-patterns.md` - Query optimization & privacy
+  - `current/entity-relationship-diagram.md` - Visual ERD
+- **Key Features**: Privacy controls, real-time aggregation
 
 ### 11. Review & Enhancement Agent (✅ Complete)
 - **Purpose**: Reviews and improves other agents' work
@@ -170,6 +174,17 @@ When working on Mile Quest:
 3. Update MANIFEST.md for new documents
 4. Ensure STATE.json reflects reality
 5. Move completed work from working/ to current/
+
+## 📝 Critical Updates When Completing Agent Work
+
+**IMPORTANT**: When an agent completes their work, they MUST update:
+1. **AGENTS.md** - Mark agent as complete, update progress to 100%
+2. **MANIFEST.md** - Update document status from "⏳ Planned" to "📌 Current"
+3. **CLAUDE.md** - Update current project state and active agent
+4. **STATE.json** - Update status to "complete" with version
+5. **CHANGELOG.md** - Create if missing, document all deliverables
+
+**Note**: The Data Model Agent (Jan 2025) completed work but missed updating AGENTS.md and MANIFEST.md, requiring manual fixes later.
 
 ---
 
