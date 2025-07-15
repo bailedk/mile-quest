@@ -121,11 +121,43 @@ The Compliance Agent (13) serves as the project's quality assurance auditor, ens
 
 ## Running the Compliance Agent
 
+### Automated Compliance Checking
+
+Before performing manual audits, run the automated compliance checker:
+
+```bash
+# Using Node.js
+cd docs/agents/13-compliance/scripts
+node compliance-checker.js
+
+# OR using Python
+python3 compliance-checker.py
+```
+
+The automated scripts will:
+- Check all agent documentation structure
+- Validate STATE.json and backlog.json formats
+- Verify project-wide file updates
+- Generate a detailed compliance report
+- Save results to `current/automated-compliance-report.json`
+
+### Manual Audit Process
+
+After running automated checks:
+1. Review the automated report for patterns
+2. Perform deeper analysis of violations
+3. Check for compliance issues not caught by automation
+4. Update the main compliance audit report
+5. Add recommendations to agent backlogs
+
+### When to Run
+
 This agent should be run:
-- After major agent completions
+- Monthly (every 15th) as per schedule
+- After 3+ agents complete major work
 - Before major releases
 - When new project rules are added
-- Periodically (monthly) for ongoing projects
+- When requested by user or other agents
 
 ---
 

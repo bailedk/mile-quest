@@ -6,13 +6,13 @@
       "toAgent": "13-compliance",
       "requestDate": "2025-01-15",
       "priority": "medium",
-      "status": "pending",
+      "status": "completed",
       "request": "Schedule next monthly compliance audit",
       "reason": "Regular audits ensure ongoing compliance as new agents are added",
       "value": "Maintains project organization and catches issues early",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "comp-002",
@@ -20,13 +20,13 @@
       "toAgent": "13-compliance",
       "requestDate": "2025-01-15",
       "priority": "low",
-      "status": "pending",
+      "status": "completed",
       "request": "Create automated compliance checking scripts",
       "reason": "Manual audits are time-consuming and error-prone",
       "value": "Enables faster and more consistent compliance checking",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "comp-003",
@@ -34,13 +34,13 @@
       "toAgent": "13-compliance",
       "requestDate": "2025-01-15",
       "priority": "medium",
-      "status": "pending",
+      "status": "completed",
       "request": "Update CLAUDE.md with completed agent status",
       "reason": "Own compliance requirement not yet fulfilled",
       "value": "Maintains accurate project documentation",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     }
   ]
 }

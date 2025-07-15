@@ -1,7 +1,7 @@
 {
   "agent": "Compliance",
   "agentNumber": 13,
-  "currentVersion": "1.0",
+  "currentVersion": "1.2",
   "status": "complete",
   "lastUpdated": "2025-01-15",
   "lastModifiedBy": "Compliance Agent",
@@ -25,6 +25,26 @@
     {
       "name": "compliance-scores.md",
       "description": "Detailed scoring breakdown",
+      "version": "1.0"
+    },
+    {
+      "name": "audit-schedule.md",
+      "description": "Monthly compliance audit schedule for 2025",
+      "version": "1.0"
+    },
+    {
+      "name": "scripts/compliance-checker.js",
+      "description": "Automated compliance checking script (Node.js)",
+      "version": "1.0"
+    },
+    {
+      "name": "scripts/compliance-checker.py",
+      "description": "Automated compliance checking script (Python)",
+      "version": "1.0"
+    },
+    {
+      "name": "scripts/README.md",
+      "description": "Documentation for compliance scripts",
       "version": "1.0"
     }
   ],

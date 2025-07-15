@@ -1,5 +1,51 @@
 # Compliance Agent Changelog
 
+## [1.2] - 2025-01-15
+
+### Added
+- Created automated compliance checking scripts in both Node.js and Python
+- Scripts perform automated checks for documentation structure, STATE.json format, project updates, and backlog format
+- Added scripts/README.md with usage instructions
+- Updated main README.md with automated checking process instructions
+
+### Deliverables
+1. **scripts/compliance-checker.js**
+   - Node.js implementation of automated compliance checker
+   - Generates console report and JSON output
+   
+2. **scripts/compliance-checker.py**
+   - Python implementation with identical functionality
+   - No external dependencies required
+   
+3. **scripts/README.md**
+   - Usage instructions for both scripts
+   - Integration guidance for compliance audits
+
+### Tasks Completed
+- Completed backlog item comp-002 (Create automated compliance checking scripts)
+- Completed backlog item comp-003 (Update CLAUDE.md with completed agent status)
+
+### Updates
+- Updated CLAUDE.md to reflect Compliance Agent v1.1 → v1.2
+- Added automated checking process to audit workflow
+
+## [1.1] - 2025-01-15
+
+### Added
+- Created comprehensive audit schedule for 2025
+- Established monthly audit calendar with specific dates
+- Defined audit scope and expectations
+
+### Deliverables
+1. **audit-schedule.md**
+   - Monthly audit dates for all of 2025
+   - Clear scope for each audit type
+   - Flexible scheduling for agent-triggered audits
+   - Expected deliverables for each audit
+
+### Tasks Completed
+- Completed backlog item comp-001 (Schedule next monthly compliance audit)
+
 ## [1.0] - 2025-01-15
 
 ### Added
