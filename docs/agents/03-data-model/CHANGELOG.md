@@ -1,5 +1,24 @@
 # Data Model Agent Changelog
 
+## [1.1.0] - 2025-01-15
+
+### Added
+- Comprehensive database index definitions document
+- Performance indexes for all high-frequency query patterns
+- Index monitoring and maintenance guidelines
+- Migration strategy for index implementation
+
+### Key Indexes Added
+- Activity queries: team feed, user dashboard, goal progress
+- Team member lookups: active members, user teams, admin queries
+- Leaderboard optimizations: distance and streak queries
+- Invite management: pending invites by email and user
+- Privacy-aware indexes for public activity feeds
+
+### Notes
+- Addresses backlog item dm-002 from API Designer Agent
+- Provides foundation for meeting API response time requirements
+
 ## [1.0.0] - 2025-01-13
 
 ### Added

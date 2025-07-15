@@ -6,13 +6,13 @@
       "toAgent": "03-data-model",
       "requestDate": "2025-01-15",
       "priority": "high",
-      "status": "pending",
+      "status": "completed",
       "request": "Update AGENTS.md to mark Data Model Agent as complete",
       "reason": "Compliance audit found this was not updated when agent completed",
       "value": "Maintains accurate project status tracking",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "dm-002",
@@ -20,13 +20,13 @@
       "toAgent": "03-data-model",
       "requestDate": "2025-01-15",
       "priority": "medium",
-      "status": "pending",
+      "status": "completed",
       "request": "Define database indexes for common query patterns",
       "reason": "API endpoints will need optimized queries for performance",
       "value": "Ensures database performance meets API response time requirements",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "dm-003",
@@ -34,13 +34,13 @@
       "toAgent": "03-data-model",
       "requestDate": "2025-01-15",
       "priority": "low",
-      "status": "pending",
+      "status": "completed",
       "request": "Consider adding spatial indexes for geographic queries",
       "reason": "Map features may benefit from PostGIS spatial capabilities",
       "value": "Improves performance of location-based features",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     }
   ]
 }

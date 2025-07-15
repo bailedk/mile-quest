@@ -1,10 +1,10 @@
 {
   "agent": "Data Model",
   "agentNumber": 3,
-  "currentVersion": "1.0",
+  "currentVersion": "1.1",
   "status": "complete",
   "startedDate": "2025-01-13",
-  "lastUpdated": "2025-01-13",
+  "lastUpdated": "2025-01-15",
   "lastModifiedBy": "Data Model Agent",
   "description": "Database schema design and data modeling for Mile Quest",
   "activeDocuments": [
@@ -31,6 +31,11 @@
     {
       "name": "data-model-summary.md",
       "description": "Summary of decisions and implementation plan",
+      "version": "1.0"
+    },
+    {
+      "name": "database-indexes.md",
+      "description": "Comprehensive database index definitions for query optimization",
       "version": "1.0"
     }
   ],

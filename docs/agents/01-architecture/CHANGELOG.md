@@ -2,6 +2,31 @@
 
 All notable changes to the Architecture documentation will be documented in this file.
 
+## [2.1] - 2025-01-15
+
+### Added
+- **API Versioning Strategy**: Defined URL-based versioning approach (/api/v1/)
+- **Performance Analysis**: Validated activity aggregation patterns can handle scale
+- **Cost Monitoring**: Created ongoing infrastructure cost tracking system
+- `api-versioning-strategy.md` - Complete versioning implementation guide
+- `activity-aggregation-performance-analysis.md` - Aggregation performance assessment
+- `infrastructure-cost-monitoring.md` - Cost tracking and projections
+
+### Resolved
+- API versioning approach (was open question)
+- Activity aggregation performance concerns
+- Infrastructure cost tracking process
+
+### Key Findings
+- Current architecture supports 100 activities/second
+- Infrastructure costs projected at $46-51/month (well under $70 budget)
+- Real-time aggregation pattern validated for scale
+
+### Updated
+- STATE.json to version 2.1 with new documents
+- Resolved API versioning open question
+- Added new open questions about WAF and read replicas
+
 ## [2.0] - 2025-01-12
 
 ### Changed

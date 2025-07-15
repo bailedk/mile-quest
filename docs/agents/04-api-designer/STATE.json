@@ -1,27 +1,47 @@
 {
-  "agent_id": "04-api-designer",
-  "agent_name": "API Designer Agent",
-  "current_version": "0.0.0",
-  "status": "pending",
-  "last_updated": "2025-01-14",
-  "description": "Designs and documents all API contracts for Mile Quest",
-  "versions": {},
-  "current_task": "Not started",
-  "next_steps": [
-    "Wait for Data Model Agent completion",
-    "Create OpenAPI specification",
-    "Design REST endpoints",
-    "Document authentication patterns"
+  "agent": "04-api-designer",
+  "version": "1.0",
+  "status": "in_progress",
+  "lastUpdated": "2025-01-15",
+  "currentFocus": "Creating core API contracts for MVP",
+  "completedTasks": [
+    "Review architecture and data model documentation"
+  ],
+  "inProgressTasks": [
+    "Design authentication API endpoints",
+    "Design team management API endpoints",
+    "Design activity logging API endpoints"
   ],
   "dependencies": {
-    "architecture": "complete",
-    "ui-ux": "complete",
-    "data-model": "pending"
-  },
-  "outputs": {
-    "openapi_spec": "pending",
-    "endpoint_docs": "pending",
-    "typescript_types": "pending",
-    "postman_collection": "pending"
+    "requires": [
+      {
+        "agent": "01-architecture",
+        "deliverable": "MVP architecture",
+        "status": "complete"
+      },
+      {
+        "agent": "03-data-model",
+        "deliverable": "Prisma schema",
+        "status": "complete"
+      }
+    ],
+    "provides": [
+      {
+        "agent": "06-security",
+        "deliverable": "API contracts for security review"
+      },
+      {
+        "agent": "07-mobile-optimization",
+        "deliverable": "API contracts for mobile optimization"
+      },
+      {
+        "agent": "08-integration",
+        "deliverable": "External API integration points"
+      },
+      {
+        "agent": "10-testing-qa",
+        "deliverable": "API contracts for test planning"
+      }
+    ]
   }
 }

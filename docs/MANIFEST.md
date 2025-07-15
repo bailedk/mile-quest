@@ -41,12 +41,16 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Data Access Patterns | 📌 Current | 1.0 | `03-data-model/current/data-access-patterns.md` | Query optimization and caching |
 | ERD | 📌 Current | 1.0 | `03-data-model/current/entity-relationship-diagram.md` | Visual database relationships |
 | Data Model Summary | 📌 Current | 1.0 | `03-data-model/current/data-model-summary.md` | Key decisions and implementation |
+| Database Indexes | 📌 Current | 1.0 | `03-data-model/current/database-indexes.md` | Performance index definitions |
 
 ### 4. API Designer Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
+| Agent Overview | 📌 Current | 1.0 | `04-api-designer/current/README.md` | Agent purpose and progress |
+| API Contracts MVP | 📌 Current | 1.0 | `04-api-designer/current/api-contracts-mvp.md` | Complete REST endpoint definitions |
+| API Design Decisions | 📌 Current | 1.0 | `04-api-designer/current/api-design-decisions.md` | Rationale for API choices |
+| Recommendations | 📌 Current | 1.0 | `04-api-designer/recommendations.md` | Guidance for other agents |
 | OpenAPI Specification | ⏳ Planned | - | `04-api-designer/current/openapi-spec.yaml` | Complete API specification |
-| Endpoint Documentation | ⏳ Planned | - | `04-api-designer/current/endpoints/` | Detailed endpoint docs |
 | TypeScript Types | ⏳ Planned | - | `04-api-designer/current/types/` | Frontend type definitions |
 | API Examples | ⏳ Planned | - | `04-api-designer/current/examples/` | Request/response examples |
 

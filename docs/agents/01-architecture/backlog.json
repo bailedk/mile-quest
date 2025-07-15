@@ -6,13 +6,13 @@
       "toAgent": "01-architecture",
       "requestDate": "2025-01-15",
       "priority": "medium",
-      "status": "pending",
+      "status": "completed",
       "request": "Review performance implications of activity aggregation patterns",
       "reason": "Large teams may generate thousands of activities requiring efficient aggregation",
       "value": "Ensures architecture can handle data volume at scale",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "arch-002",
@@ -20,13 +20,13 @@
       "toAgent": "01-architecture",
       "requestDate": "2025-01-15",
       "priority": "high",
-      "status": "pending",
+      "status": "completed",
       "request": "Define API versioning strategy before implementation begins",
       "reason": "Architecture identified this as an open question that needs resolution",
       "value": "Prevents breaking changes and ensures smooth API evolution",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "arch-003",
@@ -34,13 +34,13 @@
       "toAgent": "01-architecture",
       "requestDate": "2025-01-15",
       "priority": "low",
-      "status": "pending",
+      "status": "completed",
       "request": "Monitor infrastructure costs as features are implemented",
       "reason": "Need to ensure we stay within $70/month budget target",
       "value": "Maintains cost-effective architecture throughout development",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     }
   ]
 }

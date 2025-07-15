@@ -1,11 +1,11 @@
 {
   "agent": "Architecture",
   "agentNumber": 1,
-  "currentVersion": "2.0",
-  "previousVersion": "1.0",
-  "status": "complete",
-  "lastUpdated": "2025-01-12",
-  "lastModifiedBy": "Architecture Agent + Review Agent",
+  "currentVersion": "2.1",
+  "previousVersion": "2.0",
+  "status": "active",
+  "lastUpdated": "2025-01-15",
+  "lastModifiedBy": "Architecture Agent",
   "description": "System architecture and technical infrastructure design",
   "activeDocuments": [
     {
@@ -32,6 +32,21 @@
       "name": "summary-v2.md",
       "description": "Post-review architecture summary",
       "version": "2.0"
+    },
+    {
+      "name": "api-versioning-strategy.md",
+      "description": "API versioning decision and implementation guide",
+      "version": "2.1"
+    },
+    {
+      "name": "activity-aggregation-performance-analysis.md",
+      "description": "Performance analysis of activity aggregation patterns",
+      "version": "2.1"
+    },
+    {
+      "name": "infrastructure-cost-monitoring.md",
+      "description": "Ongoing infrastructure cost tracking and projections",
+      "version": "2.1"
     }
   ],
   "supersededDocuments": [
@@ -68,7 +83,14 @@
   },
   "nextReview": "When Data Model Agent completes",
   "openQuestions": [
-    "When should we implement API versioning?",
-    "Should we add AWS WAF for additional security?"
+    "Should we add AWS WAF for additional security?",
+    "When to implement read replicas for scaling?"
+  ],
+  "resolvedQuestions": [
+    {
+      "question": "When should we implement API versioning?",
+      "resolution": "URL-based versioning (/api/v1/) from the start",
+      "date": "2025-01-15"
+    }
   ]
 }
