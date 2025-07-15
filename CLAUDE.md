@@ -10,6 +10,7 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 **For Documentation Index**: Check docs/MANIFEST.md  
 **For Specific Agent Work**: Check docs/agents/[number]-[name]/current/
 **For Guidelines**: Check docs/GUIDELINES.md
+**For Living Agents Model**: Check docs/LIVING-AGENTS.md
 
 ## 🗂️ Documentation Structure
 
@@ -25,7 +26,9 @@ docs/agents/[agent-number]-[agent-name]/
 ├── versions/         # Historical versions (v1.0, v2.0, etc.)
 ├── working/          # Draft changes (not yet current)
 ├── STATE.json        # Agent state and version info
-└── CHANGELOG.md      # Change history
+├── CHANGELOG.md      # Change history
+├── backlog.json      # Incoming requests from other agents
+└── recommendations.md # Suggestions for other agents
 ```
 
 ### 🚨 Important: Always check `current/` folder for the active documentation!
@@ -77,21 +80,118 @@ Each agent MUST:
    - Update when dependencies are satisfied
    - Alert if blocked by missing dependencies
 
+5. **Manage Your Backlog** (NEW)
+   - Maintain a `backlog.json` file in your agent folder
+   - Track incoming requests from other agents
+   - Prioritize and process backlog items
+   - Update status when items are completed
+
 ### Agent Workflow
 
 **When Starting:**
 1. Update AGENTS.md - Mark your agent as "🚧 In Progress"
 2. Check dependencies - Ensure required agents are complete
 3. Read dependent documentation - Review all current/ folders you need
-4. Create working/ folder - Start drafts there
-5. Update STATE.json - Track your progress
+4. Check your backlog.json - Review any pending requests
+5. Create working/ folder - Start drafts there
+6. Update STATE.json - Track your progress
 
-**When Completing:**
+**When Delivering a Milestone:**
 1. Move docs from working/ to current/
-2. Update AGENTS.md - Mark as "✅ Complete" with date
+2. Update AGENTS.md - Update status and current focus
 3. Update MANIFEST.md - Change doc status to "📌 Current"
-4. Create CHANGELOG.md - List all deliverables
+4. Update CHANGELOG.md - Document deliverables and version
 5. Write recommendations.md - Suggestions for other agents
+6. Update backlog.json - Mark completed items, add new tasks
+7. Request BA to add recommendations to other agents' backlogs
+
+## 📋 Agent Backlog System
+
+### Purpose
+The backlog system ensures cross-agent recommendations are tracked, reviewed, and implemented systematically. Each agent maintains their own backlog of incoming requests from other agents.
+
+### Backlog Structure
+Each agent maintains a `backlog.json` file in their agent folder:
+```json
+{
+  "backlog": [
+    {
+      "id": "unique-id",
+      "fromAgent": "03-data-model",
+      "toAgent": "04-api-designer",
+      "requestDate": "2025-01-15",
+      "priority": "high|medium|low",
+      "status": "pending|approved|rejected|completed",
+      "request": "Add pagination to team activity endpoints",
+      "reason": "Large teams generate thousands of activities",
+      "value": "Improves performance and reduces database load",
+      "approvedBy": "user|null",
+      "approvalDate": "2025-01-15|null",
+      "completedDate": "null"
+    }
+  ]
+}
+```
+
+### How to Add Items to Another Agent's Backlog
+
+When an agent identifies work needed from another agent:
+
+1. **Document the Recommendation**
+   - Add to your `recommendations.md` file
+   - Include specific details about what's needed
+
+2. **Request User Approval**
+   - Ask: "Should I add this to [Agent Name]'s backlog?"
+   - Provide:
+     - The specific request
+     - Reason it's needed
+     - Value it provides
+
+3. **User Response Options**
+   - **Yes**: Add to target agent's backlog with status "approved"
+   - **No**: Add to target agent's backlog with status "rejected"
+   - User may provide additional context or modifications
+
+4. **Update Target Agent's Backlog**
+   - Add the new item to their `backlog.json`
+   - Include all required fields
+   - Set appropriate priority
+
+### Processing Your Backlog
+
+When starting work as an agent:
+
+1. **Review Backlog Items**
+   - Check `backlog.json` for approved items
+   - Prioritize based on dependencies and value
+
+2. **Implement Approved Items**
+   - Work on high-priority approved items first
+   - Update status to "completed" when done
+   - Add completion date
+
+3. **Defer If Necessary**
+   - Document why items are deferred
+   - Keep status as "approved" for future work
+
+### Example Interaction
+
+```
+Agent: "The Data Model Agent recommends adding pagination to the team activity endpoints because large teams can generate thousands of activities. This would improve performance and reduce database load. Should I add this to the API Designer's backlog?"
+
+User: "Yes"
+
+Agent: "Added to API Designer's backlog as an approved high-priority item."
+```
+
+### Backlog Best Practices
+
+1. **Be Specific** - Clearly describe what needs to be done
+2. **Explain Value** - Always include why the change matters
+3. **Set Priority** - Use high/medium/low based on impact
+4. **Track Status** - Keep backlog items updated
+5. **Clean Regularly** - Archive completed items periodically
 
 ## 🛠️ Working on Mile Quest
 
@@ -212,19 +312,54 @@ When working on Mile Quest:
 4. Ensure STATE.json reflects reality
 5. Move completed work from working/ to current/
 
-## 📝 Critical Updates When Completing Agent Work
+## 📝 Critical Updates When Delivering Agent Work
 
-**IMPORTANT**: When an agent completes their work, they MUST update:
-1. **AGENTS.md** - Mark agent as complete, update progress to 100%
+**IMPORTANT**: When an agent delivers a major milestone, they MUST:
+1. **AGENTS.md** - Update status and current focus
 2. **MANIFEST.md** - Update document status from "⏳ Planned" to "📌 Current"
-3. **CLAUDE.md** - Update current project state and active agent
-4. **STATE.json** - Update status to "complete" with version
-5. **CHANGELOG.md** - Create if missing, document all deliverables
+3. **CHANGELOG.md** - Document all deliverables and version
+4. **STATE.json** - Update version and progress tracking
+5. **backlog.json** - Update completed items and add new tasks identified
 
-**Note**: The Data Model Agent (Jan 2025) completed work but missed updating AGENTS.md and MANIFEST.md, requiring manual fixes later.
+**Living Agent Model**: Agents are never "complete" - they deliver milestones and remain active for future tasks. Each agent maintains a backlog of pending work and can be reactivated as needed.
+
+**Note**: Historical context is preserved through CHANGELOG.md entries for each major delivery.
 
 ---
 
+## 📊 Current Project Status
+
+### Living Agents System
+All agents remain active and can receive new tasks through their backlog system. The Business Analyst Agent monitors overall progress and task distribution.
+
+### Agent Status (as of 2025-01-15)
+- 📍 **Architecture Agent (01)** - v2.0 - MVP architecture defined, monitoring for updates
+- 📍 **UI/UX Design Agent (02)** - v2.0 - MVP designs complete, awaiting implementation feedback
+- 📍 **Data Model Agent (03)** - v1.0 - Schema defined, ready for evolution
+- 📍 **API Designer Agent (04)** - Ready to begin API contract design
+- 📍 **Map Integration Agent (05)** - Awaiting dependencies
+- 📍 **Security Agent (06)** - Awaiting API contracts
+- 📍 **Mobile Optimization Agent (07)** - Awaiting UI implementation
+- 📍 **Integration Agent (08)** - Awaiting API contracts
+- 📍 **Analytics & Gamification Agent (09)** - Awaiting core features
+- 📍 **Testing & QA Agent (10)** - Awaiting implementation
+- 📍 **DevOps Agent (11)** - Ready for infrastructure setup
+- 📍 **Review & Enhancement Agent (12)** - v1.0 - Continuous review mode
+- 📍 **Compliance Agent (13)** - v1.0 - Monthly audit schedule
+- 📍 **Business Analyst Agent (14)** - v1.0 - Actively monitoring all agent backlogs
+
+### Recent Agent Activity
+- Architecture & UI/UX agents delivered MVP designs
+- Data Model agent created comprehensive schema
+- Review agent provided simplification recommendations
+- Compliance agent completed first audit (67.6% score)
+- Business Analyst created implementation roadmap
+
+### Next Priority Tasks
+- API Designer needs to create contracts (blocking multiple agents)
+- Review Agent needs structure fixes (25% compliance)
+- All agents need to implement backlog.json files
+
 **Remember**: This is a living document. Update it whenever the project state changes significantly.
 
-Last Updated: 2025-01-15
+Last Updated: 2025-01-15 (Transformed to Living Agents Model)

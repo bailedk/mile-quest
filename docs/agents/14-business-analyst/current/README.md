@@ -32,6 +32,13 @@ The Business Analyst Agent serves as the project's implementation coordinator, r
    - Ensure plan adherence
    - Facilitate agent collaboration
 
+5. **Backlog Management** (NEW)
+   - Monitor all agent backlogs daily
+   - Identify cross-agent dependencies in backlogs
+   - Prioritize and route tasks between agents
+   - Maintain master task tracking dashboard
+   - Report on backlog health and blockers
+
 ### Ongoing Responsibilities
 
 - Regular plan compliance reviews
@@ -39,6 +46,8 @@ The Business Analyst Agent serves as the project's implementation coordinator, r
 - Dependency graph updates
 - New functionality assessment
 - Implementation guide refinements
+- Daily backlog monitoring and prioritization
+- Cross-agent task coordination
 
 ## Dependencies
 
@@ -88,6 +97,13 @@ The Business Analyst Agent serves as the project's implementation coordinator, r
    - Process improvements
    - Risk mitigation strategies
 
+5. **Master Task Dashboard** (`master-task-dashboard.md`)
+   - All agent backlog items consolidated
+   - Cross-agent dependency tracking
+   - Priority matrix across all agents
+   - Blocker identification and resolution
+   - Weekly backlog health reports
+
 ## Working Process
 
 ### Initial Analysis Phase
@@ -102,11 +118,20 @@ The Business Analyst Agent serves as the project's implementation coordinator, r
 3. Review agent recommendations
 4. Refine implementation guide
 
+### Daily Backlog Management
+1. Review all agent backlog.json files
+2. Identify new items and status changes
+3. Update master task dashboard
+4. Flag cross-agent dependencies
+5. Prioritize critical path items
+
 ### Reporting Phase
 1. Generate progress reports
 2. Update dependency graph
 3. Flag blocking issues
 4. Propose adjustments
+5. Weekly backlog health report
+6. Monthly agent activity summary
 
 ## Success Criteria
 
@@ -123,4 +148,4 @@ This agent operates in a coordinating capacity, ensuring that the technical impl
 ---
 
 Last Updated: 2025-01-15
-Status: 🚧 In Progress
+Status: 📍 Active - Monitoring all agent backlogs

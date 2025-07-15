@@ -1,0 +1,46 @@
+{
+  "backlog": [
+    {
+      "id": "arch-001",
+      "fromAgent": "03-data-model",
+      "toAgent": "01-architecture",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Review performance implications of activity aggregation patterns",
+      "reason": "Large teams may generate thousands of activities requiring efficient aggregation",
+      "value": "Ensures architecture can handle data volume at scale",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "arch-002",
+      "fromAgent": "04-api-designer",
+      "toAgent": "01-architecture",
+      "requestDate": "2025-01-15",
+      "priority": "high",
+      "status": "pending",
+      "request": "Define API versioning strategy before implementation begins",
+      "reason": "Architecture identified this as an open question that needs resolution",
+      "value": "Prevents breaking changes and ensures smooth API evolution",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "arch-003",
+      "fromAgent": "14-business-analyst",
+      "toAgent": "01-architecture",
+      "requestDate": "2025-01-15",
+      "priority": "low",
+      "status": "pending",
+      "request": "Monitor infrastructure costs as features are implemented",
+      "reason": "Need to ensure we stay within $70/month budget target",
+      "value": "Maintains cost-effective architecture throughout development",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    }
+  ]
+}

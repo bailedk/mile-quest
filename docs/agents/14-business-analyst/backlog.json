@@ -1,0 +1,60 @@
+{
+  "backlog": [
+    {
+      "id": "ba-001",
+      "fromAgent": "13-compliance",
+      "toAgent": "14-business-analyst",
+      "requestDate": "2025-01-15",
+      "priority": "high",
+      "status": "pending",
+      "request": "Monitor all agent backlogs for cross-dependencies",
+      "reason": "Business Analyst should track and coordinate cross-agent work",
+      "value": "Ensures efficient project coordination and prevents blocking issues",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "ba-002",
+      "fromAgent": "04-api-designer",
+      "toAgent": "14-business-analyst",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Create API implementation priority guide",
+      "reason": "Need to align API development with feature dependencies",
+      "value": "Optimizes development sequence and reduces rework",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "ba-003",
+      "fromAgent": "14-business-analyst",
+      "toAgent": "14-business-analyst",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Create sprint planning guide based on dependencies",
+      "reason": "Implementation teams need clear sprint objectives",
+      "value": "Improves development velocity and reduces blocking",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "ba-004",
+      "fromAgent": "10-testing-qa",
+      "toAgent": "14-business-analyst",
+      "requestDate": "2025-01-15",
+      "priority": "low",
+      "status": "pending",
+      "request": "Define acceptance criteria for all features",
+      "reason": "Testing needs clear success criteria for each feature",
+      "value": "Ensures features meet business requirements",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    }
+  ]
+}

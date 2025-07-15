@@ -1,0 +1,46 @@
+{
+  "backlog": [
+    {
+      "id": "comp-001",
+      "fromAgent": "14-business-analyst",
+      "toAgent": "13-compliance",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Schedule next monthly compliance audit",
+      "reason": "Regular audits ensure ongoing compliance as new agents are added",
+      "value": "Maintains project organization and catches issues early",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "comp-002",
+      "fromAgent": "13-compliance",
+      "toAgent": "13-compliance",
+      "requestDate": "2025-01-15",
+      "priority": "low",
+      "status": "pending",
+      "request": "Create automated compliance checking scripts",
+      "reason": "Manual audits are time-consuming and error-prone",
+      "value": "Enables faster and more consistent compliance checking",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "comp-003",
+      "fromAgent": "13-compliance",
+      "toAgent": "13-compliance",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Update CLAUDE.md with completed agent status",
+      "reason": "Own compliance requirement not yet fulfilled",
+      "value": "Maintains accurate project documentation",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "backlog": [
+    {
+      "id": "dm-001",
+      "fromAgent": "13-compliance",
+      "toAgent": "03-data-model",
+      "requestDate": "2025-01-15",
+      "priority": "high",
+      "status": "pending",
+      "request": "Update AGENTS.md to mark Data Model Agent as complete",
+      "reason": "Compliance audit found this was not updated when agent completed",
+      "value": "Maintains accurate project status tracking",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "dm-002",
+      "fromAgent": "04-api-designer",
+      "toAgent": "03-data-model",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Define database indexes for common query patterns",
+      "reason": "API endpoints will need optimized queries for performance",
+      "value": "Ensures database performance meets API response time requirements",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "dm-003",
+      "fromAgent": "05-map-integration",
+      "toAgent": "03-data-model",
+      "requestDate": "2025-01-15",
+      "priority": "low",
+      "status": "pending",
+      "request": "Consider adding spatial indexes for geographic queries",
+      "reason": "Map features may benefit from PostGIS spatial capabilities",
+      "value": "Improves performance of location-based features",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    }
+  ]
+}

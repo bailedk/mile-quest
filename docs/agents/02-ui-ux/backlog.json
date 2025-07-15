@@ -1,0 +1,46 @@
+{
+  "backlog": [
+    {
+      "id": "ui-001",
+      "fromAgent": "14-business-analyst",
+      "toAgent": "02-ui-ux",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Create implementation-ready component specifications",
+      "reason": "Developers need detailed specs for component implementation",
+      "value": "Reduces implementation ambiguity and ensures design consistency",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "ui-002",
+      "fromAgent": "07-mobile-optimization",
+      "toAgent": "02-ui-ux",
+      "requestDate": "2025-01-15",
+      "priority": "high",
+      "status": "pending",
+      "request": "Review and refine mobile gesture interactions",
+      "reason": "Mobile-first approach requires optimized touch interactions",
+      "value": "Improves mobile user experience and engagement",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    },
+    {
+      "id": "ui-003",
+      "fromAgent": "09-analytics-gamification",
+      "toAgent": "02-ui-ux",
+      "requestDate": "2025-01-15",
+      "priority": "medium",
+      "status": "pending",
+      "request": "Design achievement notification patterns",
+      "reason": "Gamification features need clear visual feedback mechanisms",
+      "value": "Enhances user engagement through rewarding experiences",
+      "approvedBy": null,
+      "approvalDate": null,
+      "completedDate": null
+    }
+  ]
+}
