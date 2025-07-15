@@ -93,6 +93,22 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Architecture Review | 📌 Current | 1.0 | `12-review-enhancement/architecture-review.md` | Architecture evaluation |
 | UI/UX Review | 📌 Current | 1.0 | `12-review-enhancement/ui-ux-review.md` | Design evaluation |
 
+### 13. Compliance Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Compliance Report | ⏳ Planned | - | `13-compliance/current/compliance-report.md` | Full audit results |
+| Recommendations | ⏳ Planned | - | `13-compliance/current/recommendations.md` | Agent-specific fixes |
+| Compliance Score | ⏳ Planned | - | `13-compliance/current/compliance-score.md` | Project metrics |
+
+### 14. Business Analyst Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Implementation Guide | 📌 Current | 1.0 | `14-business-analyst/current/implementation-guide.md` | 7-phase implementation roadmap |
+| Feature Dependencies | 📌 Current | 1.0 | `14-business-analyst/current/feature-dependencies.md` | Dependency graph with critical paths |
+| Feature Tracking | 📌 Current | 1.0 | `14-business-analyst/current/feature-tracking.md` | Feature completion dashboard |
+| Agent Overview | 📌 Current | 1.0 | `14-business-analyst/current/README.md` | Agent responsibilities and process |
+| Recommendations | ⏳ Planned | - | `14-business-analyst/current/recommendations.md` | Consolidated agent suggestions |
+
 ## Cross-Cutting Documentation
 
 | Document | Location | Purpose | Owner |
@@ -138,7 +154,9 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### Current Versions by Agent
 - Architecture: 2.0 (MVP Simplified)
 - UI/UX Design: 2.0 (MVP Aligned)
+- Data Model: 1.0 (Complete)
 - Review & Enhancement: 1.0
+- Business Analyst: 1.0 (In Progress)
 - All Others: Not started
 
 ### Version History Location
@@ -147,5 +165,5 @@ Each agent's version history is in:
 
 ---
 
-**Last Updated**: 2025-01-12
-**Next Review**: When Data Model Agent begins
+**Last Updated**: 2025-01-15
+**Next Review**: When API Designer Agent begins
