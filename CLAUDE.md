@@ -32,6 +32,8 @@ docs/agents/[agent-number]-[agent-name]/
 
 ## 📋 Where to Find Agent Documentation
 
+**Important**: Agent numbers (01, 02, etc.) are identification numbers only. They do NOT indicate order of execution or priority. Agents can work independently and in parallel as dependencies allow.
+
 - **01-architecture/** - System design, tech stack, infrastructure
 - **02-ui-ux/** - Wireframes, design system, user journeys
 - **03-data-model/** - Database schema, entities, access patterns
@@ -44,6 +46,7 @@ docs/agents/[agent-number]-[agent-name]/
 - **10-testing-qa/** - Test strategies, automation, quality
 - **11-devops/** - CI/CD, deployment, monitoring
 - **12-review-enhancement/** - Cross-agent reviews and improvements
+- **13-compliance/** - Project rule enforcement and compliance auditing
 
 ## 🤖 How Agents Should Operate
 
@@ -224,4 +227,4 @@ When working on Mile Quest:
 
 **Remember**: This is a living document. Update it whenever the project state changes significantly.
 
-Last Updated: 2025-01-14
+Last Updated: 2025-01-15

@@ -16,6 +16,7 @@
 | 10. Testing & QA | 🔄 Pending | 0% | - |
 | 11. DevOps | 🔄 Pending | 0% | - |
 | 12. Review & Enhancement | ✅ Complete | 100% | 2025-01-12 |
+| 13. Compliance | 🔄 Pending | 0% | - |
 
 ## Project Overview
 
@@ -462,6 +463,48 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 
 ---
 
+### 13. Compliance Agent 🔄 PENDING
+
+**Status**: Not Started
+
+**Purpose**: Ensure all project-level rules and guidelines from CLAUDE.md are followed across all agents.
+
+**Tasks**:
+- [ ] Scan CLAUDE.md for all project rules and patterns
+- [ ] Audit each agent's work for compliance
+- [ ] Check external service abstraction compliance
+- [ ] Verify privacy flag implementation
+- [ ] Validate documentation structure adherence
+- [ ] Check STATE.json and CHANGELOG.md maintenance
+- [ ] Verify AGENTS.md and MANIFEST.md updates
+- [ ] Generate compliance report with scores
+- [ ] Create specific recommendations for each agent
+
+**Key Audit Areas**:
+- External service abstraction (no direct imports)
+- Privacy-aware query patterns
+- Documentation in correct folders (current/, working/, versions/)
+- Proper STATE.json versioning
+- Complete CHANGELOG.md entries
+- Updated AGENTS.md status
+- MANIFEST.md document indexing
+- Absolute file paths usage
+- No unauthorized file creation
+
+**Outputs**:
+- Compliance audit report
+- Agent-specific recommendations
+- Compliance score metrics
+- Priority fix list
+- Pattern violation examples
+- Best practice reminders
+
+**Run Frequency**: Infrequently (monthly or after major updates)
+
+**Dependencies**: CLAUDE.md (for rules), All completed agents (for auditing)
+
+---
+
 ## Agent Coordination Strategy
 
 ### Phase 1: Foundation (Weeks 1-3)
@@ -555,11 +598,16 @@ mile-quest/
 │       │   ├── ci-cd.md               # Pipeline configuration
 │       │   ├── infrastructure.md      # Infrastructure setup
 │       │   └── monitoring.md          # Monitoring strategy
-│       └── 12-review-enhancement/
-│           ├── README.md              # Review methodology
-│           ├── architecture-review.md # Architecture evaluation
-│           ├── ui-ux-review.md        # UI/UX evaluation
-│           └── integration-concerns.md # Cross-agent issues
+│       ├── 12-review-enhancement/
+│       │   ├── README.md              # Review methodology
+│       │   ├── architecture-review.md # Architecture evaluation
+│       │   ├── ui-ux-review.md        # UI/UX evaluation
+│       │   └── integration-concerns.md # Cross-agent issues
+│       └── 13-compliance/
+│           ├── README.md              # Compliance overview
+│           ├── compliance-report.md   # Full audit results
+│           ├── recommendations.md     # Agent-specific fixes
+│           └── compliance-score.md    # Project metrics
 ```
 
 ### Documentation Standards

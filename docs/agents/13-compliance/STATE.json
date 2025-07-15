@@ -1,0 +1,19 @@
+{
+  "agent": "13-compliance",
+  "status": "pending",
+  "version": "1.0",
+  "lastUpdated": "2025-01-15",
+  "progress": 0,
+  "dependencies": {
+    "requires": ["CLAUDE.md"],
+    "provides": ["compliance-report", "recommendations"]
+  },
+  "outputs": {
+    "planned": [
+      "compliance-report.md",
+      "recommendations.md",
+      "compliance-score.md"
+    ],
+    "completed": []
+  }
+}
