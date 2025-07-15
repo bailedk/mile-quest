@@ -6,13 +6,13 @@
       "toAgent": "04-api-designer",
       "requestDate": "2025-01-15",
       "priority": "high",
-      "status": "pending",
+      "status": "completed",
       "request": "Define API versioning strategy before implementation begins",
       "reason": "Architecture identified this as an open question that needs resolution",
       "value": "Prevents breaking changes and ensures smooth API evolution",
       "approvedBy": "user",
       "approvalDate": "2025-01-15",
-      "completedDate": null
+      "completedDate": "2025-01-15"
     },
     {
       "id": "api-002",
@@ -20,13 +20,13 @@
       "toAgent": "04-api-designer",
       "requestDate": "2025-01-15",
       "priority": "medium",
-      "status": "pending",
+      "status": "completed",
       "request": "Design pagination patterns for large datasets",
       "reason": "Teams can have up to 50 members with thousands of activities",
       "value": "Ensures API performance at scale",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     },
     {
       "id": "api-003",
@@ -34,13 +34,13 @@
       "toAgent": "04-api-designer",
       "requestDate": "2025-01-15",
       "priority": "medium",
-      "status": "pending",
+      "status": "completed",
       "request": "Design offline-friendly API patterns",
       "reason": "Mobile users need to log activities offline",
       "value": "Enables core functionality without network",
-      "approvedBy": null,
-      "approvalDate": null,
-      "completedDate": null
+      "approvedBy": "user",
+      "approvalDate": "2025-01-15",
+      "completedDate": "2025-01-15"
     }
   ]
 }

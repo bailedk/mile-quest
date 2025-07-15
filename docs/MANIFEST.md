@@ -46,12 +46,15 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### 4. API Designer Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Agent Overview | 📌 Current | 1.0 | `04-api-designer/current/README.md` | Agent purpose and progress |
-| API Contracts MVP | 📌 Current | 1.0 | `04-api-designer/current/api-contracts-mvp.md` | Complete REST endpoint definitions |
-| API Design Decisions | 📌 Current | 1.0 | `04-api-designer/current/api-design-decisions.md` | Rationale for API choices |
+| Agent Overview | 📌 Current | 2.0 | `04-api-designer/current/README.md` | Agent purpose and progress |
+| API Contracts MVP | 📌 Current | 2.0 | `04-api-designer/current/api-contracts-mvp.md` | Complete REST endpoint definitions with v1 prefix |
+| API Design Decisions | 📌 Current | 1.1 | `04-api-designer/current/api-design-decisions.md` | Rationale for API choices |
+| API Versioning Implementation | 📌 Current | 1.0 | `04-api-designer/current/api-versioning-implementation.md` | URL-based versioning strategy |
+| Pagination Patterns | 📌 Current | 1.0 | `04-api-designer/current/pagination-patterns.md` | Cursor-based pagination implementation |
+| Offline API Patterns | 📌 Current | 1.0 | `04-api-designer/current/offline-api-patterns.md` | Offline-first mobile patterns |
+| TypeScript Types | 📌 Current | 1.0 | `04-api-designer/current/api-types.ts` | Complete TypeScript definitions |
 | Recommendations | 📌 Current | 1.0 | `04-api-designer/recommendations.md` | Guidance for other agents |
 | OpenAPI Specification | ⏳ Planned | - | `04-api-designer/current/openapi-spec.yaml` | Complete API specification |
-| TypeScript Types | ⏳ Planned | - | `04-api-designer/current/types/` | Frontend type definitions |
 | API Examples | ⏳ Planned | - | `04-api-designer/current/examples/` | Request/response examples |
 
 ### 5. Map Integration Agent
@@ -105,6 +108,10 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Compliance Recommendations | 📌 Current | 1.0 | `13-compliance/current/compliance-recommendations.md` | Specific fixes and process improvements |
 | Compliance Scores | 📌 Current | 1.0 | `13-compliance/current/compliance-scores.md` | Detailed scoring breakdown and grades |
 | Audit Summary | 📌 Current | 1.0 | `13-compliance/current/audit-summary.md` | Executive summary of findings |
+| Audit Schedule | 📌 Current | 1.0 | `13-compliance/current/audit-schedule.md` | Monthly compliance audit calendar for 2025 |
+| Compliance Checker (JS) | 📌 Current | 1.0 | `13-compliance/compliance-checker.js` | JavaScript compliance checking script |
+| Compliance Checker (Python) | 📌 Current | 1.0 | `13-compliance/compliance-checker.py` | Python compliance checking script |
+| Scripts Documentation | 📌 Current | 1.0 | `13-compliance/scripts/README.md` | Guide for using compliance scripts |
 
 ### 14. Business Analyst Agent
 | Document | Status | Version | Location | Purpose |

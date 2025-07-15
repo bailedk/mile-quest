@@ -173,18 +173,25 @@ This document captures key design decisions made for the Mile Quest API, includi
 
 ### API Versioning Strategy
 
-**Status**: Pending Architecture Agent input
+**Status**: ✅ Resolved (2025-01-15)
 
-**Options**:
-1. URL versioning (`/api/v1/...`)
-2. Header versioning (`X-API-Version: 1`)
-3. Accept header versioning
+**Decision**: URL-based versioning (`/api/v1/...`)
 
-**Considerations**:
-- Next.js routing constraints
-- CloudFront caching implications
-- Client SDK design
-- Breaking change frequency
+**Rationale**:
+- Best compatibility with Next.js App Router
+- Clear and visible in all requests
+- Simple CloudFront caching rules
+- Excellent developer experience
+- Easy debugging and testing
+
+**Implementation**:
+- All endpoints use `/api/v1/` prefix
+- Version detection endpoint at `/api/versions`
+- Response headers include version info
+- 6-month deprecation policy for old versions
+- Beta features use `/api/v1-beta/` prefix
+
+**Reference**: See `api-versioning-implementation.md` for full details
 
 ### Rate Limiting Implementation
 

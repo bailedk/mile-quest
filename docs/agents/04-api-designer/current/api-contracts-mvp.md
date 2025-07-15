@@ -56,7 +56,7 @@ X-Client-Version: 1.0.0
 
 ## Authentication Endpoints
 
-### POST /api/auth/register
+### POST /api/v1/auth/register
 Register a new user account.
 
 **Request Body:**
@@ -85,7 +85,7 @@ Register a new user account.
 }
 ```
 
-### POST /api/auth/login
+### POST /api/v1/auth/login
 Sign in an existing user.
 
 **Request Body:**
@@ -114,7 +114,7 @@ Sign in an existing user.
 }
 ```
 
-### POST /api/auth/refresh
+### POST /api/v1/auth/refresh
 Refresh access token using refresh token.
 
 **Request Body:**
@@ -135,7 +135,7 @@ Refresh access token using refresh token.
 }
 ```
 
-### POST /api/auth/logout
+### POST /api/v1/auth/logout
 Sign out the current user.
 
 **Request:** No body required (uses auth token)
@@ -148,7 +148,7 @@ Sign out the current user.
 }
 ```
 
-### POST /api/auth/verify-email
+### POST /api/v1/auth/verify-email
 Verify email address with code.
 
 **Request Body:**
@@ -171,7 +171,7 @@ Verify email address with code.
 
 ## User Endpoints
 
-### GET /api/user/profile
+### GET /api/v1/user/profile
 Get current user's profile.
 
 **Response:**
@@ -199,7 +199,7 @@ Get current user's profile.
 }
 ```
 
-### PATCH /api/user/profile
+### PATCH /api/v1/user/profile
 Update user profile.
 
 **Request Body:**
@@ -223,7 +223,7 @@ Update user profile.
 
 ## Team Endpoints
 
-### POST /api/teams
+### POST /api/v1/teams
 Create a new team.
 
 **Request Body:**
@@ -262,7 +262,7 @@ Create a new team.
 }
 ```
 
-### GET /api/teams
+### GET /api/v1/teams
 Get user's teams with progress.
 
 **Query Parameters:**
@@ -300,7 +300,7 @@ Get user's teams with progress.
 }
 ```
 
-### GET /api/teams/:teamId
+### GET /api/v1/teams/:teamId
 Get team details with full progress.
 
 **Response:**
@@ -338,7 +338,7 @@ Get team details with full progress.
 }
 ```
 
-### POST /api/teams/join
+### POST /api/v1/teams/join
 Join a team using invite code.
 
 **Request Body:**
@@ -364,7 +364,7 @@ Join a team using invite code.
 }
 ```
 
-### GET /api/teams/:teamId/members
+### GET /api/v1/teams/:teamId/members
 Get team members with their contributions.
 
 **Query Parameters:**
@@ -402,7 +402,7 @@ Get team members with their contributions.
 
 ## Activity Endpoints
 
-### POST /api/activities
+### POST /api/v1/activities
 Log a new activity.
 
 **Request Body:**
@@ -444,7 +444,7 @@ Log a new activity.
 }
 ```
 
-### GET /api/activities
+### GET /api/v1/activities
 Get user's activities.
 
 **Query Parameters:**
@@ -483,7 +483,7 @@ Get user's activities.
 }
 ```
 
-### PATCH /api/activities/:activityId
+### PATCH /api/v1/activities/:activityId
 Update an activity.
 
 **Request Body:**
@@ -504,7 +504,7 @@ Update an activity.
 }
 ```
 
-### DELETE /api/activities/:activityId
+### DELETE /api/v1/activities/:activityId
 Delete an activity.
 
 **Response:**
@@ -526,7 +526,7 @@ Delete an activity.
 
 ## Dashboard Endpoint
 
-### GET /api/dashboard
+### GET /api/v1/dashboard
 Get all dashboard data in a single optimized call.
 
 **Response:**
