@@ -1,0 +1,38 @@
+{
+  "name": "@mile-quest/frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mile-quest/shared": "^1.0.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "next": "14.2.30",
+    "zustand": "^4.4.7",
+    "@tanstack/react-query": "^5.14.0",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-toast": "^1.1.5",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "amazon-cognito-identity-js": "^6.3.6",
+    "pusher-js": "^8.4.0-rc2",
+    "idb": "^7.1.1",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.30"
+  }
+}
