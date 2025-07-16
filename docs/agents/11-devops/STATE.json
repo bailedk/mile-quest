@@ -1,7 +1,7 @@
 {
   "agent": "11-devops",
   "name": "DevOps Agent",
-  "version": "1.1",
+  "version": "1.2",
   "status": "active",
   "lastUpdated": "2025-01-16",
   "currentPhase": "implementation",
@@ -17,11 +17,14 @@
       "aws-sam-template",
       "database-setup",
       "cicd-pipeline",
-      "development-readme"
+      "development-readme",
+      "aws-infrastructure-cdk",
+      "environment-configuration",
+      "monitoring-logging"
     ],
     "testing": []
   },
   "blockers": [],
-  "nextMilestone": "Set up AWS infrastructure and test deployment",
+  "nextMilestone": "Deploy and test AWS infrastructure",
   "estimatedCompletion": "2025-01-17"
 }

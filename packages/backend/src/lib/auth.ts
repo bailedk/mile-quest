@@ -18,8 +18,12 @@ interface JWTPayload {
   iat: number;
 }
 
-function getKey(header: any, callback: any) {
-  client.getSigningKey(header.kid, (err, key) => {
+function getKey(header: any, callback: (err: any, key?: string) => void) {
+  client.getSigningKey(header.kid, (err: any, key?: any) => {
+    if (err) {
+      callback(err);
+      return;
+    }
     const signingKey = key?.getPublicKey();
     callback(null, signingKey);
   });
