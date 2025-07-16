@@ -30,6 +30,9 @@ This manifest provides a comprehensive index of all project documentation, indic
 | MVP Wireframes | 📌 Current | 2.0 | `02-ui-ux/current/mvp-wireframes.md` | Simplified screens for MVP |
 | Design System | 📌 Current | 2.0 | `02-ui-ux/current/design-system.md` | Component library and tokens |
 | UI-Architecture Alignment | 📌 Current | 2.0 | `02-ui-ux/current/ui-architecture-alignment.md` | Technical integration guide |
+| Mobile Gesture Interactions | 📌 Current | 2.1 | `02-ui-ux/current/mobile-gesture-interactions.md` | Touch interactions and gestures |
+| Component Specifications | 📌 Current | 2.2 | `02-ui-ux/current/component-specifications.md` | Implementation-ready component specs |
+| Achievement Notifications | 📌 Current | 2.2 | `02-ui-ux/current/achievement-notification-patterns.md` | Gamification notification patterns |
 | Original Wireframes | 📚 Historical | 1.0 | `02-ui-ux/versions/v1.0/wireframes.md` | Full-feature wireframes |
 | User Journeys | 📌 Current | 1.0 | `02-ui-ux/current/user-journeys.md` | User flow documentation |
 

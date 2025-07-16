@@ -1,10 +1,10 @@
 {
   "agent": "UI/UX Design",
   "agentNumber": 2,
-  "currentVersion": "2.0",
-  "previousVersion": "1.0",
-  "status": "complete",
-  "lastUpdated": "2025-01-12",
+  "currentVersion": "2.2",
+  "previousVersion": "2.1",
+  "status": "active",
+  "lastUpdated": "2025-01-15",
   "lastModifiedBy": "UI/UX Design Agent",
   "description": "User interface design, user experience flows, and design system",
   "activeDocuments": [
@@ -42,6 +42,21 @@
       "name": "accessibility.md",
       "description": "WCAG 2.1 AA compliance guidelines",
       "version": "1.0"
+    },
+    {
+      "name": "mobile-gesture-interactions.md",
+      "description": "Comprehensive mobile gesture patterns and touch interactions",
+      "version": "2.1"
+    },
+    {
+      "name": "component-specifications.md",
+      "description": "Implementation-ready component specifications with TypeScript interfaces",
+      "version": "2.2"
+    },
+    {
+      "name": "achievement-notification-patterns.md",
+      "description": "Achievement notification design patterns and celebration animations",
+      "version": "2.2"
     }
   ],
   "supersededDocuments": [
