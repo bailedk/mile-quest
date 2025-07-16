@@ -1,0 +1,20 @@
+{
+  "agent": "11-devops",
+  "name": "DevOps Agent",
+  "version": "1.0",
+  "status": "ready",
+  "lastUpdated": "2025-01-16",
+  "currentPhase": "planning",
+  "dependencies": {
+    "required": ["01-architecture"],
+    "optional": []
+  },
+  "deliverables": {
+    "planning": [],
+    "implementation": [],
+    "testing": []
+  },
+  "blockers": [],
+  "nextMilestone": "Begin infrastructure setup",
+  "estimatedCompletion": "TBD"
+}

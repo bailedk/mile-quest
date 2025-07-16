@@ -1,0 +1,20 @@
+{
+  "agent": "06-security",
+  "name": "Security & Privacy Agent",
+  "version": "1.0",
+  "status": "ready",
+  "lastUpdated": "2025-01-16",
+  "currentPhase": "planning",
+  "dependencies": {
+    "required": ["01-architecture", "03-data-model", "04-api-designer"],
+    "optional": []
+  },
+  "deliverables": {
+    "planning": [],
+    "implementation": [],
+    "testing": []
+  },
+  "blockers": [],
+  "nextMilestone": "Begin security implementation planning",
+  "estimatedCompletion": "TBD"
+}

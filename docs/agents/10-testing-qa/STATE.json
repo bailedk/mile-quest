@@ -1,0 +1,20 @@
+{
+  "agent": "10-testing-qa",
+  "name": "Testing & QA Agent",
+  "version": "1.0",
+  "status": "waiting",
+  "lastUpdated": "2025-01-16",
+  "currentPhase": "planning",
+  "dependencies": {
+    "required": ["01-architecture"],
+    "optional": ["all-other-agents"]
+  },
+  "deliverables": {
+    "planning": [],
+    "implementation": [],
+    "testing": []
+  },
+  "blockers": ["Awaiting implementation"],
+  "nextMilestone": "Begin test strategy design",
+  "estimatedCompletion": "TBD"
+}
