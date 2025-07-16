@@ -21,6 +21,8 @@ mile-quest/
 │   ├── frontend/          # Next.js application
 │   ├── backend/           # AWS Lambda functions
 │   └── shared/            # Shared types and utilities
+├── infrastructure/        # AWS CDK infrastructure code
+├── scripts/               # Deployment and setup scripts
 ├── docs/                  # Agent documentation
 └── package.json           # Monorepo configuration
 ```
@@ -33,6 +35,7 @@ mile-quest/
 - npm 10.x or later
 - PostgreSQL 14+ (for local development)
 - AWS CLI (for deployment)
+- AWS account with appropriate permissions
 
 ### Installation
 
@@ -45,8 +48,8 @@ mile-quest/
 
 2. **Set up environment variables:**
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   cp .env.example .env.local
+   # Edit .env.local with your local configuration
    ```
 
 3. **Set up the database:**
@@ -97,9 +100,21 @@ mile-quest/
 - `npm run build` - Build shared types
 - `npm run dev` - Watch mode for development
 
+### Infrastructure (`infrastructure/`)
+- `npm run build` - Build CDK TypeScript code
+- `npm run synth` - Generate CloudFormation templates
+- `npm run deploy:all` - Deploy all AWS infrastructure
+- `npm run deploy:cognito` - Deploy Cognito user management
+- `npm run deploy:database` - Deploy RDS database and VPC
+- `npm run deploy:api` - Deploy API Gateway
+- `npm run deploy:monitoring` - Deploy CloudWatch monitoring
+- `npm run destroy:all` - Remove all AWS infrastructure
+
 ## 🌐 Environment Variables
 
-Create a `.env` file with the following variables:
+### Local Development
+
+Create a `.env.local` file for local development:
 
 ```bash
 # Database
@@ -120,6 +135,18 @@ NEXT_PUBLIC_PUSHER_CLUSTER="us2"
 
 # External Services
 MAPBOX_ACCESS_TOKEN="pk.xxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+### AWS Deployment
+
+For AWS deployment, environment variables are managed through:
+- `.env.staging` - Staging environment template
+- `.env.production` - Production environment template
+- `scripts/setup-environment.sh` - Automated environment configuration
+
+After deploying infrastructure, run:
+```bash
+./scripts/setup-environment.sh setup staging
 ```
 
 ## 🏛️ Database Schema
@@ -164,23 +191,52 @@ npm run test --workspace=packages/backend
 
 ### AWS Infrastructure Setup
 
+For complete deployment instructions, see: `docs/agents/11-devops/current/cdk-deployment-guide.md`
+
+#### Quick Start
+
 1. **Configure AWS CLI:**
    ```bash
    aws configure
    ```
 
-2. **Deploy backend:**
+2. **Bootstrap CDK (one-time setup):**
    ```bash
-   cd packages/backend
-   sam build
-   sam deploy --guided
+   cd infrastructure
+   npx cdk bootstrap aws://YOUR-ACCOUNT-ID/us-east-1
    ```
 
-3. **Deploy frontend:**
+3. **Deploy infrastructure:**
    ```bash
-   cd packages/frontend
-   # Configure AWS Amplify or use your preferred deployment method
+   npm install
+   npm run deploy:all
    ```
+
+4. **Configure environment variables:**
+   ```bash
+   ./scripts/setup-environment.sh setup staging
+   ```
+
+5. **Deploy application code:**
+   ```bash
+   # Backend (Lambda functions)
+   cd packages/backend
+   sam build && sam deploy --guided
+
+   # Frontend (AWS Amplify)
+   cd packages/frontend
+   # Follow Amplify deployment guide
+   ```
+
+### Infrastructure Components
+
+The CDK deploys:
+- **Cognito** - User authentication and management
+- **RDS PostgreSQL** - Database with PostGIS extensions
+- **VPC** - Network isolation with public/private subnets
+- **API Gateway** - REST API endpoints
+- **CloudWatch** - Monitoring, logging, and alerting
+- **SNS** - Notification system for alerts
 
 ## 📚 Documentation
 
@@ -190,6 +246,9 @@ Detailed documentation is available in the `docs/` directory:
 - **UI/UX Design**: `docs/agents/02-ui-ux/current/`
 - **Data Model**: `docs/agents/03-data-model/current/`
 - **API Contracts**: `docs/agents/04-api-designer/current/`
+- **DevOps & Infrastructure**: `docs/agents/11-devops/current/`
+  - `aws-infrastructure-setup.md` - Infrastructure overview
+  - `cdk-deployment-guide.md` - Complete deployment instructions
 
 ## 🤝 Contributing
 

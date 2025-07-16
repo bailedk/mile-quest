@@ -136,6 +136,12 @@ create_env_file() {
     if [[ -n "$missing_values" ]]; then
         print_warning "The following values still need to be populated manually:"
         echo "$missing_values"
+        echo ""
+        print_warning "To complete setup:"
+        echo "1. Sign up for Pusher account at pusher.com"
+        echo "2. Sign up for Mapbox account at mapbox.com"
+        echo "3. Generate random secrets for JWT_SECRET and SESSION_SECRET"
+        echo "4. Edit $output_file and replace the placeholder values"
     fi
 }
 

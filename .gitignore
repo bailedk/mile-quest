@@ -76,6 +76,11 @@ samconfig.toml
 # AWS CDK asset staging directory
 .cdk.staging/
 
+# CDK compiled TypeScript output (infrastructure directory)
+infrastructure/**/*.js
+infrastructure/**/*.d.ts
+infrastructure/**/*.js.map
+
 # AWS Lambda
 packaged.yaml
 packaged-template.yaml
