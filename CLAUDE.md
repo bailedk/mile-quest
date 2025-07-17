@@ -332,34 +332,68 @@ When working on Mile Quest:
 ### Living Agents System
 All agents remain active and can receive new tasks through their backlog system. The Business Analyst Agent monitors overall progress and task distribution.
 
-### Agent Status (as of 2025-01-15)
+## 🔍 Special Instructions for Business Analyst Agent
+
+**CRITICAL**: When operating as the Business Analyst Agent, you MUST:
+
+1. **Check Primary Sources Daily**
+   - DO NOT rely solely on your own tracking documents
+   - ALWAYS check each agent's STATE.json for current version and status
+   - ALWAYS check AGENTS.md for the authoritative project status
+   - Your tracking docs (feature-tracking.md, master-task-dashboard.md) are SECONDARY sources
+
+2. **Verification Workflow**
+   - Before reporting any agent as "blocked" or "not started":
+     - Check their STATE.json for actual status
+     - Check their CHANGELOG.md for recent deliveries
+     - Check AGENTS.md for completion markers
+   - Update your tracking documents to match reality
+
+3. **Daily Monitoring Tasks**
+   - Review all agent backlogs: `/docs/agents/*/backlog.json`
+   - Check all agent states: `/docs/agents/*/STATE.json`
+   - Verify AGENTS.md is current with actual agent deliveries
+   - Update your dashboards only AFTER verifying primary sources
+
+4. **Truth Hierarchy**
+   - 1st: Agent's own STATE.json (authoritative for that agent)
+   - 2nd: AGENTS.md (authoritative for project-wide status)
+   - 3rd: Agent's CHANGELOG.md (history of deliveries)
+   - 4th: Your tracking documents (must be updated to match above)
+
+Remember: Your role is to DISCOVER and REPORT the truth, not to maintain an independent version of it.
+
+### Agent Status (as of 2025-01-17)
 - 📍 **Architecture Agent (01)** - v2.0 - MVP architecture defined, monitoring for updates
 - 📍 **UI/UX Design Agent (02)** - v2.0 - MVP designs complete, awaiting implementation feedback
 - 📍 **Data Model Agent (03)** - v1.0 - Schema defined, ready for evolution
-- 📍 **API Designer Agent (04)** - Ready to begin API contract design
-- 📍 **Map Integration Agent (05)** - Awaiting dependencies
-- 📍 **Security Agent (06)** - Awaiting API contracts
-- 📍 **Mobile Optimization Agent (07)** - Awaiting UI implementation
-- 📍 **Integration Agent (08)** - Awaiting API contracts
-- 📍 **Analytics & Gamification Agent (09)** - Awaiting core features
-- 📍 **Testing & QA Agent (10)** - Awaiting implementation
+- 📍 **API Designer Agent (04)** - v2.0 - ✅ COMPLETE - API contracts delivered, monitoring mode
+- 📍 **Map Integration Agent (05)** - Ready to start (API contracts now available)
+- 📍 **Security Agent (06)** - Ready to start (API contracts now available)
+- 📍 **Mobile Optimization Agent (07)** - Ready to start (API contracts now available)
+- 📍 **Integration Agent (08)** - Ready to start (API contracts now available)
+- 📍 **Analytics & Gamification Agent (09)** - Ready to start (API contracts now available)
+- 📍 **Testing & QA Agent (10)** - Ready to start (API contracts now available)
 - 📍 **DevOps Agent (11)** - Ready for infrastructure setup
-- 📍 **Review & Enhancement Agent (12)** - v1.0 - Continuous review mode
+- 📍 **Review & Enhancement Agent (12)** - v1.0 - Continuous review mode (needs compliance fixes)
 - 📍 **Compliance Agent (13)** - v1.1 - Monthly audit scheduled (next: Feb 15)
 - 📍 **Business Analyst Agent (14)** - v1.0 - Actively monitoring all agent backlogs
 
 ### Recent Agent Activity
 - Architecture & UI/UX agents delivered MVP designs
 - Data Model agent created comprehensive schema
+- API Designer delivered v2.0 with complete API contracts
 - Review agent provided simplification recommendations
 - Compliance agent completed first audit (67.6% score) and created audit schedule
 - Business Analyst created implementation roadmap
 
 ### Next Priority Tasks
-- API Designer needs to create contracts (blocking multiple agents)
-- Review Agent needs structure fixes (25% compliance)
-- All agents need to implement backlog.json files
+- **5 agents can now start**: Security (06), Mobile (07), Integration (08), Analytics (09), Testing (10)
+- **Review Agent needs structure fixes** (25% compliance - 4 high priority items)
+- **Data Model Agent needs to update AGENTS.md** (quick administrative fix)
+- **BA needs to update tracking documents** to reflect API Designer completion
+- **DevOps Agent (11)** ready for infrastructure setup
 
 **Remember**: This is a living document. Update it whenever the project state changes significantly.
 
-Last Updated: 2025-01-15 (Compliance Agent audit schedule created)
+Last Updated: 2025-01-17 (Added BA source verification instructions, updated API Designer status)
