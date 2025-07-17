@@ -125,6 +125,60 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Agent Overview | 📌 Current | 1.0 | `14-business-analyst/current/README.md` | Agent responsibilities and process |
 | Recommendations | ⏳ Planned | - | `14-business-analyst/current/recommendations.md` | Consolidated agent suggestions |
 
+### 15. Development Planning Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Agent Overview | 📌 Current | 1.0 | `15-development-planning/current/README.md` | Development planning responsibilities |
+| Master Development Plan | ⏳ Planned | - | `15-development-planning/current/master-plan.md` | Complete task breakdown |
+| Sprint Plans | ⏳ Planned | - | `15-development-planning/current/sprint-plans.md` | Sprint organization and assignments |
+| Task Specifications | ⏳ Planned | - | `15-development-planning/current/task-specs.md` | Detailed task requirements |
+| Dependency Graph | ⏳ Planned | - | `15-development-planning/current/dependencies.md` | Task dependency visualization |
+
+### 16. Frontend Developer Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Agent Overview | ⏳ Planned | - | `16-frontend-developer/current/README.md` | Frontend development overview |
+| Component Library | ⏳ Planned | - | `16-frontend-developer/current/components/` | React component implementations |
+| State Management | ⏳ Planned | - | `16-frontend-developer/current/state/` | State management implementation |
+| Frontend Tests | ⏳ Planned | - | `16-frontend-developer/current/tests/` | Unit and integration tests |
+| Performance Report | ⏳ Planned | - | `16-frontend-developer/current/performance.md` | Frontend performance metrics |
+
+### 17. Backend API Developer Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Agent Overview | ⏳ Planned | - | `17-backend-api-developer/current/README.md` | Backend development overview |
+| API Endpoints | ⏳ Planned | - | `17-backend-api-developer/current/endpoints/` | Endpoint implementations |
+| Business Services | ⏳ Planned | - | `17-backend-api-developer/current/services/` | Business logic services |
+| Backend Tests | ⏳ Planned | - | `17-backend-api-developer/current/tests/` | API and service tests |
+| Performance Benchmarks | ⏳ Planned | - | `17-backend-api-developer/current/benchmarks.md` | API performance metrics |
+
+### 18. Database Developer Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Agent Overview | ⏳ Planned | - | `18-database-developer/current/README.md` | Database development overview |
+| Migration Scripts | ⏳ Planned | - | `18-database-developer/current/migrations/` | Database migrations |
+| Seed Data | ⏳ Planned | - | `18-database-developer/current/seeds/` | Development seed data |
+| Optimized Queries | ⏳ Planned | - | `18-database-developer/current/queries/` | Performance-optimized queries |
+| Database Performance | ⏳ Planned | - | `18-database-developer/current/performance.md` | Database performance analysis |
+
+### 19. Integration Developer Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Agent Overview | ⏳ Planned | - | `19-integration-developer/current/README.md` | Integration development overview |
+| Service Abstractions | ⏳ Planned | - | `19-integration-developer/current/services/` | External service abstractions |
+| Webhook Handlers | ⏳ Planned | - | `19-integration-developer/current/webhooks/` | Webhook implementations |
+| API Integrations | ⏳ Planned | - | `19-integration-developer/current/integrations/` | Third-party integrations |
+| Real-time Features | ⏳ Planned | - | `19-integration-developer/current/real-time/` | WebSocket implementations |
+
+### 20. Mobile/PWA Developer Agent
+| Document | Status | Version | Location | Purpose |
+|----------|--------|---------|----------|---------|
+| Agent Overview | ⏳ Planned | - | `20-mobile-pwa-developer/current/README.md` | Mobile/PWA development overview |
+| Service Worker | ⏳ Planned | - | `20-mobile-pwa-developer/current/service-worker/` | Service worker implementation |
+| Offline Features | ⏳ Planned | - | `20-mobile-pwa-developer/current/offline/` | Offline functionality |
+| Push Notifications | ⏳ Planned | - | `20-mobile-pwa-developer/current/push/` | Push notification system |
+| Web App Manifest | ⏳ Planned | - | `20-mobile-pwa-developer/current/manifest.json` | PWA configuration |
+
 ## Cross-Cutting Documentation
 
 | Document | Location | Purpose | Owner |

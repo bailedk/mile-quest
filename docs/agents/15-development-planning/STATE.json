@@ -1,0 +1,88 @@
+{
+  "agent": "15-development-planning",
+  "name": "Development Planning Agent",
+  "version": "1.0",
+  "status": "ready",
+  "lastUpdated": "2025-01-17",
+  "description": "Responsible for breaking down specifications into implementable features and managing development task distribution",
+  "currentFocus": "Awaiting design agent deliverables to begin task planning",
+  "dependencies": {
+    "requires": [
+      {
+        "agent": "01-architecture",
+        "items": ["tech-stack", "patterns", "infrastructure"],
+        "status": "available"
+      },
+      {
+        "agent": "02-ui-ux",
+        "items": ["wireframes", "design-system", "user-flows"],
+        "status": "available"
+      },
+      {
+        "agent": "03-data-model",
+        "items": ["schema", "entities", "relationships"],
+        "status": "available"
+      },
+      {
+        "agent": "04-api-designer",
+        "items": ["contracts", "endpoints", "types"],
+        "status": "available"
+      },
+      {
+        "agent": "06-security",
+        "items": ["auth-patterns", "security-requirements"],
+        "status": "in-progress"
+      },
+      {
+        "agent": "14-business-analyst",
+        "items": ["implementation-roadmap", "feature-priorities"],
+        "status": "available"
+      }
+    ],
+    "provides": [
+      {
+        "agent": "16-frontend-developer",
+        "items": ["react-tasks", "component-specs", "ui-implementation"]
+      },
+      {
+        "agent": "17-backend-api-developer",
+        "items": ["api-tasks", "business-logic", "validation-rules"]
+      },
+      {
+        "agent": "18-database-developer",
+        "items": ["schema-tasks", "migrations", "optimization"]
+      },
+      {
+        "agent": "19-integration-developer",
+        "items": ["integration-tasks", "webhook-specs", "external-apis"]
+      },
+      {
+        "agent": "20-mobile-pwa-developer",
+        "items": ["pwa-tasks", "offline-features", "mobile-optimization"]
+      }
+    ]
+  },
+  "deliverables": {
+    "planned": [
+      "master-development-plan.md",
+      "sprint-plans.md",
+      "task-specifications.md",
+      "dependency-graph.md",
+      "developer-coordination-guide.md"
+    ],
+    "completed": []
+  },
+  "metrics": {
+    "tasksCreated": 0,
+    "sprintsPlanned": 0,
+    "dependenciesMapped": 0,
+    "parallelStreams": 0
+  },
+  "risks": [
+    {
+      "description": "Security patterns not yet fully defined",
+      "impact": "medium",
+      "mitigation": "Can begin with non-security tasks"
+    }
+  ]
+}
