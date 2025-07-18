@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run clean && npm run build:lambda",
-    "build:lambda": "mkdir -p dist/lambda/auth dist/lambda/users dist/lambda/teams dist/lambda/activities dist/lambda/dashboard && esbuild src/lambda/auth/index.ts --bundle --platform=node --target=node20 --outfile=dist/lambda/auth/index.js --external:@aws-sdk/* --external:pg-native && esbuild src/lambda/users/index.ts --bundle --platform=node --target=node20 --outfile=dist/lambda/users/index.js --external:@aws-sdk/* --external:pg-native && esbuild src/lambda/teams/index.ts --bundle --platform=node --target=node20 --outfile=dist/lambda/teams/index.js --external:@aws-sdk/* --external:pg-native && esbuild src/lambda/activities/index.ts --bundle --platform=node --target=node20 --outfile=dist/lambda/activities/index.js --external:@aws-sdk/* --external:pg-native && esbuild src/lambda/dashboard/index.ts --bundle --platform=node --target=node20 --outfile=dist/lambda/dashboard/index.js --external:@aws-sdk/* --external:pg-native",
+    "build:lambda": "node scripts/build.js",
     "dev": "npm run build && sam local start-api --port 3001",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",

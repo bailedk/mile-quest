@@ -45,6 +45,19 @@ Resources:
         MaxAge: "'600'"
 
   # Lambda Functions
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/lambda/health/
+      Handler: index.handler
+      Events:
+        HealthCheck:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /health
+            Method: GET
+
   AuthFunction:
     Type: AWS::Serverless::Function
     Properties:

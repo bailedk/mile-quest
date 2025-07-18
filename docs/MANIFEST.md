@@ -128,11 +128,12 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### 15. Development Planning Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Agent Overview | 📌 Current | 1.0 | `15-development-planning/current/README.md` | Development planning responsibilities |
-| Master Development Plan | ⏳ Planned | - | `15-development-planning/current/master-plan.md` | Complete task breakdown |
-| Sprint Plans | ⏳ Planned | - | `15-development-planning/current/sprint-plans.md` | Sprint organization and assignments |
-| Task Specifications | ⏳ Planned | - | `15-development-planning/current/task-specs.md` | Detailed task requirements |
-| Dependency Graph | ⏳ Planned | - | `15-development-planning/current/dependencies.md` | Task dependency visualization |
+| Agent Overview | 📌 Current | 1.0 | `15-development-planning/current/README.md` | Development planning overview and status |
+| Master Development Plan | 📌 Current | 1.0 | `15-development-planning/current/master-development-plan.md` | 8-week sprint timeline with goals |
+| Task Specifications | 📌 Current | 1.0 | `15-development-planning/current/task-specifications.md` | 151 detailed tasks with acceptance criteria |
+| Dependency Graph | 📌 Current | 1.0 | `15-development-planning/current/dependency-graph.md` | Task dependencies and critical path |
+| Sprint Plans | 📌 Current | 1.0 | `15-development-planning/current/sprint-plans.md` | Day-by-day task assignments |
+| Developer Coordination | 📌 Current | 1.0 | `15-development-planning/current/developer-coordination-guide.md` | Communication and collaboration protocols |
 
 ### 16. Frontend Developer Agent
 | Document | Status | Version | Location | Purpose |
