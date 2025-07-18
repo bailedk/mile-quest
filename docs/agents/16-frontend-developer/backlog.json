@@ -1,0 +1,50 @@
+{
+  "backlog": [
+    {
+      "id": "fe-sprint0-bundle",
+      "fromAgent": "15-development-planning",
+      "toAgent": "16-frontend-developer",
+      "requestDate": "2025-01-18",
+      "priority": "high",
+      "status": "approved",
+      "request": "Complete Sprint 0 Frontend Setup Tasks",
+      "reason": "Foundation required for all frontend development",
+      "value": "Enables parallel frontend development in Sprint 1",
+      "approvedBy": "user",
+      "approvalDate": "2025-01-18",
+      "completedDate": null,
+      "tasks": [
+        {
+          "id": "FE-001",
+          "description": "Initialize Next.js project",
+          "effort": "4 hours",
+          "status": "pending"
+        },
+        {
+          "id": "FE-002",
+          "description": "Configure TypeScript and ESLint",
+          "effort": "4 hours",
+          "status": "pending"
+        },
+        {
+          "id": "FE-003",
+          "description": "Set up Tailwind CSS",
+          "effort": "4 hours",
+          "status": "pending"
+        },
+        {
+          "id": "FE-004",
+          "description": "Create base layout components",
+          "effort": "6 hours",
+          "status": "pending"
+        },
+        {
+          "id": "FE-005",
+          "description": "Implement routing structure",
+          "effort": "4 hours",
+          "status": "pending"
+        }
+      ]
+    }
+  ]
+}

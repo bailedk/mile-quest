@@ -1,0 +1,91 @@
+{
+  "backlog": [
+    {
+      "id": "int-sprint0-bundle",
+      "fromAgent": "15-development-planning",
+      "toAgent": "19-integration-developer",
+      "requestDate": "2025-01-18",
+      "priority": "high",
+      "status": "approved",
+      "request": "Complete Sprint 0 Integration Setup Tasks",
+      "reason": "Service abstractions required for Sprint 1 authentication",
+      "value": "Enables clean separation of external services and testability",
+      "approvedBy": "user",
+      "approvalDate": "2025-01-18",
+      "completedDate": null,
+      "sprint": 0,
+      "tasks": [
+        {
+          "id": "INT-001",
+          "description": "Create AWS service abstractions",
+          "effort": "6 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "Base service interface defined",
+            "Error handling patterns",
+            "Retry logic implemented",
+            "Mock implementations ready"
+          ]
+        },
+        {
+          "id": "INT-002",
+          "description": "Implement Cognito wrapper service",
+          "effort": "8 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["INT-001"],
+          "acceptanceCriteria": [
+            "User registration working",
+            "Login/logout implemented",
+            "Token management ready",
+            "Error mapping complete"
+          ]
+        },
+        {
+          "id": "INT-003",
+          "description": "Create Pusher abstraction layer",
+          "effort": "6 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["INT-001"],
+          "acceptanceCriteria": [
+            "WebSocket connection manager",
+            "Channel subscription logic",
+            "Event publishing working",
+            "Presence channels ready"
+          ]
+        },
+        {
+          "id": "INT-004",
+          "description": "Set up SES email service wrapper",
+          "effort": "4 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["INT-001"],
+          "acceptanceCriteria": [
+            "Email sending working",
+            "Template management",
+            "Bounce handling ready",
+            "Rate limiting implemented"
+          ]
+        },
+        {
+          "id": "INT-005",
+          "description": "Create environment configuration",
+          "effort": "4 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["INT-001"],
+          "acceptanceCriteria": [
+            "Environment variables loaded",
+            "Secrets management working",
+            "Configuration validation",
+            "Multiple environments supported"
+          ]
+        }
+      ]
+    }
+  ]
+}

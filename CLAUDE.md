@@ -128,17 +128,41 @@ Each agent maintains a `backlog.json` file in their agent folder:
       "toAgent": "04-api-designer",
       "requestDate": "2025-01-15",
       "priority": "high|medium|low",
-      "status": "pending|approved|rejected|completed",
+      "status": "pending|approved|rejected|completed|in-progress",
       "request": "Add pagination to team activity endpoints",
       "reason": "Large teams generate thousands of activities",
       "value": "Improves performance and reduces database load",
       "approvedBy": "user|null",
       "approvalDate": "2025-01-15|null",
-      "completedDate": "null"
+      "completedDate": "null",
+      "sprint": 2,  // Optional: Sprint assignment for planning
+      "tasks": [    // Optional: Granular task breakdown
+        {
+          "id": "TASK-ID",
+          "description": "Specific implementation task",
+          "effort": "4 hours",
+          "status": "pending|in-progress|completed",
+          "completedDate": "null",
+          "dependencies": ["OTHER-TASK-ID"],
+          "acceptanceCriteria": [
+            "Criteria 1",
+            "Criteria 2"
+          ]
+        }
+      ]
     }
   ]
 }
 ```
+
+**Enhanced Fields**:
+- `status`: Added "in-progress" for active work
+- `sprint`: Optional sprint assignment for development tasks
+- `tasks`: Optional array for granular task breakdown with:
+  - Individual task status tracking
+  - Effort estimates
+  - Dependencies between tasks
+  - Clear acceptance criteria
 
 ### How to Add Items to Another Agent's Backlog
 
@@ -172,9 +196,14 @@ When starting work as an agent:
 1. **Review Backlog Items**
    - Check `backlog.json` for approved items
    - Prioritize based on dependencies and value
+   - Check for embedded tasks in development items
 
 2. **Implement Approved Items**
    - Work on high-priority approved items first
+   - For items with tasks:
+     - Update individual task status as you progress
+     - Track completion at task level
+     - Update parent item when all tasks complete
    - Update status to "completed" when done
    - Add completion date
 

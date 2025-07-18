@@ -1,0 +1,77 @@
+{
+  "backlog": [
+    {
+      "id": "db-sprint0-bundle",
+      "fromAgent": "15-development-planning",
+      "toAgent": "18-database-developer",
+      "requestDate": "2025-01-18",
+      "priority": "high",
+      "status": "approved",
+      "request": "Complete Sprint 0 Database Setup Tasks",
+      "reason": "Database foundation required for all features",
+      "value": "Enables data persistence and API functionality",
+      "approvedBy": "user",
+      "approvalDate": "2025-01-18",
+      "completedDate": null,
+      "sprint": 0,
+      "tasks": [
+        {
+          "id": "DB-001",
+          "description": "Deploy RDS PostgreSQL instance",
+          "effort": "4 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": [],
+          "acceptanceCriteria": [
+            "RDS instance running PostgreSQL 15 with PostGIS",
+            "Connection verified from Lambda functions",
+            "SSL encryption enabled",
+            "Automated backups configured"
+          ]
+        },
+        {
+          "id": "DB-002",
+          "description": "Run initial Prisma migrations",
+          "effort": "4 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["DB-001"],
+          "acceptanceCriteria": [
+            "All tables created per schema specification",
+            "Indexes applied correctly",
+            "Foreign key constraints active",
+            "Migration history tracked"
+          ]
+        },
+        {
+          "id": "DB-003",
+          "description": "Create development seed data",
+          "effort": "6 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["DB-002"],
+          "acceptanceCriteria": [
+            "10 test users with varied data",
+            "5 teams with different member counts",
+            "100+ activities across teams",
+            "Realistic data distributions"
+          ]
+        },
+        {
+          "id": "DB-004",
+          "description": "Set up database backup procedures",
+          "effort": "4 hours",
+          "status": "pending",
+          "completedDate": null,
+          "dependencies": ["DB-001"],
+          "acceptanceCriteria": [
+            "Automated daily backups",
+            "Point-in-time recovery enabled",
+            "Backup retention policy (30 days)",
+            "Restore procedure documented"
+          ]
+        }
+      ]
+    }
+  ]
+}
