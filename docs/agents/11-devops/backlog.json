@@ -1,3 +1,11 @@
 {
-  "backlog": []
+  "backlog": [
+    {
+      "id": "devops-001",
+      "from": "backend-developer",
+      "request": "Review CloudWatch integration and operational aspects of logging",
+      "priority": "medium",
+      "status": "pending"
+    }
+  ]
 }

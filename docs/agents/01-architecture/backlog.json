@@ -41,6 +41,13 @@
       "approvedBy": "user",
       "approvalDate": "2025-01-15",
       "completedDate": "2025-01-15"
+    },
+    {
+      "id": "arch-004",
+      "from": "backend-developer",
+      "request": "Review logging service architecture and integration patterns",
+      "priority": "medium",
+      "status": "pending"
     }
   ]
 }

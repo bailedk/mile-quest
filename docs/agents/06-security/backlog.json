@@ -1,3 +1,11 @@
 {
-  "backlog": []
+  "backlog": [
+    {
+      "id": "sec-001",
+      "from": "backend-developer",
+      "request": "Review logging service for sensitive data handling",
+      "priority": "high",
+      "status": "pending"
+    }
+  ]
 }

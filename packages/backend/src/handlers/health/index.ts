@@ -2,9 +2,10 @@
  * Health check Lambda handler
  */
 
-import { createHandler } from '../../utils/lambda-handler';
+import { createHandler, EnhancedContext } from '../../utils/lambda-handler';
 import { config } from '../../config/environment';
 import { PrismaClient } from '@prisma/client';
+import { APIGatewayProxyEvent } from 'aws-lambda';
 
 const prisma = new PrismaClient();
 
@@ -31,14 +32,25 @@ interface HealthCheckResponse {
  * Health check handler
  * Will be enhanced with database connectivity check when DB is available
  */
-async function healthHandler(event: any, context: any): Promise<{ statusCode: number; body: HealthCheckResponse }> {
+async function healthHandler(
+  event: APIGatewayProxyEvent, 
+  context: EnhancedContext
+): Promise<{ statusCode: number; body: HealthCheckResponse }> {
+  const { logger } = context;
   const startTime = Date.now();
+  
+  logger.info('Health check started');
   
   // Memory check
   const memoryUsage = process.memoryUsage();
   const memoryTotal = 512 * 1024 * 1024; // 512MB Lambda memory
   const memoryUsed = memoryUsage.heapUsed;
   const memoryPercentage = Math.round((memoryUsed / memoryTotal) * 100);
+  
+  logger.debug('Memory check completed', {
+    memoryUsedMB: Math.round(memoryUsed / 1024 / 1024),
+    memoryPercentage,
+  });
 
   const response: HealthCheckResponse = {
     status: 'healthy',
@@ -56,22 +68,39 @@ async function healthHandler(event: any, context: any): Promise<{ statusCode: nu
 
   // Database connectivity check
   try {
-    const dbStartTime = Date.now();
+    const dbTimer = logger.startTimer('database-check');
+    
     // Simple query to verify connection
     await prisma.$queryRaw`SELECT 1`;
-    const dbLatency = Date.now() - dbStartTime;
+    
+    const dbLatency = Date.now() - startTime;
+    dbTimer();
+    
+    logger.info('Database check successful', { latency: dbLatency });
     
     response.checks.database = {
       status: 'connected',
       latency: dbLatency,
     };
   } catch (error) {
+    logger.error('Database check failed', error as Error);
+    
     response.status = 'unhealthy';
     response.checks.database = {
       status: 'error',
       error: error instanceof Error ? error.message : 'Unknown database error',
     };
   }
+  
+  const totalTime = Date.now() - startTime;
+  logger.info('Health check completed', {
+    status: response.status,
+    duration: totalTime,
+    checks: {
+      memory: response.checks.memory?.percentage + '%',
+      database: response.checks.database?.status,
+    },
+  });
   
   return {
     statusCode: 200,
@@ -83,6 +112,7 @@ async function healthHandler(event: any, context: any): Promise<{ statusCode: nu
 export const handler = createHandler(healthHandler, {
   enableCors: true,
   requireAuth: false,
+  functionName: 'health-check',
 });
 
 // Cleanup Prisma connection on Lambda container shutdown

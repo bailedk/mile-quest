@@ -8,21 +8,27 @@ import {
   Context,
 } from 'aws-lambda';
 import { config } from '../config/environment';
+import { createLogger, MileQuestLogger } from '../services/logger';
 
 export type LambdaHandler = (
   event: APIGatewayProxyEvent,
   context: Context
 ) => Promise<APIGatewayProxyResult>;
 
+export interface EnhancedContext extends Context {
+  logger: MileQuestLogger;
+}
+
 export type RouteHandler = (
   event: APIGatewayProxyEvent,
-  context: Context
+  context: EnhancedContext
 ) => Promise<any>;
 
 interface HandlerOptions {
   enableCors?: boolean;
   requireAuth?: boolean;
   validateBody?: boolean;
+  functionName?: string;
 }
 
 /**
@@ -36,32 +42,82 @@ export function createHandler(
     enableCors = true,
     requireAuth = false,
     validateBody = false,
+    functionName = 'unknown-function',
   } = options;
 
   return async (
     event: APIGatewayProxyEvent,
     context: Context
   ): Promise<APIGatewayProxyResult> => {
+    // Create logger for this request
+    const logger = createLogger(functionName);
+    
+    // Set correlation ID
+    const correlationId = event.headers?.['x-correlation-id'] || 
+                         event.requestContext?.requestId || 
+                         context.awsRequestId ||
+                         `local-${Date.now()}`;
+    
+    logger.setCorrelationId(correlationId);
+    
+    // Create enhanced context with logger
+    const enhancedContext = context as EnhancedContext;
+    enhancedContext.logger = logger;
+    
+    // Log incoming request
+    logger.info('Incoming request', {
+      httpMethod: event.httpMethod,
+      path: event.path,
+      pathParameters: event.pathParameters,
+      queryStringParameters: event.queryStringParameters,
+      headers: {
+        'user-agent': event.headers?.['user-agent'],
+        'content-type': event.headers?.['content-type'],
+      },
+    });
+    
+    const timer = logger.startTimer('request-processing');
+    
     try {
       // Set context settings
       context.callbackWaitsForEmptyEventLoop = false;
 
       // Handle CORS preflight
       if (enableCors && event.httpMethod === 'OPTIONS') {
-        return createResponse(200, {}, getCorsHeaders());
+        const response = createResponse(200, {}, getCorsHeaders());
+        logger.info('CORS preflight response', { statusCode: 200 });
+        return response;
       }
 
       // Process the request
-      const result = await handler(event, context);
+      const result = await handler(event, enhancedContext);
+
+      // Stop timer
+      timer();
 
       // Return successful response
-      return createResponse(
+      const response = createResponse(
         result.statusCode || 200,
         result.body || result,
         enableCors ? getCorsHeaders() : {}
       );
+      
+      logger.info('Request completed', {
+        statusCode: response.statusCode,
+        correlationId,
+      });
+      
+      return response;
     } catch (error) {
-      console.error('Lambda handler error:', error);
+      // Stop timer
+      timer();
+      
+      // Log error
+      logger.error('Lambda handler error', error as Error, {
+        correlationId,
+        httpMethod: event.httpMethod,
+        path: event.path,
+      });
       
       // Return error response
       return createErrorResponse(error as Error, enableCors);

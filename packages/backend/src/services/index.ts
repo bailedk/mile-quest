@@ -13,6 +13,7 @@ export * from './auth';
 export * from './websocket';
 export * from './email';
 export * from './config';
+export * from './logger';
 export * from './aws/base-service';
 
 /**

@@ -55,6 +55,13 @@
       "approvedBy": "user",
       "approvalDate": "2025-01-15",
       "completedDate": "2025-01-15"
+    },
+    {
+      "id": "re-005",
+      "from": "backend-developer",
+      "request": "Review logging service for cross-cutting concerns",
+      "priority": "medium",
+      "status": "pending"
     }
   ]
 }
