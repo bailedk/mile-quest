@@ -7,10 +7,12 @@ Mile Quest is a mobile-first team walking challenge platform where teams set geo
 ## 📍 How to Navigate This Project
 
 **For Current Status**: Check AGENTS.md
+**For Development Progress**: Check docs/SPRINT-TRACKING.md ← NEW!
 **For Documentation Index**: Check docs/MANIFEST.md  
 **For Specific Agent Work**: Check docs/agents/[number]-[name]/current/
 **For Guidelines**: Check docs/GUIDELINES.md
 **For Living Agents Model**: Check docs/LIVING-AGENTS.md
+**For Tracking System**: Check docs/ATTENTION-ALL-AGENTS.md ← NEW!
 
 ## 🗂️ Documentation Structure
 
@@ -112,57 +114,39 @@ Each agent MUST:
 6. Update backlog.json - Mark completed items, add new tasks
 7. Request BA to add recommendations to other agents' backlogs
 
-## 📋 Agent Backlog System
+## 📋 Simplified Task Tracking System (v2.0)
 
-### Purpose
-The backlog system ensures cross-agent recommendations are tracked, reviewed, and implemented systematically. Each agent maintains their own backlog of incoming requests from other agents.
+### Overview
+Mile Quest uses a simplified three-part tracking system:
 
-### Backlog Structure
-Each agent maintains a `backlog.json` file in their agent folder:
+1. **SPRINT-TRACKING.md** - Single source of truth for ALL development work
+2. **AGENTS.md** - High-level agent status only  
+3. **Agent backlogs** - Simple inter-agent recommendations only
+
+### Development Task Tracking
+For all implementation work, use `/docs/SPRINT-TRACKING.md`:
+- Current sprint status and progress
+- Task completion tracking
+- Next priority items
+- Updated immediately when work is done
+
+### Agent Backlog Structure (Simplified)
+Each agent maintains a simple `backlog.json` for recommendations ONLY:
 ```json
 {
   "backlog": [
     {
-      "id": "unique-id",
-      "fromAgent": "03-data-model",
-      "toAgent": "04-api-designer",
-      "requestDate": "2025-01-15",
+      "id": "simple-id",
+      "from": "requesting-agent",
+      "request": "What needs to be done",
       "priority": "high|medium|low",
-      "status": "pending|approved|rejected|completed|in-progress",
-      "request": "Add pagination to team activity endpoints",
-      "reason": "Large teams generate thousands of activities",
-      "value": "Improves performance and reduces database load",
-      "approvedBy": "user|null",
-      "approvalDate": "2025-01-15|null",
-      "completedDate": "null",
-      "sprint": 2,  // Optional: Sprint assignment for planning
-      "tasks": [    // Optional: Granular task breakdown
-        {
-          "id": "TASK-ID",
-          "description": "Specific implementation task",
-          "effort": "4 hours",
-          "status": "pending|in-progress|completed",
-          "completedDate": "null",
-          "dependencies": ["OTHER-TASK-ID"],
-          "acceptanceCriteria": [
-            "Criteria 1",
-            "Criteria 2"
-          ]
-        }
-      ]
+      "status": "pending|accepted|declined"
     }
   ]
 }
 ```
 
-**Enhanced Fields**:
-- `status`: Added "in-progress" for active work
-- `sprint`: Optional sprint assignment for development tasks
-- `tasks`: Optional array for granular task breakdown with:
-  - Individual task status tracking
-  - Effort estimates
-  - Dependencies between tasks
-  - Clear acceptance criteria
+**Important**: Backlogs are NOT for development tasks, sprint work, or implementation details. Those go in SPRINT-TRACKING.md.
 
 ### How to Add Items to Another Agent's Backlog
 
@@ -235,9 +219,16 @@ Agent: "Added to API Designer's backlog as an approved high-priority item."
 
 1. **Check CLAUDE.md** (this file) for documentation structure
 2. **Read AGENTS.md** for current project status
-3. **Check docs/MANIFEST.md** for documentation index
-4. **Review relevant agent folders** for context
-5. **Follow docs/GUIDELINES.md** for updates
+3. **Check SPRINT-TRACKING.md** for development task status ← NEW!
+4. **Check docs/MANIFEST.md** for documentation index
+5. **Review relevant agent folders** for context
+6. **Follow docs/GUIDELINES.md** for updates
+
+### When Completing a Task
+
+1. **Update SPRINT-TRACKING.md** immediately ← CRITICAL!
+2. **Commit your code** with clear message
+3. **That's it!** Don't update multiple tracking files
 
 ### When Making Updates
 

@@ -1,5 +1,12 @@
 # Mile Quest Multi-Agent Orchestration Plan
 
+## 🚨 NEW TRACKING SYSTEM (2025-01-18) 🚨
+
+**All agents MUST use the simplified tracking system:**
+- **Development Tasks** → Update `/docs/SPRINT-TRACKING.md`
+- **Agent Recommendations** → Simple entries in backlog.json
+- **See** `/docs/ATTENTION-ALL-AGENTS.md` for details
+
 ## Living Agent Status
 
 All agents remain active and can receive new tasks through their backlog system. The Business Analyst Agent monitors and coordinates all agent activities.

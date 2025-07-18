@@ -187,6 +187,9 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Agent Orchestration | `/AGENTS.md` | Agent roles and status | Project Manager |
 | Claude Context | `/CLAUDE.md` | AI assistant context | All Agents |
 | Documentation Guidelines | `/docs/GUIDELINES.md` | How to update docs | All Agents |
+| Sprint Tracking | `/docs/SPRINT-TRACKING.md` | Single source of truth for dev progress | All Agents |
+| Tracking Guide | `/docs/TRACKING-GUIDE.md` | Simplified tracking system guide | All Agents |
+| Local Development | `/docs/LOCAL-DEVELOPMENT-GUIDE.md` | Local dev environment setup | DevOps |
 | Glossary | `/docs/glossary.md` | Shared terminology | All Agents |
 | Decision Log | `/docs/decisions/` | Major project decisions | All Agents |
 
