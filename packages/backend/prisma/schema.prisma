@@ -1,14 +1,213 @@
-// Prisma Schema for Mile Quest
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  name            String
+  avatarUrl       String?
+  emailVerified   Boolean           @default(false)
+  cognitoId       String            @unique
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  activities      Activity[]
+  createdGoals    TeamGoal[]        @relation("GoalCreator")
+  sentInvites     TeamInvite[]      @relation("InviteSender")
+  receivedInvites TeamInvite[]      @relation("InviteRecipient")
+  teamMemberships TeamMember[]
+  createdTeams    Team[]            @relation("TeamCreator")
+  achievements    UserAchievement[]
+  stats           UserStats?
+
+  @@index([email])
+  @@index([cognitoId])
+  @@map("users")
 }
 
-// Enums
+model Team {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  avatarUrl   String?
+  isPublic    Boolean      @default(true)
+  maxMembers  Int          @default(50)
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  activities  Activity[]
+  goals       TeamGoal[]
+  invites     TeamInvite[]
+  members     TeamMember[]
+  createdBy   User         @relation("TeamCreator", fields: [createdById], references: [id])
+
+  @@index([isPublic])
+  @@index([createdById])
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String    @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole  @default(MEMBER)
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+  team     Team      @relation(fields: [teamId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId, leftAt])
+  @@index([userId])
+  @@index([teamId])
+  @@map("team_members")
+}
+
+model TeamGoal {
+  id             String        @id @default(uuid())
+  teamId         String
+  name           String
+  description    String?
+  targetDistance Float
+  targetDate     DateTime?
+  routeData      Json
+  status         GoalStatus    @default(DRAFT)
+  createdById    String
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  activities     Activity[]
+  createdBy      User          @relation("GoalCreator", fields: [createdById], references: [id])
+  team           Team          @relation(fields: [teamId], references: [id])
+  progress       TeamProgress?
+
+  @@index([teamId])
+  @@index([status])
+  @@map("team_goals")
+}
+
+model Activity {
+  id                 String            @id @default(uuid())
+  userId             String
+  teamId             String
+  teamGoalId         String?
+  distance           Float
+  duration           Int
+  startTime          DateTime
+  endTime            DateTime
+  notes              String?
+  source             ActivitySource    @default(MANUAL)
+  externalId         String?
+  isPrivate          Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  teamGoal           TeamGoal?         @relation(fields: [teamGoalId], references: [id])
+  team               Team              @relation(fields: [teamId], references: [id])
+  user               User              @relation(fields: [userId], references: [id])
+  achievementsEarned UserAchievement[]
+
+  @@unique([source, externalId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([teamGoalId])
+  @@index([startTime])
+  @@index([isPrivate])
+  @@map("activities")
+}
+
+model TeamProgress {
+  id                  String    @id @default(uuid())
+  teamGoalId          String    @unique
+  totalDistance       Float     @default(0)
+  totalActivities     Int       @default(0)
+  totalDuration       Int       @default(0)
+  currentSegmentIndex Int       @default(0)
+  segmentProgress     Float     @default(0)
+  lastActivityAt      DateTime?
+  updatedAt           DateTime  @updatedAt
+  teamGoal            TeamGoal  @relation(fields: [teamGoalId], references: [id])
+
+  @@map("team_progress")
+}
+
+model UserStats {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  totalDistance   Float     @default(0)
+  totalActivities Int       @default(0)
+  totalDuration   Int       @default(0)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastActivityAt  DateTime?
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@map("user_stats")
+}
+
+model TeamInvite {
+  id              String       @id @default(uuid())
+  teamId          String
+  invitedByUserId String
+  email           String?
+  userId          String?
+  code            String       @unique @default(cuid())
+  status          InviteStatus @default(PENDING)
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+  acceptedAt      DateTime?
+  invitedBy       User         @relation("InviteSender", fields: [invitedByUserId], references: [id])
+  team            Team         @relation(fields: [teamId], references: [id])
+  user            User?        @relation("InviteRecipient", fields: [userId], references: [id])
+
+  @@index([teamId])
+  @@index([email])
+  @@index([userId])
+  @@index([status])
+  @@index([code])
+  @@map("team_invites")
+}
+
+model Achievement {
+  id               String              @id @default(uuid())
+  key              String              @unique
+  name             String
+  description      String
+  iconUrl          String
+  category         AchievementCategory
+  criteria         Json
+  points           Int                 @default(10)
+  createdAt        DateTime            @default(now())
+  userAchievements UserAchievement[]
+
+  @@index([category])
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime    @default(now())
+  teamId        String?
+  activityId    String?
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  activity      Activity?   @relation(fields: [activityId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([earnedAt])
+  @@map("user_achievements")
+}
+
 enum TeamRole {
   ADMIN
   MEMBER
@@ -41,226 +240,4 @@ enum AchievementCategory {
   SPEED
   TEAM
   SPECIAL
-}
-
-// Models
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  name          String
-  avatarUrl     String?
-  emailVerified Boolean   @default(false)
-  cognitoId     String    @unique
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
-
-  // Relations
-  teamMemberships TeamMember[]
-  activities      Activity[]
-  createdTeams    Team[]         @relation("TeamCreator")
-  createdGoals    TeamGoal[]     @relation("GoalCreator")
-  stats           UserStats?
-  achievements    UserAchievement[]
-  sentInvites     TeamInvite[]   @relation("InviteSender")
-  receivedInvites TeamInvite[]   @relation("InviteRecipient")
-
-  @@index([email])
-  @@index([cognitoId])
-  @@map("users")
-}
-
-model Team {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  description String?
-  avatarUrl   String?
-  isPublic    Boolean   @default(true)
-  maxMembers  Int       @default(50)
-  createdById String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-
-  // Relations
-  createdBy  User         @relation("TeamCreator", fields: [createdById], references: [id])
-  members    TeamMember[]
-  goals      TeamGoal[]
-  activities Activity[]
-  invites    TeamInvite[]
-
-  @@index([isPublic])
-  @@index([createdById])
-  @@map("teams")
-}
-
-model TeamMember {
-  id       String    @id @default(uuid())
-  teamId   String
-  userId   String
-  role     TeamRole  @default(MEMBER)
-  joinedAt DateTime  @default(now())
-  leftAt   DateTime?
-
-  // Relations
-  team Team @relation(fields: [teamId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-
-  @@unique([teamId, userId, leftAt])
-  @@index([userId])
-  @@index([teamId])
-  @@map("team_members")
-}
-
-model TeamGoal {
-  id            String      @id @default(uuid())
-  teamId        String
-  name          String
-  description   String?
-  targetDistance Float      // in miles
-  targetDate    DateTime?
-  routeData     Json       // Waypoints and segments
-  status        GoalStatus @default(DRAFT)
-  createdById   String
-  startedAt     DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-
-  // Relations
-  team       Team         @relation(fields: [teamId], references: [id])
-  createdBy  User         @relation("GoalCreator", fields: [createdById], references: [id])
-  activities Activity[]
-  progress   TeamProgress?
-
-  @@index([teamId])
-  @@index([status])
-  @@map("team_goals")
-}
-
-model Activity {
-  id          String         @id @default(uuid())
-  userId      String
-  teamId      String
-  teamGoalId  String?
-  distance    Float          // in miles
-  duration    Int            // in seconds
-  startTime   DateTime
-  endTime     DateTime
-  notes       String?
-  source      ActivitySource @default(MANUAL)
-  externalId  String?
-  isPrivate   Boolean        @default(false) // User can hide from leaderboards
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  // Relations
-  user              User               @relation(fields: [userId], references: [id])
-  team              Team               @relation(fields: [teamId], references: [id])
-  teamGoal          TeamGoal?          @relation(fields: [teamGoalId], references: [id])
-  achievementsEarned UserAchievement[]
-
-  @@unique([source, externalId])
-  @@index([userId])
-  @@index([teamId])
-  @@index([teamGoalId])
-  @@index([startTime])
-  @@index([isPrivate]) // For filtering private activities
-  @@map("activities")
-}
-
-model TeamProgress {
-  id                  String    @id @default(uuid())
-  teamGoalId          String    @unique
-  totalDistance       Float     @default(0)
-  totalActivities     Int       @default(0)
-  totalDuration       Int       @default(0) // in seconds
-  currentSegmentIndex Int       @default(0)
-  segmentProgress     Float     @default(0) // miles into current segment
-  lastActivityAt      DateTime?
-  updatedAt           DateTime  @updatedAt
-
-  // Relations
-  teamGoal TeamGoal @relation(fields: [teamGoalId], references: [id])
-
-  @@map("team_progress")
-}
-
-model UserStats {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  totalDistance   Float     @default(0)
-  totalActivities Int       @default(0)
-  totalDuration   Int       @default(0) // in seconds
-  currentStreak   Int       @default(0)
-  longestStreak   Int       @default(0)
-  lastActivityAt  DateTime?
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id])
-
-  @@map("user_stats")
-}
-
-model TeamInvite {
-  id               String       @id @default(uuid())
-  teamId           String
-  invitedByUserId  String
-  email            String?
-  userId           String?
-  code             String       @unique @default(cuid())
-  status           InviteStatus @default(PENDING)
-  expiresAt        DateTime
-  createdAt        DateTime     @default(now())
-  acceptedAt       DateTime?
-
-  // Relations
-  team      Team  @relation(fields: [teamId], references: [id])
-  invitedBy User  @relation("InviteSender", fields: [invitedByUserId], references: [id])
-  user      User? @relation("InviteRecipient", fields: [userId], references: [id])
-
-  @@index([teamId])
-  @@index([email])
-  @@index([userId])
-  @@index([status])
-  @@index([code])
-  @@map("team_invites")
-}
-
-model Achievement {
-  id          String              @id @default(uuid())
-  key         String              @unique
-  name        String
-  description String
-  iconUrl     String
-  category    AchievementCategory
-  criteria    Json                // Rules for earning
-  points      Int                 @default(10)
-  createdAt   DateTime            @default(now())
-
-  // Relations
-  userAchievements UserAchievement[]
-
-  @@index([category])
-  @@map("achievements")
-}
-
-model UserAchievement {
-  id            String   @id @default(uuid())
-  userId        String
-  achievementId String
-  earnedAt      DateTime @default(now())
-  teamId        String?
-  activityId    String?
-
-  // Relations
-  user        User        @relation(fields: [userId], references: [id])
-  achievement Achievement @relation(fields: [achievementId], references: [id])
-  activity    Activity?   @relation(fields: [activityId], references: [id])
-
-  @@unique([userId, achievementId])
-  @@index([userId])
-  @@index([earnedAt])
-  @@map("user_achievements")
 }

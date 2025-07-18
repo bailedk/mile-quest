@@ -47,8 +47,8 @@
           "id": "BE-003",
           "description": "Implement health check endpoint",
           "effort": "4 hours",
-          "status": "in-progress",
-          "completedDate": null,
+          "status": "completed",
+          "completedDate": "2025-01-18T15:00:00Z",
           "dependencies": ["BE-002", "DB-001"],
           "acceptanceCriteria": [
             "GET /api/v1/health returns 200",

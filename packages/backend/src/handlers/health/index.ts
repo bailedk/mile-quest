@@ -4,6 +4,9 @@
 
 import { createHandler } from '../../utils/lambda-handler';
 import { config } from '../../config/environment';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 interface HealthCheckResponse {
   status: 'healthy' | 'unhealthy';
@@ -51,8 +54,24 @@ async function healthHandler(event: any, context: any): Promise<{ statusCode: nu
     },
   };
 
-  // Database check will be added in BE-003 implementation
-  // For now, just return healthy status
+  // Database connectivity check
+  try {
+    const dbStartTime = Date.now();
+    // Simple query to verify connection
+    await prisma.$queryRaw`SELECT 1`;
+    const dbLatency = Date.now() - dbStartTime;
+    
+    response.checks.database = {
+      status: 'connected',
+      latency: dbLatency,
+    };
+  } catch (error) {
+    response.status = 'unhealthy';
+    response.checks.database = {
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown database error',
+    };
+  }
   
   return {
     statusCode: 200,
@@ -64,4 +83,9 @@ async function healthHandler(event: any, context: any): Promise<{ statusCode: nu
 export const handler = createHandler(healthHandler, {
   enableCors: true,
   requireAuth: false,
+});
+
+// Cleanup Prisma connection on Lambda container shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
 });

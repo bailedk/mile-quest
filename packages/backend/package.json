@@ -28,6 +28,9 @@
     "zod": "^3.22.0",
     "pg": "^8.11.0"
   },
+  "prisma": {
+    "seed": "tsx src/scripts/seed.ts"
+  },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.131",
     "@types/jsonwebtoken": "^9.0.5",
