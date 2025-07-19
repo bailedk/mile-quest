@@ -10,6 +10,7 @@ import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
 import { ProgressService } from '../../services/progress/progress.service';
+import { MaterializedViewsService } from '../../services/materialized-views/materialized-views.service';
 import { cache, cacheKeys, cacheTTL } from '../../utils/cache';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
@@ -20,6 +21,7 @@ validateEnvironment();
 const teamService = new TeamService(prisma);
 const activityService = new ActivityService(prisma);
 const progressService = new ProgressService(prisma);
+const materializedViewsService = new MaterializedViewsService(prisma);
 
 // Create router
 const router = createRouter();
@@ -256,9 +258,36 @@ async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]
   }));
 }
 
-// Helper function to get user's personal stats
+// Helper function to get user's personal stats (optimized with materialized views)
 async function getUserPersonalStats(userId: string): Promise<PersonalStats> {
-  // Get user stats from service (which includes caching)
+  // Try to get optimized stats from materialized view first
+  try {
+    const mvStats = await materializedViewsService.getUserActivityStats(userId);
+    
+    if (mvStats) {
+      return {
+        totalDistance: Number(mvStats.total_distance),
+        totalActivities: Number(mvStats.total_activities),
+        currentStreak: 0, // Will be calculated separately if needed
+        bestDay: {
+          date: mvStats.last_activity_date,
+          distance: Number(mvStats.best_distance),
+        },
+        thisWeek: {
+          distance: Number(mvStats.week_distance),
+          activities: Number(mvStats.week_activities),
+        },
+        thisMonth: {
+          distance: Number(mvStats.month_distance),
+          activities: Number(mvStats.month_activities),
+        },
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to get stats from materialized view, falling back to original method:', error);
+  }
+
+  // Fallback to original method if materialized view fails
   const userStats = await activityService.getUserStats(userId);
   
   // Get best day distance
@@ -290,12 +319,41 @@ async function getUserPersonalStats(userId: string): Promise<PersonalStats> {
   };
 }
 
-// Helper function to get team leaderboards
+// Helper function to get team leaderboards (optimized with materialized views)
 async function getTeamLeaderboards(teamIds: string[]): Promise<TeamLeaderboard[]> {
   const leaderboards = await Promise.all(
     teamIds.map(async (teamId) => {
       try {
-        // Get team name
+        // Try to get optimized leaderboard from materialized view first
+        try {
+          const mvLeaderboard = await materializedViewsService.getTeamLeaderboard(teamId, 5);
+          
+          if (mvLeaderboard && mvLeaderboard.length > 0) {
+            // Calculate total team distance for percentages
+            const totalTeamDistance = mvLeaderboard.reduce((sum, member) => sum + Number(member.total_distance), 0);
+            
+            const topMembers = mvLeaderboard.map((member) => ({
+              userId: member.user_id,
+              name: member.user_name,
+              avatarUrl: member.user_avatar,
+              distance: Number(member.total_distance),
+              percentage: totalTeamDistance > 0 ? (Number(member.total_distance) / totalTeamDistance) * 100 : 0,
+            }));
+
+            return {
+              teamId,
+              teamName: mvLeaderboard[0]?.team_id ? (await prisma.team.findUnique({
+                where: { id: teamId },
+                select: { name: true },
+              }))?.name || 'Unknown Team' : 'Unknown Team',
+              members: topMembers,
+            };
+          }
+        } catch (mvError) {
+          console.warn(`Failed to get team leaderboard from materialized view for team ${teamId}, falling back:`, mvError);
+        }
+
+        // Fallback to original method
         const team = await prisma.team.findUnique({
           where: { id: teamId },
           select: { name: true },

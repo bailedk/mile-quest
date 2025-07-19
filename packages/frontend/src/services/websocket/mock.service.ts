@@ -1,32 +1,56 @@
-import { WebSocketService, WebSocketConfig } from './types';
+import { WebSocketService, WebSocketConfig, WebSocketConnectionState } from './types';
 
 export class MockWebSocketService implements WebSocketService {
-  private connected = false;
+  private connectionState = WebSocketConnectionState.DISCONNECTED;
   private subscriptions = new Map<string, Set<(data: any) => void>>();
   private eventListeners = new Map<string, Set<(data: any) => void>>();
+  private stateChangeCallbacks: ((state: WebSocketConnectionState) => void)[] = [];
+  private errorCallbacks: ((error: Error) => void)[] = [];
 
   constructor(config?: WebSocketConfig) {
     // Mock service doesn't need config
   }
 
   async connect(): Promise<void> {
+    this.setConnectionState(WebSocketConnectionState.CONNECTING);
     // Simulate connection delay
     await new Promise(resolve => setTimeout(resolve, 100));
-    this.connected = true;
+    this.setConnectionState(WebSocketConnectionState.CONNECTED);
   }
 
   disconnect(): void {
-    this.connected = false;
+    this.setConnectionState(WebSocketConnectionState.DISCONNECTED);
     this.subscriptions.clear();
     this.eventListeners.clear();
   }
 
   isConnected(): boolean {
-    return this.connected;
+    return this.connectionState === WebSocketConnectionState.CONNECTED;
+  }
+
+  getConnectionState(): WebSocketConnectionState {
+    return this.connectionState;
+  }
+
+  getSocketId(): string | null {
+    return this.isConnected() ? 'mock-socket-id' : null;
+  }
+
+  private setConnectionState(state: WebSocketConnectionState): void {
+    if (this.connectionState !== state) {
+      this.connectionState = state;
+      this.stateChangeCallbacks.forEach(callback => {
+        try {
+          callback(state);
+        } catch (error) {
+          console.error('Error in connection state callback:', error);
+        }
+      });
+    }
   }
 
   subscribe(channel: string, callback: (data: any) => void): () => void {
-    if (!this.connected) {
+    if (!this.isConnected()) {
       throw new Error('WebSocket not connected');
     }
 
@@ -53,7 +77,7 @@ export class MockWebSocketService implements WebSocketService {
   }
 
   on(event: string, callback: (data: any) => void): () => void {
-    if (!this.connected) {
+    if (!this.isConnected()) {
       throw new Error('WebSocket not connected');
     }
 
@@ -88,12 +112,34 @@ export class MockWebSocketService implements WebSocketService {
     }
   }
 
+  onConnectionStateChange(callback: (state: WebSocketConnectionState) => void): () => void {
+    this.stateChangeCallbacks.push(callback);
+    
+    return () => {
+      const index = this.stateChangeCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.stateChangeCallbacks.splice(index, 1);
+      }
+    };
+  }
+
+  onError(callback: (error: Error) => void): () => void {
+    this.errorCallbacks.push(callback);
+    
+    return () => {
+      const index = this.errorCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.errorCallbacks.splice(index, 1);
+      }
+    };
+  }
+
   // Test helper methods
   simulateMessage(channel: string, event: string, data: any): void {
     const callbacks = this.subscriptions.get(channel);
     if (callbacks) {
       callbacks.forEach(callback => {
-        callback({ event, data });
+        callback({ event, data, timestamp: Date.now() });
       });
     }
   }
@@ -103,5 +149,19 @@ export class MockWebSocketService implements WebSocketService {
     if (callbacks) {
       callbacks.forEach(callback => callback(data));
     }
+  }
+
+  simulateConnectionError(error: Error): void {
+    this.errorCallbacks.forEach(callback => {
+      try {
+        callback(error);
+      } catch (callbackError) {
+        console.error('Error in error callback:', callbackError);
+      }
+    });
+  }
+
+  simulateStateChange(state: WebSocketConnectionState): void {
+    this.setConnectionState(state);
   }
 }

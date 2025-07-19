@@ -43,6 +43,11 @@ const config: Config = {
         '18': '4.5rem',
         '88': '22rem',
         '128': '32rem',
+        // Safe area spacing for mobile devices
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
       },
       fontSize: {
         // Type scale from design system
@@ -100,6 +105,29 @@ const config: Config = {
         'ease-in': 'cubic-bezier(0.4, 0, 1, 1)',
         'ease-out': 'cubic-bezier(0, 0, 0.2, 1)',
         'spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+      },
+      // Mobile-specific screen sizes
+      screens: {
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+        // Custom mobile breakpoints
+        'mobile-s': '320px',
+        'mobile-m': '375px',
+        'mobile-l': '425px',
+        'tablet': '768px',
+      },
+      // Minimum touch target sizes
+      minHeight: {
+        '44': '44px',  // iOS minimum touch target
+        '48': '48px',  // Android minimum touch target
+      },
+      minWidth: {
+        '44': '44px',
+        '48': '48px',
       },
     },
   },

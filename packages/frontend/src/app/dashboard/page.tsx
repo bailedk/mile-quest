@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ProgressLineChart, GoalProgressChart, ActivityBarChart } from '@/components/charts';
 import { formatDistance } from '@/services/activity.service';
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import { PullToRefresh, TouchCard } from '@/components/mobile/TouchInteractions';
+import { ConnectionStatus, ConnectionStatusBanner } from '@/components/ConnectionStatus';
+import { AchievementNotificationManager } from '@/components/AchievementNotification';
+import { useWebSocketContext, useWebSocketStatus } from '@/contexts/WebSocketContext';
+import { useRealtimeActivities } from '@/hooks/useRealtimeActivities';
+import { useRealtimeUpdates, Achievement } from '@/hooks/useRealtimeUpdates';
 import { 
   mockUser, 
   mockTeams, 
@@ -35,10 +42,46 @@ export default function DashboardPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [chartView, setChartView] = useState<'daily' | 'weekly'>('daily');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   
   // Use mock data instead of API calls
   const user = mockUser;
   const teams = mockTeams;
+
+  // WebSocket connection for real-time updates
+  const { isConnected, connectionState, connect, error } = useWebSocket({
+    autoConnect: true,
+    reconnectOnAuthChange: true,
+  });
+
+  // Real-time activity updates for the selected team
+  const realtimeActivities = useRealtimeActivities(selectedTeamId, {
+    onActivity: (update) => {
+      console.log('Dashboard received activity update:', update);
+      // Could show toast notification here
+    },
+    onError: (error) => {
+      console.error('Realtime activity error:', error);
+    },
+    enableLogging: process.env.NODE_ENV === 'development',
+  });
+
+  // Real-time updates for general events
+  const realtimeUpdates = useRealtimeUpdates({
+    channels: selectedTeamId ? [
+      `team-${selectedTeamId}`,
+      `user-${user.id}`,
+      'global-achievements'
+    ] : [`user-${user.id}`, 'global-achievements'],
+    onAchievement: (achievement) => {
+      setAchievements(prev => [...prev, achievement]);
+    },
+    onError: (error) => {
+      console.error('Realtime updates error:', error);
+    },
+    enableLogging: process.env.NODE_ENV === 'development',
+  });
   
   // Generate chart data
   const dailyProgressData = generateDailyProgressData();
@@ -56,14 +99,48 @@ export default function DashboardPage() {
     }, 1000);
   }, [teams, selectedTeamId]);
 
+  // Handle pull-to-refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Simulate refresh delay and reconnect WebSocket if needed
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Try to reconnect if disconnected
+    if (!isConnected && error) {
+      try {
+        await connect();
+      } catch (err) {
+        console.error('Failed to reconnect during refresh:', err);
+      }
+    }
+    
+    setIsRefreshing(false);
+  };
+
+  // Handle achievement dismissal
+  const handleAchievementDismiss = (achievementId: string) => {
+    setAchievements(prev => prev.filter(a => a.id !== achievementId));
+  };
+
+  // Handle connection retry
+  const handleConnectionRetry = async () => {
+    try {
+      await connect();
+    } catch (err) {
+      console.error('Manual connection retry failed:', err);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+      <MobileLayout title="Dashboard">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
         </div>
-      </div>
+      </MobileLayout>
     );
   }
 
@@ -74,21 +151,31 @@ export default function DashboardPage() {
   const teamProgress = selectedTeamId ? mockTeamProgress[selectedTeamId] : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Mile Quest</h1>
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl">🚶</span>
-              <span className="text-sm text-gray-600">{user.name.split(' ')[0]}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <MobileLayout 
+      title="Dashboard"
+      headerActions={
+        <ConnectionStatus 
+          connectionState={connectionState}
+          error={error}
+          size="sm"
+          className="mr-2"
+        />
+      }
+    >
+      <PullToRefresh onRefresh={handleRefresh} className="bg-gray-50">
+        <div className="max-w-md mx-auto px-4 py-6">
+          {/* Connection Status Banner */}
+          <ConnectionStatusBanner
+            connectionState={connectionState}
+            error={error}
+            onRetry={handleConnectionRetry}
+          />
 
-      <div className="max-w-md mx-auto px-4 py-6">
+          {/* Achievement Notifications */}
+          <AchievementNotificationManager
+            achievements={achievements}
+            onDismiss={handleAchievementDismiss}
+          />
         {!hasTeams ? (
           // No teams state
           <div className="text-center py-12">
@@ -135,7 +222,7 @@ export default function DashboardPage() {
 
             {/* Team Progress Card - Following wireframe */}
             {selectedTeam && teamProgress && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <TouchCard className="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">{selectedTeam.name}</h2>
                 
                 {/* Progress Bar */}
@@ -161,11 +248,11 @@ export default function DashboardPage() {
                     <span className="font-medium">Your Best:</span> {mockDashboardStats.bestDay.date} ({formatDistance(mockDashboardStats.bestDay.distance, user.preferredUnits)})
                   </p>
                 </div>
-              </div>
+              </TouchCard>
             )}
 
             {/* Team Activity Feed - Following wireframe */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <TouchCard className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Activity</h3>
               <div className="space-y-3">
                 {mockRecentActivities.slice(0, 3).map((activity) => {
@@ -189,52 +276,58 @@ export default function DashboardPage() {
                   );
                 })}
               </div>
-            </div>
+            </TouchCard>
 
             {/* Log Activity Button - Following wireframe */}
-            <Link
-              href="/activities/new"
-              className="block w-full px-6 py-3 text-center border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            <TouchCard 
+              onClick={() => window.location.href = '/activities/new'}
+              className="bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm mb-6 transition-colors"
             >
-              Log Today&apos;s Walk
-            </Link>
+              <div className="px-6 py-4 text-center">
+                <span className="text-white font-medium text-lg">Log Today's Walk</span>
+              </div>
+            </TouchCard>
 
             {/* Progress Charts Section */}
             <div className="space-y-6">
               {/* Goal Progress Chart */}
               {selectedTeam && teamProgress && (
-                <div className="bg-white rounded-lg shadow-sm p-6">
+                <TouchCard className="bg-white rounded-lg shadow-sm p-4 mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Goal Progress</h3>
-                  <GoalProgressChart
-                    currentDistance={teamProgress.totalDistance}
-                    targetDistance={teamProgress.targetDistance}
-                    userPreferredUnits={user.preferredUnits}
-                    height={240}
-                    className="w-full"
-                  />
-                </div>
+                  <div className="overflow-hidden">
+                    <GoalProgressChart
+                      currentDistance={teamProgress.totalDistance}
+                      targetDistance={teamProgress.targetDistance}
+                      userPreferredUnits={user.preferredUnits}
+                      height={200} 
+                      className="w-full"
+                    />
+                  </div>
+                </TouchCard>
               )}
 
               {/* Activity Breakdown Chart */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <TouchCard className="bg-white rounded-lg shadow-sm p-4 mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Activity</h3>
-                <ActivityBarChart
-                  data={activityBreakdownData}
-                  userPreferredUnits={user.preferredUnits}
-                  height={280}
-                  className="w-full"
-                  showActivityCount={false}
-                />
-              </div>
+                <div className="overflow-hidden">
+                  <ActivityBarChart
+                    data={activityBreakdownData}
+                    userPreferredUnits={user.preferredUnits}
+                    height={220}
+                    className="w-full"
+                    showActivityCount={false}
+                  />
+                </div>
+              </TouchCard>
 
               {/* Progress Over Time Chart */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center justify-between mb-4">
+              <TouchCard className="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Progress Over Time</h3>
-                  <div className="flex bg-gray-100 rounded-lg p-1">
+                  <div className="flex bg-gray-100 rounded-lg p-1 self-end sm:self-auto">
                     <button
                       onClick={() => setChartView('daily')}
-                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors min-h-[44px] ${
                         chartView === 'daily'
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
@@ -244,7 +337,7 @@ export default function DashboardPage() {
                     </button>
                     <button
                       onClick={() => setChartView('weekly')}
-                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors min-h-[44px] ${
                         chartView === 'weekly'
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
@@ -254,38 +347,40 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 </div>
-                <ProgressLineChart
-                  data={chartView === 'daily' ? dailyProgressData : weeklyProgressData}
-                  userPreferredUnits={user.preferredUnits}
-                  showCumulative={chartView === 'weekly'}
-                  height={280}
-                  className="w-full"
-                />
-              </div>
+                <div className="overflow-hidden">
+                  <ProgressLineChart
+                    data={chartView === 'daily' ? dailyProgressData : weeklyProgressData}
+                    userPreferredUnits={user.preferredUnits}
+                    showCumulative={chartView === 'weekly'}
+                    height={220}
+                    className="w-full"
+                  />
+                </div>
+              </TouchCard>
             </div>
 
             {/* Additional Stats Cards for better visualization */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-lg shadow-sm p-4">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <TouchCard className="bg-white rounded-lg shadow-sm p-4">
                 <p className="text-sm text-gray-600">Total Distance</p>
                 <p className="text-xl font-semibold text-gray-900">
                   {formatDistance(mockDashboardStats.totalDistance, user.preferredUnits)}
                 </p>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm p-4">
+              </TouchCard>
+              <TouchCard className="bg-white rounded-lg shadow-sm p-4">
                 <p className="text-sm text-gray-600">Current Streak</p>
                 <p className="text-xl font-semibold text-gray-900">
                   {mockDashboardStats.weekDistance > 0 ? '7 days' : '0 days'}
                 </p>
-              </div>
+              </TouchCard>
             </div>
 
             {/* Team Leaderboard Preview */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <TouchCard className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Members</h3>
               <div className="space-y-3">
                 {mockTeamMembers[selectedTeamId || 'team-1']?.slice(0, 4).map((member) => (
-                  <div key={member.userId} className="flex items-center justify-between">
+                  <div key={member.userId} className="flex items-center justify-between py-2">
                     <div className="flex items-center space-x-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         member.rank === 1 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
@@ -296,35 +391,36 @@ export default function DashboardPage() {
                         {member.isCurrentUser ? `${member.name} (You)` : member.name}
                       </span>
                     </div>
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 text-sm">
                       {formatDistance(member.weekDistance, user.preferredUnits)}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
+            </TouchCard>
 
             {/* Coming Soon Features */}
-            <div className="bg-gray-100 rounded-lg p-6">
+            <TouchCard className="bg-gray-100 rounded-lg p-6 mb-6">
               <h3 className="text-sm font-semibold text-gray-600 mb-3">Coming Soon</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li className="flex items-center">
-                  <span className="mr-2">🔒</span>
+              <ul className="space-y-3 text-sm text-gray-500">
+                <li className="flex items-center py-1">
+                  <span className="mr-3 text-base">🔒</span>
                   <span>Achievements - Week 2</span>
                 </li>
-                <li className="flex items-center">
-                  <span className="mr-2">🔒</span>
+                <li className="flex items-center py-1">
+                  <span className="mr-3 text-base">🔒</span>
                   <span>Photos - Week 2</span>
                 </li>
-                <li className="flex items-center">
-                  <span className="mr-2">🔒</span>
+                <li className="flex items-center py-1">
+                  <span className="mr-3 text-base">🔒</span>
                   <span>Leaderboard - Week 3</span>
                 </li>
               </ul>
-            </div>
+            </TouchCard>
           </div>
         )}
-      </div>
-    </div>
+        </div>
+      </PullToRefresh>
+    </MobileLayout>
   );
 }

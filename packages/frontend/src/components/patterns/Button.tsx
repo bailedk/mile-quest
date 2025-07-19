@@ -37,13 +37,15 @@ export function Button({
     transition-all duration-200
     focus:outline-none focus:ring-2 focus:ring-offset-2
     disabled:opacity-50 disabled:cursor-not-allowed
+    select-none touch-manipulation
+    active:transform active:scale-95
   `;
 
-  // Size variants
+  // Size variants with mobile-friendly minimum touch targets (44px)
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+    sm: 'px-3 py-2.5 text-sm min-h-[44px]',  // Ensure 44px minimum touch target
+    md: 'px-4 py-3 text-base min-h-[44px]',   // Ensure 44px minimum touch target
+    lg: 'px-6 py-3.5 text-lg min-h-[48px]',  // Larger for better mobile UX
   };
 
   // Style variants
@@ -52,19 +54,19 @@ export function Button({
       bg-primary text-white
       hover:bg-primary-dark
       focus:ring-primary
-      active:scale-95
+      active:bg-primary-dark
     `,
     secondary: `
       bg-gray-100 text-gray-700
       hover:bg-gray-200
       focus:ring-gray-500
-      active:scale-95
+      active:bg-gray-300
     `,
     text: `
       bg-transparent text-primary
       hover:bg-primary/10
       focus:ring-primary
-      active:scale-95
+      active:bg-primary/20
     `,
   };
 

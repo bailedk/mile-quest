@@ -20,6 +20,34 @@ export function ActivityFeed({
   userPreferredUnits = 'miles',
   isRealtime = false
 }: ActivityFeedProps) {
+  const [newActivityIds, setNewActivityIds] = useState<Set<string>>(new Set());
+
+  // Track new activities for visual highlighting
+  useEffect(() => {
+    if (isRealtime && activities.length > 0) {
+      const currentTime = Date.now();
+      const recentThreshold = 5000; // 5 seconds
+      
+      const newIds = new Set<string>();
+      activities.forEach(activity => {
+        const activityTime = new Date(activity.startTime).getTime();
+        if (currentTime - activityTime < recentThreshold) {
+          newIds.add(activity.id);
+        }
+      });
+      
+      setNewActivityIds(newIds);
+      
+      // Clear highlights after a delay
+      if (newIds.size > 0) {
+        const timer = setTimeout(() => {
+          setNewActivityIds(new Set());
+        }, 3000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [activities, isRealtime]);
   if (loading) {
     return (
       <div className="space-y-4">
@@ -64,8 +92,20 @@ export function ActivityFeed({
           </span>
         </div>
       )}
-      {activities.map((activity) => (
-        <div key={activity.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+      {activities.map((activity) => {
+        const isNewActivity = newActivityIds.has(activity.id);
+        
+        return (
+        <div 
+          key={activity.id} 
+          className={`
+            flex items-start space-x-3 p-3 rounded-lg transition-all duration-300
+            ${isNewActivity 
+              ? 'bg-green-50 border-l-4 border-green-400 shadow-md animate-pulse' 
+              : 'hover:bg-gray-50'
+            }
+          `}
+        >
           <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
             <span className="text-blue-600 font-semibold text-sm">
               {activity.userId.substring(0, 2).toUpperCase()}
@@ -94,7 +134,8 @@ export function ActivityFeed({
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

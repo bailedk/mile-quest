@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/patterns/Button';
 import { Card } from '@/components/patterns/Card';
+import { MobileLayout } from '@/components/layout/MobileLayout';
 import { ArrowLeftIcon, CalendarIcon, ClockIcon, MapPinIcon, UsersIcon, LockIcon } from '@/components/icons';
 import { useAuthStore } from '@/store/auth.store';
 import { teamService } from '@/services/team.service';
@@ -180,41 +181,37 @@ export default function NewActivityPage() {
 
   if (isLoadingTeams) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading your teams...</div>
-      </div>
+      <MobileLayout title="Log Activity" showBack={true}>
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">Loading your teams...</div>
+        </div>
+      </MobileLayout>
     );
   }
 
   if (userTeams.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Card>
-          <h2 className="text-2xl font-bold mb-2">No Teams Found</h2>
-          <p className="text-gray-600 mb-4">
-            You need to join a team before you can log activities.
-          </p>
-          <Button onClick={() => router.push('/teams/join')}>
-            Join a Team
-          </Button>
-        </Card>
-      </div>
+      <MobileLayout title="Log Activity" showBack={true}>
+        <div className="max-w-md mx-auto px-4 py-6">
+          <Card>
+            <h2 className="text-2xl font-bold mb-2">No Teams Found</h2>
+            <p className="text-gray-600 mb-4">
+              You need to join a team before you can log activities.
+            </p>
+            <Button onClick={() => router.push('/teams/join')}>
+              Join a Team
+            </Button>
+          </Card>
+        </div>
+      </MobileLayout>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Button
-        variant="text"
-        onClick={() => router.back()}
-        className="mb-6"
-        leftIcon={<ArrowLeftIcon />}
-      >
-        Back
-      </Button>
-
-      <Card>
-        <form onSubmit={handleSubmit}>
+    <MobileLayout title="Log Activity" showBack={true}>
+      <div className="max-w-md mx-auto px-4 py-6">
+        <Card>
+          <form onSubmit={handleSubmit}>
           <h2 className="text-2xl font-bold mb-2">Log Activity</h2>
           <p className="text-gray-600 mb-6">
             Record your walking or running activity
@@ -237,7 +234,7 @@ export default function NewActivityPage() {
               name="teamId"
               value={formData.teamId}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-4 py-3 border rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.teamId ? 'border-red-500' : 'border-gray-300'
               }`}
             >
@@ -268,7 +265,7 @@ export default function NewActivityPage() {
                 placeholder="5.5"
                 value={formData.distance}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.distance ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -289,7 +286,7 @@ export default function NewActivityPage() {
                 placeholder="45"
                 value={formData.duration}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.duration ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -312,7 +309,7 @@ export default function NewActivityPage() {
               value={formData.date}
               onChange={handleInputChange}
               max={new Date().toISOString().split('T')[0]}
-              className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-4 py-3 border rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.date ? 'border-red-500' : 'border-gray-300'
               }`}
             />
@@ -332,7 +329,7 @@ export default function NewActivityPage() {
                 name="startTime"
                 value={formData.startTime}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.startTime ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -351,7 +348,7 @@ export default function NewActivityPage() {
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.endTime ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -373,7 +370,7 @@ export default function NewActivityPage() {
               value={formData.notes}
               onChange={handleInputChange}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -406,7 +403,8 @@ export default function NewActivityPage() {
             {isSubmitting ? 'Logging Activity...' : 'Log Activity'}
           </Button>
         </form>
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </MobileLayout>
   );
 }

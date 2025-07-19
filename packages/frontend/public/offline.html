@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Mile Quest</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .offline-container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .features {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .features h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #d1fae5;
+        }
+        
+        .features ul {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+        
+        .features li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+        
+        .retry-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        @media (max-width: 480px) {
+            h1 { font-size: 1.75rem; }
+            p { font-size: 1rem; }
+            .icon { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="icon pulse">📶</div>
+        <h1>You're Offline</h1>
+        <p>Don't worry! Mile Quest works offline too. You can still view your cached data and log activities.</p>
+        
+        <div class="features">
+            <h2>Available Offline Features:</h2>
+            <ul>
+                <li>View your recent activities</li>
+                <li>Check team progress from cache</li>
+                <li>Log new activities (syncs when online)</li>
+                <li>View your personal statistics</li>
+                <li>Browse your teams</li>
+            </ul>
+        </div>
+        
+        <button class="retry-button" onclick="goOnline()">
+            Try Again
+        </button>
+        
+        <div class="status">
+            <div id="connection-status">Checking connection...</div>
+        </div>
+    </div>
+
+    <script>
+        // Check if we're actually online
+        function checkConnection() {
+            const status = document.getElementById('connection-status');
+            
+            if (navigator.onLine) {
+                status.textContent = 'Connection detected! Click "Try Again" to reload.';
+                status.style.color = '#10b981';
+            } else {
+                status.textContent = 'No internet connection detected.';
+                status.style.color = '#fbbf24';
+            }
+        }
+        
+        // Try to go back online
+        function goOnline() {
+            if (navigator.onLine) {
+                // If we're online, try to navigate back to the app
+                window.location.href = '/';
+            } else {
+                // Force a reload attempt
+                window.location.reload();
+            }
+        }
+        
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            document.getElementById('connection-status').textContent = 'Back online! Click "Try Again" to continue.';
+            document.getElementById('connection-status').style.color = '#10b981';
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('connection-status').textContent = 'Connection lost.';
+            document.getElementById('connection-status').style.color = '#ef4444';
+        });
+        
+        // Initial connection check
+        checkConnection();
+        
+        // Periodic connection checks
+        setInterval(checkConnection, 5000);
+        
+        // Auto-retry when connection is restored
+        window.addEventListener('online', () => {
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

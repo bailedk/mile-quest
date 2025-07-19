@@ -6,7 +6,7 @@
 
 ## 🎯 Current Sprint: Sprint 4 - Dashboard Implementation
 
-### Sprint 4 Status: 50% Complete 🚧
+### Sprint 4 Status: 62% Complete 🚧
 
 | Task ID | Description | Status | Owner | Notes |
 |---------|-------------|--------|-------|-------|
@@ -16,7 +16,7 @@
 | BE-018 | Leaderboard calculations | ✅ Complete | Backend Dev | Team member rankings |
 | FE-016 | Real-time updates | 🔴 Ready | Frontend Dev | WebSocket integration |
 | BE-019 | Achievement detection | ✅ Complete | Backend Dev | Achievement system implemented |
-| DB-008 | Dashboard query optimization | 🔴 Ready | Database Dev | Materialized views |
+| DB-008 | Dashboard query optimization | ✅ Complete | Database Dev | Materialized views and performance monitoring |
 | FE-017 | Mobile optimization | 🔴 Ready | Frontend Dev | Touch interactions |
 
 ### Sprint 4 Current Work
@@ -30,6 +30,17 @@
   - ✅ Created reusable components: TeamProgressCard, ActivityFeedItem, LeaderboardItem
   - ✅ Enhanced mock data with team members for leaderboard
   - 🔄 Next: Integration with real API when available
+
+- **DB-008 Complete**: Dashboard query optimization with materialized views
+  - ✅ Created 5 materialized views for dashboard aggregations
+  - ✅ Implemented materialized views service with caching
+  - ✅ Added performance monitoring service
+  - ✅ Created automatic refresh scheduler with strategies
+  - ✅ Added 15+ performance-optimized database indexes
+  - ✅ Integrated materialized views into dashboard handler
+  - ✅ Created performance monitoring Lambda endpoint
+  - ✅ Added database triggers for automatic refresh notifications
+  - ✅ Implemented fallback mechanisms for reliability
 
 ## 📅 Previous Sprints
 
@@ -177,6 +188,24 @@ When completing work:
 4. Update percentage calculations
 
 ## 📋 Historical Updates
+
+### 2025-01-19 (BE-018 Complete)
+- Completed BE-018: Leaderboard calculation service and endpoints
+  - ✅ Created comprehensive leaderboard service with team and global rankings
+  - ✅ Implemented TypeScript types and interfaces for leaderboard data
+  - ✅ Built API endpoints:
+    - GET /teams/:id/leaderboard?period=week|month|all
+    - GET /leaderboards/global?period=week|month|all
+    - GET /teams/:id/leaderboard/rank (user's rank in team)
+  - ✅ Used efficient SQL queries with window functions for ranking calculations
+  - ✅ Implemented caching with 15-minute TTL for leaderboard data
+  - ✅ Ensured privacy flags (isPrivate) are respected - only public activities show in rankings
+  - ✅ Added leaderboard cache invalidation to activity service (create, update, delete)
+  - ✅ Updated SAM template with leaderboards Lambda function
+  - ✅ Created comprehensive test script with 7 test scenarios
+  - ✅ Verified security: users can only access teams they're members of
+- Sprint 4 progress increased from 37.5% to 50%
+- All leaderboard functionality working and tested
 
 ### 2025-01-19 (INT-006 Complete)
 - Completed INT-006: Team goals integration with map service
