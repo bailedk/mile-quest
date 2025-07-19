@@ -46,15 +46,20 @@ if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
       }
 
       // For other operations, get a connection from the pool
-      return async (...args: any[]) => {
-        return pool.execute(async (client) => {
-          const method = (client as any)[prop];
-          if (typeof method === 'function') {
-            return method.apply(client, args);
-          }
-          return method;
-        });
-      };
+      return new Proxy({} as any, {
+        get(modelTarget, modelProp) {
+          return async (...args: any[]) => {
+            return pool.execute(async (client) => {
+              const model = (client as any)[prop];
+              const method = model[modelProp];
+              if (typeof method === 'function') {
+                return method.apply(model, args);
+              }
+              return method;
+            });
+          };
+        }
+      });
     }
   });
 } else {
