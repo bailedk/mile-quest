@@ -226,6 +226,34 @@ body {
 
 /* Animation Utilities */
 @layer utilities {
+  /* Shimmer animation for progress bars */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Subtle bounce for celebrations */
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  .animate-bounce-subtle {
+    animation: bounce-subtle 0.5s ease-in-out;
+  }
+  
   /* Reduce motion for accessibility */
   @media (prefers-reduced-motion: reduce) {
     *,
