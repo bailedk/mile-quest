@@ -14,6 +14,15 @@ Globals:
         DATABASE_URL: !Ref DatabaseUrl
         JWT_SECRET: !Ref JwtSecret
         CORS_ORIGIN: !Ref CorsOrigin
+        LOG_LEVEL: !Ref LogLevel
+        NODE_ENV: !Ref Stage
+        AWS_LAMBDA_LOG_FORMAT: JSON
+        AWS_LAMBDA_LOG_LEVEL: !Ref LogLevel
+    Tracing: Active
+    LoggingConfig:
+      LogFormat: JSON
+      ApplicationLogLevel: !Ref LogLevel
+      SystemLogLevel: INFO
 
 Parameters:
   Stage:
@@ -31,8 +40,54 @@ Parameters:
     Type: String
     Default: "https://localhost:3000"
     Description: CORS origin for API
+  LogLevel:
+    Type: String
+    Default: "INFO"
+    AllowedValues: ["DEBUG", "INFO", "WARN", "ERROR"]
+    Description: Logging level for Lambda functions
+
+Conditions:
+  IsProduction: !Equals [!Ref Stage, "prod"]
+  IsStaging: !Equals [!Ref Stage, "staging"]
+  IsDevelopment: !Equals [!Ref Stage, "dev"]
 
 Resources:
+  # Lambda Execution Role with CloudWatch permissions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*'
+        - PolicyName: DatabaseAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:DescribeDBClusters
+                Resource: '*'
+
   # API Gateway
   ApiGateway:
     Type: AWS::Serverless::Api
@@ -43,6 +98,59 @@ Resources:
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
         MaxAge: "'600'"
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{"requestTime":"$context.requestTime","requestId":"$context.requestId","httpMethod":"$context.httpMethod","path":"$context.path","resourcePath":"$context.resourcePath","status":"$context.status","responseLatency":"$context.responseLatency","xrayTraceId":"$context.xrayTraceId","integrationRequestId":"$context.integration.requestId","functionResponseStatus":"$context.integration.status","integrationLatency":"$context.integration.latency","integrationServiceStatus":"$context.integration.integrationStatus","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent"}'
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+  # API Gateway Access Log Group
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${AWS::StackName}-${Stage}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  # CloudWatch Log Groups for Lambda Functions
+  HealthFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-HealthFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  AuthFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-AuthFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  UsersFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-UsersFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  TeamsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-TeamsFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  ActivitiesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-ActivitiesFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  DashboardFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-DashboardFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
 
   # Lambda Functions
   HealthFunction:
@@ -50,6 +158,9 @@ Resources:
     Properties:
       CodeUri: dist/lambda/health/
       Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref HealthFunctionLogGroup
       Events:
         HealthCheck:
           Type: Api
@@ -63,6 +174,9 @@ Resources:
     Properties:
       CodeUri: dist/lambda/auth/
       Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref AuthFunctionLogGroup
       Events:
         AuthProxy:
           Type: Api
@@ -76,6 +190,9 @@ Resources:
     Properties:
       CodeUri: dist/lambda/users/
       Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref UsersFunctionLogGroup
       Events:
         UsersProxy:
           Type: Api
@@ -89,6 +206,9 @@ Resources:
     Properties:
       CodeUri: dist/lambda/teams/
       Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref TeamsFunctionLogGroup
       Events:
         TeamsProxy:
           Type: Api
@@ -102,6 +222,9 @@ Resources:
     Properties:
       CodeUri: dist/lambda/activities/
       Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ActivitiesFunctionLogGroup
       Events:
         ActivitiesProxy:
           Type: Api
@@ -115,6 +238,9 @@ Resources:
     Properties:
       CodeUri: dist/lambda/dashboard/
       Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref DashboardFunctionLogGroup
       Events:
         DashboardGet:
           Type: Api
@@ -123,9 +249,59 @@ Resources:
             Path: /dashboard
             Method: GET
 
+  # CloudWatch Dashboard for monitoring
+  MileQuestDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${AWS::StackName}-${Stage}-Dashboard'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", { "stat": "Sum" } ],
+                  [ ".", "Errors", { "stat": "Sum" } ],
+                  [ ".", "Duration", { "stat": "Average" } ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Lambda Metrics"
+              }
+            },
+            {
+              "type": "log",
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${AWS::StackName}-${Stage}-*'\n| fields @timestamp, @message\n| filter @type = \"REPORT\"\n| stats count() by bin(5m)",
+                "region": "${AWS::Region}",
+                "title": "Lambda Invocations Over Time"
+              }
+            }
+          ]
+        }
+
 Outputs:
   ApiGatewayEndpoint:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/"
     Export:
       Name: !Sub "${AWS::StackName}-ApiEndpoint"
+  
+  CloudWatchDashboard:
+    Description: "CloudWatch Dashboard URL"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${AWS::StackName}-${Stage}-Dashboard"
+    Export:
+      Name: !Sub "${AWS::StackName}-DashboardUrl"
+  
+  LogGroupNames:
+    Description: "CloudWatch Log Group Names for Lambda Functions"
+    Value: !Sub |
+      Health: /aws/lambda/${AWS::StackName}-${Stage}-HealthFunction
+      Auth: /aws/lambda/${AWS::StackName}-${Stage}-AuthFunction
+      Users: /aws/lambda/${AWS::StackName}-${Stage}-UsersFunction
+      Teams: /aws/lambda/${AWS::StackName}-${Stage}-TeamsFunction
+      Activities: /aws/lambda/${AWS::StackName}-${Stage}-ActivitiesFunction
+      Dashboard: /aws/lambda/${AWS::StackName}-${Stage}-DashboardFunction
+      API Gateway: /aws/apigateway/${AWS::StackName}-${Stage}
