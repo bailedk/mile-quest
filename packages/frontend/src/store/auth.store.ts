@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthUser, AuthTokens } from '@mile-quest/shared';
 import { AuthState, AuthError } from '@/services/auth';
-import { authApi } from '@/api/auth.api';
+import { authApi } from '@/services/auth.api';
 
 interface AuthStore extends AuthState {
   // State
