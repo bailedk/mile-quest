@@ -124,6 +124,36 @@ router.get('/me/achievements', async (event, _context, _params) => {
   }
 });
 
+// Manual achievement check for user (BE-019)
+router.post('/me/achievements/check', async (event, _context, _params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const result = await achievementService.checkUserAchievements(user.sub);
+    
+    return {
+      statusCode: 200,
+      body: {
+        message: 'Achievement check completed',
+        newAchievements: result.newAchievements,
+        checkedCount: result.checkedAchievements.length,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
+    console.error('Error checking achievements:', error);
+    return {
+      statusCode: 500,
+      body: { error: 'Failed to check achievements' },
+    };
+  }
+});
+
 router.patch('/me', async (_event, _context, _params) => {
   return {
     statusCode: 501,

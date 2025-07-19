@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx src/scripts/seed.ts",
     "test:activities": "tsx src/scripts/test-activities.ts",
-    "test:aggregations": "tsx src/scripts/test-aggregations.ts"
+    "test:aggregations": "tsx src/scripts/test-aggregations.ts",
+    "test:leaderboards": "tsx src/scripts/test-leaderboards.ts"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^1.17.0",

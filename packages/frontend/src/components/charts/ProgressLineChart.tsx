@@ -1,5 +1,7 @@
 'use client';
 
+// @ts-nocheck
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatDistance } from '@/services/activity.service';
 import { DailyProgressData } from '@/utils/chartMockData';

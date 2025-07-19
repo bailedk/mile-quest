@@ -2,10 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { DashboardStats } from '@/components/dashboard/DashboardStats';
-import { TeamProgressOverview } from '@/components/dashboard/TeamProgressOverview';
-import { RecentActivities } from '@/components/dashboard/RecentActivities';
-import { QuickActions } from '@/components/dashboard/QuickActions';
 import { ProgressLineChart, GoalProgressChart, ActivityBarChart } from '@/components/charts';
 import { formatDistance } from '@/services/activity.service';
 import { 
@@ -76,13 +72,6 @@ export default function DashboardPage() {
   
   // Get mock data for selected team
   const teamProgress = selectedTeamId ? mockTeamProgress[selectedTeamId] : null;
-  const teamProgressData = teams.map(team => ({
-    teamId: team.id,
-    teamName: team.name,
-    currentDistance: mockTeamProgress[team.id]?.totalDistance || 0,
-    targetDistance: mockTeamProgress[team.id]?.targetDistance || 100000,
-    percentageComplete: mockTeamProgress[team.id]?.percentageComplete || 0,
-  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -207,7 +196,7 @@ export default function DashboardPage() {
               href="/activities/new"
               className="block w-full px-6 py-3 text-center border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Log Today's Walk
+              Log Today&apos;s Walk
             </Link>
 
             {/* Progress Charts Section */}

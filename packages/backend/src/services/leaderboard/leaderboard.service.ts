@@ -86,39 +86,39 @@ export class LeaderboardService {
       }>
     >`
       SELECT 
-        u.id as user_id,
-        u.name,
-        u.avatar_url,
-        COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) as total_distance,
-        COUNT(CASE WHEN a.is_private = false THEN a.id END) as activity_count,
+        u."id" as user_id,
+        u."name",
+        u."avatarUrl" as avatar_url,
+        COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0) as total_distance,
+        COUNT(CASE WHEN a."isPrivate" = false THEN a."id" END) as activity_count,
         CASE 
-          WHEN COUNT(CASE WHEN a.is_private = false THEN a.id END) > 0 
-          THEN COALESCE(AVG(CASE WHEN a.is_private = false THEN a.distance END), 0)
+          WHEN COUNT(CASE WHEN a."isPrivate" = false THEN a."id" END) > 0 
+          THEN COALESCE(AVG(CASE WHEN a."isPrivate" = false THEN a."distance" END), 0)
           ELSE 0 
         END as average_distance,
         EXISTS(
-          SELECT 1 FROM activities 
-          WHERE user_id = u.id 
-            AND team_id = ${teamId}
-            AND is_private = true
-            AND start_time >= ${startDate}
-            AND start_time <= ${endDate}
-            ${options.teamGoalId ? Prisma.sql`AND team_goal_id = ${options.teamGoalId}` : Prisma.empty}
+          SELECT 1 FROM "activities" 
+          WHERE "userId" = u."id" 
+            AND "teamId" = ${teamId}
+            AND "isPrivate" = true
+            AND "startTime" >= ${startDate}
+            AND "startTime" <= ${endDate}
+            ${options.teamGoalId ? Prisma.sql`AND "teamGoalId" = ${options.teamGoalId}` : Prisma.empty}
         ) as has_private_activities,
-        MAX(CASE WHEN a.is_private = false THEN a.start_time END) as last_activity_at
-      FROM users u
-      INNER JOIN team_members tm ON tm.user_id = u.id
-      LEFT JOIN activities a ON a.user_id = u.id 
-        AND a.team_id = ${teamId}
-        AND a.is_private = false
-        AND a.start_time >= ${startDate}
-        AND a.start_time <= ${endDate}
-        ${options.teamGoalId ? Prisma.sql`AND a.team_goal_id = ${options.teamGoalId}` : Prisma.empty}
-      WHERE tm.team_id = ${teamId}
-        AND tm.left_at IS NULL
-        AND u.deleted_at IS NULL
-      GROUP BY u.id, u.name, u.avatar_url
-      ORDER BY total_distance DESC, u.name ASC
+        MAX(CASE WHEN a."isPrivate" = false THEN a."startTime" END) as last_activity_at
+      FROM "users" u
+      INNER JOIN "team_members" tm ON tm."userId" = u."id"
+      LEFT JOIN "activities" a ON a."userId" = u."id" 
+        AND a."teamId" = ${teamId}
+        AND a."isPrivate" = false
+        AND a."startTime" >= ${startDate}
+        AND a."startTime" <= ${endDate}
+        ${options.teamGoalId ? Prisma.sql`AND a."teamGoalId" = ${options.teamGoalId}` : Prisma.empty}
+      WHERE tm."teamId" = ${teamId}
+        AND tm."leftAt" IS NULL
+        AND u."deletedAt" IS NULL
+      GROUP BY u."id", u."name", u."avatarUrl"
+      ORDER BY total_distance DESC, u."name" ASC
       LIMIT ${limit}
     `;
 
@@ -204,39 +204,39 @@ export class LeaderboardService {
       }>
     >`
       SELECT 
-        u.id as user_id,
-        u.name,
-        u.avatar_url,
-        COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) as total_distance,
-        COUNT(CASE WHEN a.is_private = false THEN a.id END) as activity_count,
+        u."id" as user_id,
+        u."name",
+        u."avatarUrl" as avatar_url,
+        COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0) as total_distance,
+        COUNT(CASE WHEN a."isPrivate" = false THEN a."id" END) as activity_count,
         CASE 
-          WHEN COUNT(CASE WHEN a.is_private = false THEN a.id END) > 0 
-          THEN COALESCE(AVG(CASE WHEN a.is_private = false THEN a.distance END), 0)
+          WHEN COUNT(CASE WHEN a."isPrivate" = false THEN a."id" END) > 0 
+          THEN COALESCE(AVG(CASE WHEN a."isPrivate" = false THEN a."distance" END), 0)
           ELSE 0 
         END as average_distance,
         EXISTS(
-          SELECT 1 FROM activities 
-          WHERE user_id = u.id 
-            AND is_private = true
-            AND start_time >= ${startDate}
-            AND start_time <= ${endDate}
+          SELECT 1 FROM "activities" 
+          WHERE "userId" = u."id" 
+            AND "isPrivate" = true
+            AND "startTime" >= ${startDate}
+            AND "startTime" <= ${endDate}
         ) as has_private_activities,
-        MAX(CASE WHEN a.is_private = false THEN a.start_time END) as last_activity_at
-      FROM users u
-      LEFT JOIN activities a ON a.user_id = u.id 
-        AND a.is_private = false
-        AND a.start_time >= ${startDate}
-        AND a.start_time <= ${endDate}
-      WHERE u.deleted_at IS NULL
+        MAX(CASE WHEN a."isPrivate" = false THEN a."startTime" END) as last_activity_at
+      FROM "users" u
+      LEFT JOIN "activities" a ON a."userId" = u."id" 
+        AND a."isPrivate" = false
+        AND a."startTime" >= ${startDate}
+        AND a."startTime" <= ${endDate}
+      WHERE u."deletedAt" IS NULL
         AND EXISTS(
-          SELECT 1 FROM activities 
-          WHERE user_id = u.id 
-            AND is_private = false
-            AND start_time >= ${startDate}
-            AND start_time <= ${endDate}
+          SELECT 1 FROM "activities" 
+          WHERE "userId" = u."id" 
+            AND "isPrivate" = false
+            AND "startTime" >= ${startDate}
+            AND "startTime" <= ${endDate}
         )
-      GROUP BY u.id, u.name, u.avatar_url
-      ORDER BY total_distance DESC, u.name ASC
+      GROUP BY u."id", u."name", u."avatarUrl"
+      ORDER BY total_distance DESC, u."name" ASC
       LIMIT ${limit}
     `;
 
@@ -308,23 +308,23 @@ export class LeaderboardService {
     >`
       WITH ranked_users AS (
         SELECT 
-          u.id as user_id,
-          COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) as total_distance,
-          RANK() OVER (ORDER BY COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) DESC) as rank,
-          LAG(COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0)) OVER (ORDER BY COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) DESC) as next_distance,
-          LEAD(COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0)) OVER (ORDER BY COALESCE(SUM(CASE WHEN a.is_private = false THEN a.distance ELSE 0 END), 0) DESC) as prev_distance
-        FROM users u
-        INNER JOIN team_members tm ON tm.user_id = u.id
-        LEFT JOIN activities a ON a.user_id = u.id 
-          AND a.team_id = ${teamId}
-          AND a.is_private = false
-          AND a.start_time >= ${startDate}
-          AND a.start_time <= ${endDate}
-          ${options.teamGoalId ? Prisma.sql`AND a.team_goal_id = ${options.teamGoalId}` : Prisma.empty}
-        WHERE tm.team_id = ${teamId}
-          AND tm.left_at IS NULL
-          AND u.deleted_at IS NULL
-        GROUP BY u.id
+          u."id" as user_id,
+          COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0) as total_distance,
+          RANK() OVER (ORDER BY COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0) DESC) as rank,
+          LAG(COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0)) OVER (ORDER BY COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0) DESC) as next_distance,
+          LEAD(COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0)) OVER (ORDER BY COALESCE(SUM(CASE WHEN a."isPrivate" = false THEN a."distance" ELSE 0 END), 0) DESC) as prev_distance
+        FROM "users" u
+        INNER JOIN "team_members" tm ON tm."userId" = u."id"
+        LEFT JOIN "activities" a ON a."userId" = u."id" 
+          AND a."teamId" = ${teamId}
+          AND a."isPrivate" = false
+          AND a."startTime" >= ${startDate}
+          AND a."startTime" <= ${endDate}
+          ${options.teamGoalId ? Prisma.sql`AND a."teamGoalId" = ${options.teamGoalId}` : Prisma.empty}
+        WHERE tm."teamId" = ${teamId}
+          AND tm."leftAt" IS NULL
+          AND u."deletedAt" IS NULL
+        GROUP BY u."id"
       ),
       participant_count AS (
         SELECT COUNT(*) as total_participants FROM ranked_users

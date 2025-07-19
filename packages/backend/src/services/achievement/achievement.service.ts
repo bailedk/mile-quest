@@ -26,7 +26,7 @@ export class AchievementService {
           iconUrl: definition.iconUrl,
           category: definition.category,
           points: definition.points,
-          criteria: definition.criteria,
+          criteria: definition.criteria as any,
         },
         update: {
           name: definition.name,
@@ -34,7 +34,7 @@ export class AchievementService {
           iconUrl: definition.iconUrl,
           category: definition.category,
           points: definition.points,
-          criteria: definition.criteria,
+          criteria: definition.criteria as any,
         },
       });
     }
@@ -173,7 +173,7 @@ export class AchievementService {
     achievement: Achievement, 
     triggeringActivity?: Activity
   ): Promise<boolean> {
-    const criteria = achievement.criteria as AchievementCriteria;
+    const criteria = achievement.criteria as unknown as AchievementCriteria;
 
     switch (criteria.type) {
       case 'distance':
@@ -362,7 +362,7 @@ export class AchievementService {
     userId: string,
     achievement: Achievement
   ): Promise<{ current: number; target: number; percentage: number } | undefined> {
-    const criteria = achievement.criteria as AchievementCriteria;
+    const criteria = achievement.criteria as unknown as AchievementCriteria;
 
     let current = 0;
     const target = criteria.condition.value;

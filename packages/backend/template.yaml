@@ -158,6 +158,12 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-ProgressFunction'
       RetentionInDays: !If [IsProduction, 30, 7]
 
+  LeaderboardsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-LeaderboardsFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
   # Lambda Functions
   HealthFunction:
     Type: AWS::Serverless::Function
@@ -276,6 +282,34 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /progress/{proxy+}
             Method: ANY
+
+  LeaderboardsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/lambda/leaderboards/
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref LeaderboardsFunctionLogGroup
+      Events:
+        LeaderboardsGlobal:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /leaderboards/global
+            Method: GET
+        TeamLeaderboard:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /teams/{teamId}/leaderboard
+            Method: GET
+        TeamLeaderboardRank:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /teams/{teamId}/leaderboard/rank
+            Method: GET
 
   ScheduledFunctionLogGroup:
     Type: AWS::Logs::LogGroup
