@@ -3,10 +3,12 @@
  * Handles caching strategies, offline support, and push notifications
  */
 
-const CACHE_VERSION = 'mile-quest-v1';
+const CACHE_VERSION = 'mile-quest-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const API_CACHE = `${CACHE_VERSION}-api`;
+const IMAGE_CACHE = `${CACHE_VERSION}-images`;
+const DATA_CACHE = `${CACHE_VERSION}-data`;
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
@@ -33,12 +35,26 @@ const API_ROUTES = [
 // Maximum cache sizes
 const MAX_DYNAMIC_CACHE_SIZE = 50;
 const MAX_API_CACHE_SIZE = 30;
+const MAX_IMAGE_CACHE_SIZE = 100;
+const MAX_DATA_CACHE_SIZE = 200;
 
 // Cache duration in milliseconds
 const CACHE_DURATION = {
   STATIC: 30 * 24 * 60 * 60 * 1000, // 30 days
   DYNAMIC: 24 * 60 * 60 * 1000,     // 1 day
   API: 5 * 60 * 1000,               // 5 minutes
+  IMAGE: 7 * 24 * 60 * 60 * 1000,   // 7 days
+  DATA: 24 * 60 * 60 * 1000,        // 1 day
+};
+
+// Network timeout for fetch operations
+const NETWORK_TIMEOUT = 5000; // 5 seconds
+
+// Sync retry configuration
+const SYNC_RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelay: 1000, // 1 second
+  maxDelay: 60000,    // 1 minute
 };
 
 // Install event - cache static assets
@@ -116,42 +132,118 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(staleWhileRevalidateStrategy(request));
 });
 
-// Network-first strategy (for API calls)
+// Enhanced network-first strategy with intelligent caching
 async function networkFirstStrategy(request) {
+  const url = new URL(request.url);
+  const isDataRequest = url.pathname.includes('/dashboard') || 
+                       url.pathname.includes('/teams') ||
+                       url.pathname.includes('/activities');
+  
   try {
     console.log('[SW] Network-first:', request.url);
     
-    // Try network first
-    const networkResponse = await fetch(request);
+    // Try network with timeout
+    const networkResponse = await fetchWithTimeout(request, {}, NETWORK_TIMEOUT);
     
     if (networkResponse.ok) {
-      // Cache successful API responses
-      const cache = await caches.open(API_CACHE);
-      await cache.put(request, networkResponse.clone());
-      await limitCacheSize(API_CACHE, MAX_API_CACHE_SIZE);
+      // Cache successful responses
+      const cache = await caches.open(isDataRequest ? DATA_CACHE : API_CACHE);
+      const responseToCache = networkResponse.clone();
+      
+      // Add cache metadata
+      const headers = new Headers(responseToCache.headers);
+      headers.set('X-Cache-Time', Date.now().toString());
+      
+      const cachedResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers: headers,
+      });
+      
+      await cache.put(request, cachedResponse);
+      await limitCacheSize(
+        isDataRequest ? DATA_CACHE : API_CACHE,
+        isDataRequest ? MAX_DATA_CACHE_SIZE : MAX_API_CACHE_SIZE
+      );
       
       return networkResponse;
     }
     
-    // If network fails, try cache
     throw new Error('Network response not ok');
   } catch (error) {
     console.log('[SW] Network failed, trying cache:', request.url);
     
-    const cachedResponse = await caches.match(request);
+    // Try cache with freshness check
+    const cachedResponse = await getCachedResponseWithFreshness(
+      request,
+      isDataRequest ? DATA_CACHE : API_CACHE,
+      isDataRequest ? CACHE_DURATION.DATA : CACHE_DURATION.API
+    );
+    
     if (cachedResponse) {
-      return cachedResponse;
+      // Add stale header if cache is old
+      const headers = new Headers(cachedResponse.headers);
+      headers.set('X-From-Cache', 'true');
+      
+      const cacheTime = parseInt(headers.get('X-Cache-Time') || '0');
+      const age = Date.now() - cacheTime;
+      
+      if (age > (isDataRequest ? CACHE_DURATION.DATA : CACHE_DURATION.API)) {
+        headers.set('X-Cache-Stale', 'true');
+      }
+      
+      return new Response(cachedResponse.body, {
+        status: cachedResponse.status,
+        statusText: cachedResponse.statusText,
+        headers: headers,
+      });
     }
     
-    // Return offline page for failed API requests
+    // Return offline response
+    return createOfflineResponse(request);
+  }
+}
+
+// Get cached response with freshness check
+async function getCachedResponseWithFreshness(request, cacheName, maxAge) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+  
+  if (!cachedResponse) return null;
+  
+  const cacheTime = parseInt(cachedResponse.headers.get('X-Cache-Time') || '0');
+  const age = Date.now() - cacheTime;
+  
+  // Return cached response regardless of age (stale-while-revalidate)
+  return cachedResponse;
+}
+
+// Create offline response based on request type
+function createOfflineResponse(request) {
+  const url = new URL(request.url);
+  
+  // For API requests, return JSON error
+  if (url.pathname.startsWith('/api/')) {
     return new Response(
-      JSON.stringify({ error: 'Offline', message: 'This feature requires an internet connection' }),
+      JSON.stringify({
+        error: 'Offline',
+        message: 'This feature requires an internet connection',
+        offline: true,
+      }),
       { 
         status: 503,
         headers: { 'Content-Type': 'application/json' }
       }
     );
   }
+  
+  // For navigation requests, return offline page
+  if (request.mode === 'navigate') {
+    return caches.match('/offline');
+  }
+  
+  // Default offline response
+  return new Response('Content not available offline', { status: 503 });
 }
 
 // Cache-first strategy (for static assets)
@@ -322,49 +414,191 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Background sync (for offline data sync)
+// Enhanced background sync with multiple sync types
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync triggered:', event.tag);
   
-  if (event.tag === 'sync-activities') {
-    event.waitUntil(syncOfflineActivities());
-  }
-  
-  if (event.tag === 'sync-team-progress') {
-    event.waitUntil(syncTeamProgress());
+  switch (event.tag) {
+    case 'sync-activities':
+      event.waitUntil(syncOfflineActivities());
+      break;
+    case 'sync-team-progress':
+      event.waitUntil(syncTeamProgress());
+      break;
+    case 'sync-all-data':
+      event.waitUntil(syncAllData());
+      break;
+    case 'sync-analytics':
+      event.waitUntil(syncAnalytics());
+      break;
+    default:
+      // Handle dynamic sync tags for retry operations
+      if (event.tag.startsWith('retry-')) {
+        event.waitUntil(handleRetrySync(event.tag));
+      }
   }
 });
 
-// Sync offline activities when connection is restored
+// Comprehensive data sync
+async function syncAllData() {
+  console.log('[SW] Starting comprehensive data sync...');
+  
+  try {
+    // Sync in priority order
+    await syncOfflineActivities();
+    await syncTeamProgress();
+    await syncAnalytics();
+    await cleanupOldData();
+    
+    // Notify clients
+    await notifyClients('sync-all-complete', { timestamp: Date.now() });
+  } catch (error) {
+    console.error('[SW] Comprehensive sync failed:', error);
+  }
+}
+
+// Sync analytics events
+async function syncAnalytics() {
+  try {
+    const db = await openIndexedDB();
+    const events = await getUnsyncedAnalytics(db);
+    
+    if (events.length === 0) return;
+    
+    // Batch send analytics
+    const response = await fetch('/api/analytics/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ events }),
+    });
+    
+    if (response.ok) {
+      await markAnalyticsSynced(db, events.map(e => e.id));
+      console.log('[SW] Synced analytics events:', events.length);
+    }
+  } catch (error) {
+    console.error('[SW] Analytics sync failed:', error);
+  }
+}
+
+// Handle retry sync operations
+async function handleRetrySync(tag) {
+  const parts = tag.split('-');
+  const type = parts[1];
+  const id = parts.slice(2).join('-');
+  
+  console.log('[SW] Retrying sync for:', type, id);
+  
+  const db = await openIndexedDB();
+  const syncItem = await getSyncQueueItem(db, id);
+  
+  if (syncItem && Date.now() >= syncItem.nextRetryTime) {
+    switch (type) {
+      case 'activity':
+        await syncOfflineActivities();
+        break;
+      // Add other retry types as needed
+    }
+  }
+}
+
+// Enhanced sync with conflict resolution and retry logic
 async function syncOfflineActivities() {
   try {
-    console.log('[SW] Syncing offline activities...');
+    console.log('[SW] Starting enhanced offline sync...');
     
-    // Get pending activities from IndexedDB
     const db = await openIndexedDB();
-    const pendingActivities = await getOfflineActivities(db);
+    const pendingActivities = await getPendingActivities(db);
+    const syncResults = { synced: 0, failed: 0, conflicts: 0 };
     
     for (const activity of pendingActivities) {
       try {
-        const response = await fetch('/api/activities', {
+        // Update sync attempt
+        activity.syncAttempts = (activity.syncAttempts || 0) + 1;
+        activity.lastSyncAttempt = Date.now();
+        await updateActivity(db, activity);
+        
+        // Attempt sync with timeout
+        const response = await fetchWithTimeout('/api/activities', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Checksum': activity.checksum || '',
           },
           body: JSON.stringify(activity.data),
-        });
+        }, NETWORK_TIMEOUT);
         
         if (response.ok) {
           await removeOfflineActivity(db, activity.id);
-          console.log('[SW] Synced offline activity:', activity.id);
+          syncResults.synced++;
+          console.log('[SW] Synced activity:', activity.id);
+        } else if (response.status === 409) {
+          // Conflict detected
+          activity.status = 'conflict';
+          activity.conflictData = await response.json();
+          await updateActivity(db, activity);
+          syncResults.conflicts++;
+        } else {
+          throw new Error(`Sync failed: ${response.status}`);
         }
       } catch (error) {
         console.error('[SW] Failed to sync activity:', error);
+        
+        // Mark as failed after max retries
+        if (activity.syncAttempts >= SYNC_RETRY_CONFIG.maxRetries) {
+          activity.status = 'failed';
+          await updateActivity(db, activity);
+        } else {
+          // Schedule retry
+          await scheduleRetry(db, activity);
+        }
+        syncResults.failed++;
       }
     }
+    
+    // Notify clients of sync results
+    await notifyClients('sync-complete', syncResults);
+    
   } catch (error) {
-    console.error('[SW] Background sync failed:', error);
+    console.error('[SW] Enhanced sync failed:', error);
   }
+}
+
+// Fetch with timeout
+async function fetchWithTimeout(url, options, timeout) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+// Schedule retry for failed sync
+async function scheduleRetry(db, activity) {
+  const delay = Math.min(
+    SYNC_RETRY_CONFIG.initialDelay * Math.pow(2, activity.syncAttempts - 1),
+    SYNC_RETRY_CONFIG.maxDelay
+  );
+  
+  const retryItem = {
+    id: `retry_${activity.id}_${Date.now()}`,
+    type: 'activity',
+    priority: 'medium',
+    data: activity,
+    timestamp: Date.now(),
+    nextRetryTime: Date.now() + delay,
+  };
+  
+  await addToSyncQueue(db, retryItem);
 }
 
 // Sync team progress data
@@ -386,10 +620,10 @@ async function syncTeamProgress() {
   }
 }
 
-// IndexedDB helper functions
+// Enhanced IndexedDB helper functions
 function openIndexedDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('MileQuestOffline', 1);
+    const request = indexedDB.open('MileQuestOffline', 2);
     
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
@@ -397,9 +631,35 @@ function openIndexedDB() {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       
+      // Activities store
       if (!db.objectStoreNames.contains('activities')) {
-        const store = db.createObjectStore('activities', { keyPath: 'id' });
-        store.createIndex('timestamp', 'timestamp');
+        const activityStore = db.createObjectStore('activities', { keyPath: 'id' });
+        activityStore.createIndex('timestamp', 'timestamp');
+        activityStore.createIndex('status', 'status');
+        activityStore.createIndex('checksum', 'checksum');
+      }
+      
+      // Teams store
+      if (!db.objectStoreNames.contains('teams')) {
+        const teamStore = db.createObjectStore('teams', { keyPath: 'id' });
+        teamStore.createIndex('lastSynced', 'lastSynced');
+        teamStore.createIndex('isStale', 'isStale');
+      }
+      
+      // Sync queue store
+      if (!db.objectStoreNames.contains('syncQueue')) {
+        const syncStore = db.createObjectStore('syncQueue', { keyPath: 'id' });
+        syncStore.createIndex('type', 'type');
+        syncStore.createIndex('priority', 'priority');
+        syncStore.createIndex('timestamp', 'timestamp');
+      }
+      
+      // Analytics store
+      if (!db.objectStoreNames.contains('analytics')) {
+        const analyticsStore = db.createObjectStore('analytics', { keyPath: 'id' });
+        analyticsStore.createIndex('event', 'event');
+        analyticsStore.createIndex('timestamp', 'timestamp');
+        analyticsStore.createIndex('synced', 'synced');
       }
     };
   });
@@ -427,7 +687,7 @@ function removeOfflineActivity(db, id) {
   });
 }
 
-// Handle messages from main thread
+// Enhanced message handling with more operations
 self.addEventListener('message', (event) => {
   const { type, payload } = event.data;
   
@@ -440,16 +700,116 @@ self.addEventListener('message', (event) => {
       cacheOfflineActivity(payload);
       break;
       
+    case 'CACHE_TEAM':
+      cacheOfflineTeam(payload);
+      break;
+      
     case 'GET_CACHE_INFO':
       getCacheInfo().then(info => {
         event.ports[0].postMessage(info);
       });
       break;
       
+    case 'GET_SYNC_STATUS':
+      getSyncStatus().then(status => {
+        event.ports[0].postMessage(status);
+      });
+      break;
+      
+    case 'FORCE_SYNC':
+      syncAllData();
+      break;
+      
+    case 'CLEAR_OLD_DATA':
+      cleanupOldData();
+      break;
+      
+    case 'LOG_ANALYTICS':
+      logOfflineAnalytics(payload);
+      break;
+      
     default:
       console.log('[SW] Unknown message type:', type);
   }
 });
+
+// Cache offline team data
+async function cacheOfflineTeam(teamData) {
+  try {
+    const db = await openIndexedDB();
+    const transaction = db.transaction(['teams'], 'readwrite');
+    const store = transaction.objectStore('teams');
+    
+    await store.put({
+      ...teamData,
+      lastSynced: Date.now(),
+      isStale: false,
+    });
+    
+    console.log('[SW] Team cached for offline access');
+  } catch (error) {
+    console.error('[SW] Failed to cache team:', error);
+  }
+}
+
+// Log offline analytics
+async function logOfflineAnalytics(eventData) {
+  try {
+    const db = await openIndexedDB();
+    const transaction = db.transaction(['analytics'], 'readwrite');
+    const store = transaction.objectStore('analytics');
+    
+    await store.add({
+      id: `analytics_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...eventData,
+      timestamp: Date.now(),
+      synced: false,
+    });
+    
+    console.log('[SW] Analytics event logged for offline sync');
+  } catch (error) {
+    console.error('[SW] Failed to log analytics:', error);
+  }
+}
+
+// Get sync status
+async function getSyncStatus() {
+  const db = await openIndexedDB();
+  
+  const [pendingActivities, syncQueue, unsyncedAnalytics] = await Promise.all([
+    getPendingActivities(db),
+    getSyncQueue(db),
+    getUnsyncedAnalytics(db),
+  ]);
+  
+  return {
+    pendingActivities: pendingActivities.length,
+    syncQueueSize: syncQueue.length,
+    unsyncedAnalytics: unsyncedAnalytics.length,
+    lastSync: await getLastSyncTime(),
+  };
+}
+
+// Cleanup old data
+async function cleanupOldData() {
+  try {
+    const db = await openIndexedDB();
+    const cutoffTime = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    // Clean up old synced activities
+    await cleanupOldActivities(db, cutoffTime);
+    
+    // Clean up old analytics
+    await cleanupOldAnalytics(db, cutoffTime);
+    
+    // Clean up old caches
+    await cleanupOldCaches();
+    
+    console.log('[SW] Old data cleanup completed');
+  } catch (error) {
+    console.error('[SW] Cleanup failed:', error);
+  }
+}
 
 // Cache activity for offline sync
 async function cacheOfflineActivity(activityData) {
@@ -482,6 +842,170 @@ async function getCacheInfo() {
   }
   
   return info;
+}
+
+// Additional helper functions for enhanced sync
+async function getPendingActivities(db) {
+  const transaction = db.transaction(['activities'], 'readonly');
+  const store = transaction.objectStore('activities');
+  const index = store.index('status');
+  
+  return new Promise((resolve, reject) => {
+    const request = index.getAll('pending');
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function updateActivity(db, activity) {
+  const transaction = db.transaction(['activities'], 'readwrite');
+  const store = transaction.objectStore('activities');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.put(activity);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function addToSyncQueue(db, item) {
+  const transaction = db.transaction(['syncQueue'], 'readwrite');
+  const store = transaction.objectStore('syncQueue');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.add(item);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getSyncQueue(db) {
+  const transaction = db.transaction(['syncQueue'], 'readonly');
+  const store = transaction.objectStore('syncQueue');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getSyncQueueItem(db, id) {
+  const transaction = db.transaction(['syncQueue'], 'readonly');
+  const store = transaction.objectStore('syncQueue');
+  
+  return new Promise((resolve, reject) => {
+    const request = store.get(id);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getUnsyncedAnalytics(db) {
+  const transaction = db.transaction(['analytics'], 'readonly');
+  const store = transaction.objectStore('analytics');
+  const index = store.index('synced');
+  
+  return new Promise((resolve, reject) => {
+    const request = index.getAll(false);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function markAnalyticsSynced(db, ids) {
+  const transaction = db.transaction(['analytics'], 'readwrite');
+  const store = transaction.objectStore('analytics');
+  
+  for (const id of ids) {
+    const request = await store.get(id);
+    if (request) {
+      request.synced = true;
+      await store.put(request);
+    }
+  }
+}
+
+async function getLastSyncTime() {
+  // Store last sync time in cache metadata
+  const cache = await caches.open('mile-quest-metadata');
+  const response = await cache.match('last-sync-time');
+  if (response) {
+    const data = await response.json();
+    return data.timestamp;
+  }
+  return 0;
+}
+
+async function cleanupOldActivities(db, cutoffTime) {
+  const transaction = db.transaction(['activities'], 'readwrite');
+  const store = transaction.objectStore('activities');
+  const index = store.index('timestamp');
+  const range = IDBKeyRange.upperBound(cutoffTime);
+  
+  return new Promise((resolve, reject) => {
+    const request = index.openCursor(range);
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        if (cursor.value.status === 'synced') {
+          cursor.delete();
+        }
+        cursor.continue();
+      } else {
+        resolve();
+      }
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function cleanupOldAnalytics(db, cutoffTime) {
+  const transaction = db.transaction(['analytics'], 'readwrite');
+  const store = transaction.objectStore('analytics');
+  const index = store.index('timestamp');
+  const range = IDBKeyRange.upperBound(cutoffTime);
+  
+  return new Promise((resolve, reject) => {
+    const request = index.openCursor(range);
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        if (cursor.value.synced) {
+          cursor.delete();
+        }
+        cursor.continue();
+      } else {
+        resolve();
+      }
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function cleanupOldCaches() {
+  const cacheNames = await caches.keys();
+  const cacheWhitelist = [STATIC_CACHE, DYNAMIC_CACHE, API_CACHE, IMAGE_CACHE, DATA_CACHE];
+  
+  await Promise.all(
+    cacheNames.map(async (cacheName) => {
+      if (!cacheWhitelist.includes(cacheName) && !cacheName.includes('mile-quest')) {
+        await caches.delete(cacheName);
+      }
+    })
+  );
+}
+
+// Notify all clients of events
+async function notifyClients(type, data) {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  
+  clients.forEach(client => {
+    client.postMessage({
+      type: `sw-${type}`,
+      data,
+    });
+  });
 }
 
 console.log('[SW] Service worker loaded');

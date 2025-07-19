@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import animations */
+@import '../styles/animations.css';
+
 /* CSS Custom Properties for Theme */
 :root {
   /* Colors */
