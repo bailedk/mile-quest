@@ -65,7 +65,9 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### 5. Map Integration Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
-| Map Integration | ⏳ Planned | - | `05-map-integration/current/design.md` | Mapping service integration |
+| Agent Overview | 📌 Current | 2.0 | `05-map-integration/current/README.md` | Agent status and deliverables |
+| Map Integration Guide | 📌 Current | 2.0 | `05-map-integration/current/map-integration-implementation-guide.md` | Comprehensive implementation guide |
+| Mapbox Guide | 📌 Current | 1.0 | `05-map-integration/current/mapbox-implementation-guide.md` | Initial Mapbox-specific guide |
 
 ### 6. Security & Privacy Agent
 | Document | Status | Version | Location | Purpose |
@@ -81,6 +83,7 @@ This manifest provides a comprehensive index of all project documentation, indic
 ### 8. Integration Agent
 | Document | Status | Version | Location | Purpose |
 |----------|--------|---------|----------|---------|
+| Service Abstractions Report | 📌 Current | 1.1 | `08-integration/current/service-abstractions-implementation.md` | WebSocket & Email service review |
 | Fitness APIs | ⏳ Planned | - | `08-integration/current/fitness-apis.md` | External API integrations |
 
 ### 9. Analytics & Gamification Agent
