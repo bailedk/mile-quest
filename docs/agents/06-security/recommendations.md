@@ -1,14 +1,68 @@
 # Security Agent Recommendations for Other Agents
 
-**Date**: 2025-01-17  
+**Date**: 2025-01-19  
 **From**: Security & Privacy Agent (06)  
-**Status**: Planning Phase Complete
+**Status**: Active - Logging Security Review Complete
 
 ## Overview
 
 Based on the security implementation planning, the Security Agent has identified several recommendations for other agents to ensure secure implementation across the Mile Quest platform.
 
-## Recommendations by Agent
+## New Recommendations (2025-01-19)
+
+### Backend Development Teams
+
+#### High Priority - Logging Security
+1. **Implement Logging Guards**
+   - **Request**: Add automatic sensitive data redaction to logger service
+   - **Reason**: Prevent accidental logging of passwords, tokens, or PII
+   - **Value**: Reduces risk of credential exposure in logs
+   - **Implementation**: Add sanitization layer before log output
+
+2. **Security Event Logging**
+   - **Request**: Add specific methods for logging security events
+   - **Reason**: Better security monitoring and incident response
+   - **Value**: Enables proactive threat detection
+   - **Events**: Login attempts, permission changes, API abuse
+
+3. **Pre-commit Hooks**
+   - **Request**: Add git hooks to scan for sensitive logging patterns
+   - **Reason**: Catch security issues before code reaches repository
+   - **Value**: Prevents sensitive data from entering codebase
+   - **Patterns**: password, token, secret, api_key in log statements
+
+### 11. DevOps Agent
+
+#### High Priority - Log Monitoring
+1. **CloudWatch Security Alarms**
+   - **Request**: Configure alarms for security-relevant log patterns
+   - **Reason**: Early detection of security incidents
+   - **Value**: Rapid incident response capability
+   - **Alarms Needed**:
+     - Multiple failed authentication attempts
+     - Rate limit violations
+     - Unexpected error rate spikes
+     - Unauthorized access attempts
+
+2. **Log Access Controls**
+   - **Request**: Review and restrict CloudWatch log access
+   - **Reason**: Logs may contain sensitive information
+   - **Value**: Prevents unauthorized data access
+   - **Implementation**: Use IAM policies with least privilege
+
+### 10. Testing & QA Agent
+
+#### Medium Priority - Log Security Testing
+1. **Sensitive Data Leak Tests**
+   - **Request**: Add tests to verify no sensitive data in logs
+   - **Reason**: Automated verification of logging security
+   - **Value**: Catches logging security issues in CI/CD
+   - **Test Cases**:
+     - Password parameters not logged
+     - Auth tokens not in error messages
+     - PII properly redacted
+
+## Previous Recommendations by Agent
 
 ### 11. DevOps Agent
 

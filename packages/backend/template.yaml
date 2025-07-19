@@ -226,6 +226,12 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref ActivitiesFunctionLogGroup
       Events:
+        ActivitiesRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /activities
+            Method: ANY
         ActivitiesProxy:
           Type: Api
           Properties:

@@ -74,6 +74,7 @@ This manifest provides a comprehensive index of all project documentation, indic
 |----------|--------|---------|----------|---------|
 | Security Architecture | ⏳ Planned | - | `06-security/current/architecture.md` | Security design |
 | Authentication Flow | ⏳ Planned | - | `06-security/current/authentication.md` | Cognito implementation |
+| Logging Security Review | 📌 Current | 1.0 | `06-security/current/logging-security-review.md` | Security analysis of logging implementation |
 
 ### 7. Mobile Optimization Agent
 | Document | Status | Version | Location | Purpose |

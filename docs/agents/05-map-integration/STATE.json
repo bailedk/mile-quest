@@ -1,20 +1,23 @@
 {
   "agent": "05-map-integration",
   "name": "Map Integration Agent",
-  "version": "1.0",
-  "status": "ready",
-  "lastUpdated": "2025-01-16",
-  "currentPhase": "planning",
+  "version": "2.0",
+  "status": "delivered",
+  "lastUpdated": "2025-01-19",
+  "currentPhase": "implementation-ready",
   "dependencies": {
     "required": ["01-architecture", "02-ui-ux", "04-api-designer"],
     "optional": []
   },
   "deliverables": {
-    "planning": ["mapbox-implementation-guide.md"],
+    "planning": [
+      "mapbox-implementation-guide.md",
+      "map-integration-implementation-guide.md"
+    ],
     "implementation": [],
     "testing": []
   },
   "blockers": [],
-  "nextMilestone": "Begin map integration implementation",
+  "nextMilestone": "Implementation by developer agents",
   "estimatedCompletion": "TBD"
 }
