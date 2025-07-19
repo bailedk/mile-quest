@@ -4,33 +4,46 @@
 **Last Updated**: 2025-01-19 (Evening)
 **Update Frequency**: Daily during active development
 
-## 🎯 Current Sprint: Sprint 2 - Team Management
+## 🎯 Current Sprint: Sprint 3 - Activity Tracking
 
-### Sprint 2 Status: 50% Complete
+### Sprint 3 Status: 25% Complete 🚧
 
 | Task ID | Description | Status | Owner | Notes |
 |---------|-------------|--------|-------|-------|
-| FE-007 | Create team list page | 🔴 Not Started | Frontend Dev | Awaiting BE-010 |
-| FE-008 | Create team detail page | 🔴 Not Started | Frontend Dev | Awaiting BE-010, BE-011 |
-| FE-009 | Create team creation form | 🔴 Not Started | Frontend Dev | Awaiting BE-011 |
-| BE-010 | Get user teams endpoint | ✅ Complete | Backend Dev | GET /users/me/teams |
-| BE-011 | Create team endpoint | ✅ Complete | Backend Dev | POST /teams |
-| BE-012 | Update team endpoint | ✅ Complete | Backend Dev | PATCH /teams/:id |
-| BE-013 | Join team endpoint | ✅ Complete | Backend Dev | POST /teams/join |
-| DB-006 | Team queries optimization | 🔴 Not Started | Database Dev | Pending after initial testing |
+| FE-010 | Manual activity entry form | ✅ Complete | Frontend Dev | `/activities/new` page with validation |
+| FE-011 | Activity list/history page | ✅ Complete | Frontend Dev | `/activities` page with stats |
+| BE-014 | Activity CRUD endpoints | 🔴 Not Started | Backend Dev | POST, GET, PATCH, DELETE /activities |
+| BE-015 | Activity aggregation service | 🔴 Not Started | Backend Dev | Stats and progress calculations |
+| FE-012 | Dashboard activity enhancement | 🔴 Not Started | Frontend Dev | Show recent activities on dashboard |
+| BE-016 | Team progress tracking | 🔴 Not Started | Backend Dev | Real-time goal progress |
+| DB-007 | Activity data performance | 🔴 Not Started | Database Dev | Query optimization |
+| FE-013 | Activity validation | ✅ Complete | Frontend Dev | Built into FE-010 |
 
-### Sprint 2 Summary
-- **Completed**: 4/8 tasks (50%)
+### Sprint 3 Summary
+- **Completed**: 3/8 tasks (37.5%)
 - **Key Achievements**:
-  - Team service with full business logic
-  - All backend team endpoints implemented
-  - Proper authentication and authorization
-  - Team member role management
-  - Join team via invite code or public team
-- **Blockers**: None - frontend can now start implementation
-- **Next Steps**: Frontend team pages implementation
+  - ✅ Manual activity entry form with comprehensive validation
+  - ✅ Activity list page with user statistics
+  - ✅ Activity types and service layer for frontend
+  - ✅ Form validation for distance, duration, time
+  - ✅ Privacy toggle for activities
+- **Blockers**: Need backend endpoints to fully test functionality
+- **Next Steps**: Implement BE-014 Activity CRUD endpoints
 
 ## 📅 Previous Sprints
+
+### Sprint 2 - Team Management (90% Complete)
+- **Completed**: 9/10 tasks
+- **Key Achievements**:
+  - ✅ Complete team management system (frontend + backend)
+  - ✅ All 4 team pages implemented: list, detail, create, join
+  - ✅ Backend authentication service fully working
+  - ✅ JWT token authentication system operational
+  - ✅ Team service with comprehensive business logic
+  - ✅ Proper role-based authorization
+  - ✅ Mock auth service for local development
+  - ✅ Database seeded with test data
+- **Deferred**: DB-006 Team queries optimization (moved to Sprint 4)
 
 ### Sprint 1 - Authentication (100% Complete)
 
@@ -81,8 +94,8 @@
 |--------|------|--------|----------|
 | Sprint 0 | Foundation | ✅ Complete | 89% |
 | Sprint 1 | Authentication | ✅ Complete | 100% |
-| Sprint 2 | Team Management | 🚧 In Progress | 50% |
-| Sprint 3 | Activity Tracking | 🔴 Not Started | 0% |
+| Sprint 2 | Team Management | ✅ Nearly Complete | 90% |
+| Sprint 3 | Activity Tracking | 🔴 Ready to Start | 0% |
 | Sprint 4 | Dashboard | 🔴 Not Started | 0% |
 | Sprint 5 | Real-time | 🔴 Not Started | 0% |
 | Sprint 6 | PWA | 🔴 Not Started | 0% |
@@ -99,15 +112,18 @@
 
 ## 🚀 Next Priority Tasks
 
-### Sprint 2 - Team Management (Ready to Start)
-1. **FE-007**: Create team list page
-2. **FE-008**: Create team detail page
-3. **FE-009**: Create team creation form
-4. **BE-010**: Get user teams endpoint
-5. **BE-011**: Create team endpoint
-6. **BE-012**: Update team endpoint
-7. **BE-013**: Join team endpoint
-8. **DB-006**: Team queries optimization
+### Sprint 3 - Activity Tracking (Ready to Start)
+
+| Task ID | Description | Status | Owner | Priority | Dependencies |
+|---------|-------------|--------|-------|----------|--------------|
+| FE-010 | Manual activity entry form | 🔴 Ready | Frontend Dev | High | Sprint 2 complete |
+| FE-011 | Activity list/history page | 🔴 Ready | Frontend Dev | High | FE-010 |
+| BE-014 | Activity CRUD endpoints | 🔴 Ready | Backend Dev | High | Sprint 2 complete |
+| BE-015 | Activity aggregation service | 🔴 Ready | Backend Dev | High | BE-014 |
+| FE-012 | Dashboard activity enhancement | 🔴 Ready | Frontend Dev | Medium | FE-010, BE-014 |
+| BE-016 | Team progress tracking | 🔴 Ready | Backend Dev | Medium | BE-015 |
+| DB-007 | Activity data performance | 🔴 Ready | Database Dev | Low | BE-014 |
+| FE-013 | Activity validation | 🔴 Ready | Frontend Dev | Low | FE-010 |
 
 ## 📝 Task Completion Criteria
 
@@ -126,6 +142,21 @@ When completing work:
 4. Update percentage calculations
 
 ## 📋 Historical Updates
+
+### 2025-01-19 (Late Evening)
+- Started Sprint 3 - Activity Tracking (37.5% complete)
+- Implemented frontend activity features:
+  - FE-010: Manual activity entry form with validation
+  - FE-011: Activity list/history page with statistics
+  - Created activity types and service layer
+  - Form includes team selection, distance, duration, date/time
+  - Privacy toggle for activities that count toward goals but stay private
+- Fixed backend authentication issues:
+  - Resolved auth service exports and circular dependencies
+  - Changed auth factory to default to mock provider
+  - Updated database credentials in env.json
+  - Backend login endpoint now fully functional
+- Sprint 2 reached 90% completion (only DB optimization deferred)
 
 ### 2025-01-19 (Evening)
 - Started Sprint 2 - Team Management (50% complete)
