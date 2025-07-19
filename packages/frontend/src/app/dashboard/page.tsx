@@ -148,7 +148,7 @@ export default function DashboardPage() {
   }, [teamLeaderboards, selectedTeamId]);
   
   // User preferences fallback
-  const userPreferredUnits = user?.preferredUnits || 'metric';
+  const userPreferredUnits = user?.preferredUnits || 'kilometers';
 
   // Handle pull-to-refresh
   const handleRefresh = async () => {
@@ -514,7 +514,7 @@ export default function DashboardPage() {
               variant="primary"
               size="lg"
               className="w-full mb-6"
-              hapticFeedback="medium"
+              hapticFeedback={true}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -564,7 +564,7 @@ export default function DashboardPage() {
                       variant={chartView === 'daily' ? 'primary' : 'ghost'}
                       size="sm"
                       className="flex-1"
-                      hapticFeedback="light"
+                      hapticFeedback={true}
                     >
                       Daily
                     </TouchButton>
@@ -573,7 +573,7 @@ export default function DashboardPage() {
                       variant={chartView === 'weekly' ? 'primary' : 'ghost'}
                       size="sm"
                       className="flex-1"
-                      hapticFeedback="light"
+                      hapticFeedback={true}
                     >
                       Weekly
                     </TouchButton>
@@ -643,12 +643,14 @@ export default function DashboardPage() {
             {selectedTeamLeaderboard && selectedTeamLeaderboard.members.length > 0 && (
               <SwipeableLeaderboard
                 teamMembers={selectedTeamLeaderboard.members.map(member => ({
-                  id: member.userId,
+                  userId: member.userId,
                   name: member.name,
+                  weekDistance: member.distance, // TODO: Add week distance to API
                   totalDistance: member.distance,
                   rank: selectedTeamLeaderboard.members.indexOf(member) + 1,
-                  avatarUrl: member.avatarUrl,
-                  percentage: member.percentage,
+                  isCurrentUser: member.userId === user?.id,
+                  avatarUrl: member.avatarUrl || undefined,
+                  streakDays: 0, // TODO: Add streak data to API
                 }))}
                 userPreferredUnits={userPreferredUnits}
                 className="mb-6"

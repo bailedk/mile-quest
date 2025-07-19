@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthUser, AuthTokens } from '@mile-quest/shared';
+import { AuthTokens } from '@mile-quest/shared';
 import { AuthState, AuthError } from '@/services/auth';
 import { authApi } from '@/services/auth.api';
 
@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      forgotPassword: async (email: string) => {
+      forgotPassword: async (/* email: string */) => {
         set({ isLoading: true, error: null });
         try {
           // TODO: Implement forgot password API endpoint
@@ -143,7 +143,7 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      confirmPassword: async (email: string, code: string, newPassword: string) => {
+      confirmPassword: async (/* email: string, code: string, newPassword: string */) => {
         set({ isLoading: true, error: null });
         try {
           // TODO: Implement confirm password API endpoint

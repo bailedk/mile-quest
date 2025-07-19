@@ -6,13 +6,13 @@
 
 import React, { useState } from 'react';
 import { 
-  CloudOffIcon, 
-  RefreshIcon, 
+  CloudArrowDownIcon as CloudOffIcon, 
+  ArrowPathIcon as RefreshIcon, 
   WifiIcon, 
   ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
-  DatabaseIcon,
+  CircleStackIcon as DatabaseIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { useAdvancedOfflineSync } from '@/hooks/useAdvancedOfflineSync';

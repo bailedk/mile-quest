@@ -262,7 +262,7 @@ export function useFormValidation<T extends Record<string, any>>(
   }, [touched, validateField]);
 
   // Mark field as touched
-  const setTouched = useCallback((name: string) => {
+  const setFieldTouched = useCallback((name: string) => {
     setTouched(prev => ({ ...prev, [name]: true }));
     
     // Validate on touch
@@ -291,8 +291,8 @@ export function useFormValidation<T extends Record<string, any>>(
     value: values[name] || '',
     onChange: setValue,
     error: errors[name],
-    onBlur: () => setTouched(name)
-  }), [values, errors, setValue, setTouched]);
+    onBlur: () => setFieldTouched(name)
+  }), [values, errors, setValue, setFieldTouched]);
 
   const isValid = useMemo(() => Object.keys(errors).length === 0, [errors]);
   const hasErrors = useMemo(() => Object.keys(errors).length > 0, [errors]);
@@ -304,7 +304,7 @@ export function useFormValidation<T extends Record<string, any>>(
     isValid,
     hasErrors,
     setValue,
-    setTouched,
+    setTouched: setFieldTouched,
     validateField,
     validateAll,
     reset,

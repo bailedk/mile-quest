@@ -13,7 +13,7 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { offlineDB, OfflineTeam } from '@/services/offline/db';
-import { useTeams } from '@/hooks/useTeams';
+import { useUserTeams } from '@/hooks/useTeams';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useNetworkAwareSync } from '@/hooks/useNetworkAwareSync';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -23,7 +23,7 @@ interface OfflineTeamManagerProps {
 }
 
 export default function OfflineTeamManager({ className = '' }: OfflineTeamManagerProps) {
-  const { teams: onlineTeams, loading: onlineLoading } = useTeams();
+  const { data: onlineTeams, isLoading: onlineLoading } = useUserTeams();
   const { isOnline } = useOnlineStatus();
   const { canDownloadLargeFiles, shouldReduceDataUsage } = useNetworkAwareSync();
   const [offlineTeams, setOfflineTeams] = useState<OfflineTeam[]>([]);

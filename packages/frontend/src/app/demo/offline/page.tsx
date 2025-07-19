@@ -8,10 +8,9 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { 
   WifiIcon, 
   CloudArrowDownIcon,
-  CpuChipIcon,
   SignalIcon,
   BoltIcon,
-  DatabaseIcon,
+  CircleStackIcon as DatabaseIcon,
 } from '@heroicons/react/24/outline';
 
 export default function OfflineDemoPage() {

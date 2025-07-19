@@ -3,7 +3,7 @@
  * Tests authentication flow, route protection, and auth state management
  */
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useRouter } from 'next/navigation';
@@ -231,7 +231,7 @@ const AuthenticatedHeader = () => {
 
 // Route protection HOC
 const withAuth = (Component: React.ComponentType) => {
-  return function AuthenticatedComponent(props: any) {
+  return function AuthenticatedComponent(props: Record<string, unknown>) {
     const { isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
 
