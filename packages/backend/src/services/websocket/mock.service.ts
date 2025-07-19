@@ -1,5 +1,6 @@
 /**
  * Mock implementation of WebSocketService for testing
+ * Enhanced with advanced testing capabilities and state simulation
  */
 
 import crypto from 'crypto';
@@ -13,6 +14,23 @@ import {
   WebSocketErrorCode,
 } from './types';
 
+interface MockConnectionState {
+  isConnected: boolean;
+  connectionAttempts: number;
+  lastError?: Error;
+  messageCount: number;
+  healthStatus: 'healthy' | 'degraded' | 'unhealthy';
+}
+
+interface MockServiceConfig {
+  enableSimulatedLatency?: boolean;
+  enableConnectionSimulation?: boolean;
+  enableRandomFailures?: boolean;
+  failureRate?: number; // 0-1
+  maxLatency?: number;
+  enableMetrics?: boolean;
+}
+
 interface MockChannel {
   name: string;
   users: Map<string, WebSocketPresenceData>;
@@ -25,15 +43,41 @@ export class MockWebSocketService implements WebSocketService {
   private mockDelay: number = 0;
   private shouldFailNext: boolean = false;
   private nextFailureError: WebSocketError | null = null;
+  private connectionState: MockConnectionState;
+  private config: MockServiceConfig;
+  private operationHistory: Array<{
+    operation: string;
+    timestamp: Date;
+    success: boolean;
+    latency?: number;
+    error?: string;
+  }> = [];
 
-  constructor() {
+  constructor(config?: MockServiceConfig) {
+    this.config = {
+      enableSimulatedLatency: false,
+      enableConnectionSimulation: true,
+      enableRandomFailures: false,
+      failureRate: 0.1,
+      maxLatency: 1000,
+      enableMetrics: true,
+      ...config,
+    };
+
+    this.connectionState = {
+      isConnected: true,
+      connectionAttempts: 0,
+      messageCount: 0,
+      healthStatus: 'healthy',
+    };
+
     // Initialize with some default channels
     this.createChannel('public-channel');
     this.createChannel('private-channel');
     this.createChannel('presence-channel');
   }
 
-  // Helper methods for testing
+  // Enhanced helper methods for testing
   setMockDelay(ms: number): void {
     this.mockDelay = ms;
   }
@@ -55,6 +99,71 @@ export class MockWebSocketService implements WebSocketService {
     this.triggeredMessages = [];
     this.shouldFailNext = false;
     this.nextFailureError = null;
+    this.operationHistory = [];
+    this.resetConnectionState();
+  }
+
+  // New enhanced testing methods
+  simulateConnectionFailure(): void {
+    this.connectionState.isConnected = false;
+    this.connectionState.healthStatus = 'unhealthy';
+    this.connectionState.lastError = new Error('Simulated connection failure');
+  }
+
+  simulateConnectionRestore(): void {
+    this.connectionState.isConnected = true;
+    this.connectionState.healthStatus = 'healthy';
+    this.connectionState.lastError = undefined;
+  }
+
+  setFailureRate(rate: number): void {
+    this.config.failureRate = Math.max(0, Math.min(1, rate));
+    this.config.enableRandomFailures = rate > 0;
+  }
+
+  enableLatencySimulation(enabled: boolean, maxLatency = 1000): void {
+    this.config.enableSimulatedLatency = enabled;
+    this.config.maxLatency = maxLatency;
+  }
+
+  getOperationHistory(): typeof this.operationHistory {
+    return [...this.operationHistory];
+  }
+
+  getConnectionState(): MockConnectionState & {
+    config: MockServiceConfig;
+    metrics: {
+      totalOperations: number;
+      successfulOperations: number;
+      failedOperations: number;
+      averageLatency: number;
+    };
+  } {
+    const totalOps = this.operationHistory.length;
+    const successfulOps = this.operationHistory.filter(op => op.success).length;
+    const averageLatency = totalOps > 0 
+      ? this.operationHistory.reduce((sum, op) => sum + (op.latency || 0), 0) / totalOps 
+      : 0;
+
+    return {
+      ...this.connectionState,
+      config: { ...this.config },
+      metrics: {
+        totalOperations: totalOps,
+        successfulOperations: successfulOps,
+        failedOperations: totalOps - successfulOps,
+        averageLatency,
+      },
+    };
+  }
+
+  resetConnectionState(): void {
+    this.connectionState = {
+      isConnected: true,
+      connectionAttempts: 0,
+      messageCount: 0,
+      healthStatus: 'healthy',
+    };
   }
 
   createChannel(name: string): void {
@@ -76,43 +185,63 @@ export class MockWebSocketService implements WebSocketService {
 
   // WebSocketService implementation
   async trigger(channel: string, event: string, data: any): Promise<void> {
-    await this.delay();
-    
-    if (this.shouldFailNext) {
-      this.shouldFailNext = false;
-      throw this.nextFailureError!;
-    }
-
-    const message: WebSocketMessage = {
-      event,
-      data,
-      channel,
-    };
-
-    this.triggeredMessages.push(message);
-    
-    const ch = this.channels.get(channel);
-    if (ch) {
-      ch.messages.push(message);
-    }
-  }
-
-  async triggerBatch(messages: WebSocketMessage[]): Promise<void> {
-    await this.delay();
-    
-    if (this.shouldFailNext) {
-      this.shouldFailNext = false;
-      throw this.nextFailureError!;
-    }
-
-    for (const message of messages) {
-      this.triggeredMessages.push(message);
+    return this.executeOperation('trigger', async () => {
+      await this.delay();
       
-      const ch = this.channels.get(message.channel || 'default');
+      if (this.shouldFailNext) {
+        this.shouldFailNext = false;
+        throw this.nextFailureError!;
+      }
+
+      if (this.shouldSimulateFailure()) {
+        throw new WebSocketError(
+          'Simulated random failure',
+          WebSocketErrorCode.NETWORK_ERROR
+        );
+      }
+
+      const message: WebSocketMessage = {
+        event,
+        data,
+        channel,
+      };
+
+      this.triggeredMessages.push(message);
+      this.connectionState.messageCount++;
+      
+      const ch = this.channels.get(channel);
       if (ch) {
         ch.messages.push(message);
       }
-    }
+    });
+  }
+
+  async triggerBatch(messages: WebSocketMessage[]): Promise<void> {
+    return this.executeOperation('triggerBatch', async () => {
+      await this.delay();
+      
+      if (this.shouldFailNext) {
+        this.shouldFailNext = false;
+        throw this.nextFailureError!;
+      }
+
+      if (this.shouldSimulateFailure()) {
+        throw new WebSocketError(
+          'Simulated batch failure',
+          WebSocketErrorCode.NETWORK_ERROR
+        );
+      }
+
+      for (const message of messages) {
+        this.triggeredMessages.push(message);
+        this.connectionState.messageCount++;
+        
+        const ch = this.channels.get(message.channel || 'default');
+        if (ch) {
+          ch.messages.push(message);
+        }
+      }
+    });
   }
 
   authenticateChannel(
@@ -172,36 +301,54 @@ export class MockWebSocketService implements WebSocketService {
     subscriptionCount?: number;
     userCount?: number;
   }> {
-    await this.delay();
-    
-    const ch = this.channels.get(channel);
-    if (!ch) {
-      return { occupied: false };
-    }
+    return this.executeOperation('getChannelInfo', async () => {
+      await this.delay();
+      
+      if (this.shouldSimulateFailure()) {
+        throw new WebSocketError(
+          'Simulated channel info failure',
+          WebSocketErrorCode.SERVICE_ERROR
+        );
+      }
+      
+      const ch = this.channels.get(channel);
+      if (!ch) {
+        return { occupied: false };
+      }
 
-    return {
-      occupied: ch.users.size > 0 || ch.messages.length > 0,
-      subscriptionCount: ch.users.size,
-      userCount: this.isPresenceChannel(channel) ? ch.users.size : undefined,
-    };
+      return {
+        occupied: ch.users.size > 0 || ch.messages.length > 0,
+        subscriptionCount: ch.users.size,
+        userCount: this.isPresenceChannel(channel) ? ch.users.size : undefined,
+      };
+    });
   }
 
   async getChannelUsers(channel: string): Promise<WebSocketPresenceData[]> {
-    await this.delay();
-    
-    if (!this.isPresenceChannel(channel)) {
-      throw new WebSocketError(
-        'Channel users can only be retrieved for presence channels',
-        WebSocketErrorCode.INVALID_CHANNEL
-      );
-    }
+    return this.executeOperation('getChannelUsers', async () => {
+      await this.delay();
+      
+      if (!this.isPresenceChannel(channel)) {
+        throw new WebSocketError(
+          'Channel users can only be retrieved for presence channels',
+          WebSocketErrorCode.INVALID_CHANNEL
+        );
+      }
 
-    const ch = this.channels.get(channel);
-    if (!ch) {
-      return [];
-    }
+      if (this.shouldSimulateFailure()) {
+        throw new WebSocketError(
+          'Simulated channel users failure',
+          WebSocketErrorCode.SERVICE_ERROR
+        );
+      }
 
-    return Array.from(ch.users.values());
+      const ch = this.channels.get(channel);
+      if (!ch) {
+        return [];
+      }
+
+      return Array.from(ch.users.values());
+    });
   }
 
   validateWebhook(
@@ -257,5 +404,154 @@ export class MockWebSocketService implements WebSocketService {
 
   private isPresenceChannel(channel: string): boolean {
     return channel.startsWith('presence-');
+  }
+
+  /**
+   * Execute operation with enhanced simulation and metrics tracking
+   */
+  private async executeOperation<T>(
+    operationName: string,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const start = Date.now();
+    let success = false;
+    let error: string | undefined;
+
+    try {
+      // Simulate connection check
+      if (this.config.enableConnectionSimulation && !this.connectionState.isConnected) {
+        throw new WebSocketError(
+          'Connection is not available',
+          WebSocketErrorCode.CONNECTION_FAILED
+        );
+      }
+
+      // Simulate latency if enabled
+      if (this.config.enableSimulatedLatency) {
+        const latency = Math.random() * (this.config.maxLatency || 1000);
+        await new Promise(resolve => setTimeout(resolve, latency));
+      }
+
+      const result = await operation();
+      success = true;
+      return result;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Unknown error';
+      this.updateConnectionHealth(false);
+      throw err;
+    } finally {
+      const latency = Date.now() - start;
+      
+      if (success) {
+        this.updateConnectionHealth(true);
+      }
+
+      if (this.config.enableMetrics) {
+        this.operationHistory.push({
+          operation: operationName,
+          timestamp: new Date(),
+          success,
+          latency,
+          error,
+        });
+
+        // Keep only last 100 operations for memory management
+        if (this.operationHistory.length > 100) {
+          this.operationHistory = this.operationHistory.slice(-100);
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if random failure should be simulated
+   */
+  private shouldSimulateFailure(): boolean {
+    return this.config.enableRandomFailures && 
+           Math.random() < (this.config.failureRate || 0.1);
+  }
+
+  /**
+   * Update connection health based on operation results
+   */
+  private updateConnectionHealth(success: boolean): void {
+    this.connectionState.connectionAttempts++;
+    
+    if (success) {
+      // Improve health status on success
+      if (this.connectionState.healthStatus === 'unhealthy') {
+        this.connectionState.healthStatus = 'degraded';
+      } else if (this.connectionState.healthStatus === 'degraded') {
+        // After several successes, mark as healthy
+        const recentOperations = this.operationHistory.slice(-10);
+        const recentSuccesses = recentOperations.filter(op => op.success).length;
+        if (recentSuccesses >= 8) {
+          this.connectionState.healthStatus = 'healthy';
+        }
+      }
+    } else {
+      // Degrade health status on failure
+      if (this.connectionState.healthStatus === 'healthy') {
+        this.connectionState.healthStatus = 'degraded';
+      } else if (this.connectionState.healthStatus === 'degraded') {
+        // After several failures, mark as unhealthy
+        const recentOperations = this.operationHistory.slice(-5);
+        const recentFailures = recentOperations.filter(op => !op.success).length;
+        if (recentFailures >= 3) {
+          this.connectionState.healthStatus = 'unhealthy';
+        }
+      }
+    }
+  }
+
+  /**
+   * Health check method for compatibility with real service
+   */
+  public async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
+    return this.executeOperation('healthCheck', async () => {
+      if (this.shouldSimulateFailure()) {
+        throw new Error('Simulated health check failure');
+      }
+
+      return {
+        healthy: this.connectionState.isConnected && this.connectionState.healthStatus !== 'unhealthy',
+        message: this.connectionState.healthStatus === 'unhealthy' 
+          ? 'Service is experiencing issues'
+          : undefined,
+      };
+    });
+  }
+
+  /**
+   * Test connection method for compatibility with real service
+   */
+  public async testConnection(): Promise<{
+    success: boolean;
+    latency?: number;
+    error?: string;
+  }> {
+    const start = Date.now();
+    
+    try {
+      await this.healthCheck();
+      const latency = Date.now() - start;
+      
+      return {
+        success: true,
+        latency,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Cleanup method for compatibility with real service
+   */
+  public destroy(): void {
+    this.clearMockData();
   }
 }

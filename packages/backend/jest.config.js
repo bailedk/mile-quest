@@ -22,17 +22,20 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70,
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@mile-quest/shared$': '<rootDir>/../shared/src',
   },
-  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  setupFilesAfterEnv: [
+    '<rootDir>/src/test/setup.ts',
+    '<rootDir>/src/__tests__/jest.setup.ts'
+  ],
   testTimeout: 10000,
   clearMocks: true,
   restoreMocks: true,
