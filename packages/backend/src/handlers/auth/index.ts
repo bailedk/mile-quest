@@ -6,7 +6,7 @@ import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
 import { getAuthService } from '../../services/auth';
-import { getPrismaClient } from '../../lib/prisma';
+import { prisma } from '../../lib/database';
 import { generateTokens } from '../../utils/auth/jwt.utils';
 import { 
   RegisterSchema, 
@@ -31,7 +31,6 @@ const router = createRouter();
 
 // Get services
 const authService = getAuthService();
-const prisma = getPrismaClient();
 
 // BE-008: User registration endpoint
 router.post('/register', async (event, context, params) => {
