@@ -6,14 +6,14 @@
 
 ## 🎯 Current Sprint: Sprint 4 - Dashboard Implementation
 
-### Sprint 4 Status: 37.5% Complete 🚧
+### Sprint 4 Status: 50% Complete 🚧
 
 | Task ID | Description | Status | Owner | Notes |
 |---------|-------------|--------|-------|-------|
 | FE-014 | Dashboard UI components | 🚧 In Progress | Frontend Dev | Mobile-first dashboard with mock data |
 | FE-015 | Progress visualization | ✅ Complete | Frontend Dev | Charts and graphs implemented |
 | BE-017 | Dashboard API endpoint | ✅ Complete | Backend Dev | Aggregated dashboard data with caching |
-| BE-018 | Leaderboard calculations | 🔴 Ready | Backend Dev | Team member rankings |
+| BE-018 | Leaderboard calculations | ✅ Complete | Backend Dev | Team member rankings |
 | FE-016 | Real-time updates | 🔴 Ready | Frontend Dev | WebSocket integration |
 | BE-019 | Achievement detection | ✅ Complete | Backend Dev | Achievement system implemented |
 | DB-008 | Dashboard query optimization | 🔴 Ready | Database Dev | Materialized views |

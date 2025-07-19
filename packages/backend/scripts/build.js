@@ -17,6 +17,7 @@ const functions = [
   'activities',
   'dashboard',
   'progress',
+  'leaderboards',
   'scheduled',
 ];
 
