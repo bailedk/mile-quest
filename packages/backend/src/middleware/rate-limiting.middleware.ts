@@ -198,7 +198,7 @@ export class RateLimitingMiddleware {
     }
 
     const key = userId ? `user:${userId}` : `ip:${this.getClientId(event)}`;
-    return this.checkRateLimit(key, rule, event);
+    return this.checkRateLimitRule(key, rule, event);
   }
 
   /**
@@ -223,7 +223,7 @@ export class RateLimitingMiddleware {
 
     const userId = this.extractUserId(event);
     const key = `endpoint:${endpoint}:${userId || this.getClientId(event)}`;
-    return this.checkRateLimit(key, rule, event);
+    return this.checkRateLimitRule(key, rule, event);
   }
 
   /**
@@ -252,13 +252,13 @@ export class RateLimitingMiddleware {
     };
 
     const key = `burst:${clientId}`;
-    return this.checkRateLimit(key, rule, event);
+    return this.checkRateLimitRule(key, rule, event);
   }
 
   /**
    * Core rate limit checking logic
    */
-  private async checkRateLimit(
+  private async checkRateLimitRule(
     key: string,
     rule: RateLimitRule,
     event: APIGatewayProxyEvent

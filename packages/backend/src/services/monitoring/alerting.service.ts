@@ -272,9 +272,9 @@ export class AlertingService implements IAlertingService {
   }
 
   /**
-   * Get alert statistics
+   * Get detailed alert statistics with time range analysis
    */
-  async getAlertStatistics(timeRange: string = '24h'): Promise<{
+  async getDetailedAlertStatistics(timeRange: string = '24h'): Promise<{
     totalAlerts: number;
     firingAlerts: number;
     resolvedAlerts: number;

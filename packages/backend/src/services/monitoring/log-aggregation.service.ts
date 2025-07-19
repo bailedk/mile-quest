@@ -256,25 +256,6 @@ export class LogAggregationService implements ILogAggregationService {
       topErrors,
     };
   }
-    
-    // Apply text search
-    if (query.search) {
-      const searchTerm = query.search.toLowerCase();
-      filteredLogs = filteredLogs.filter(log => 
-        log.message.toLowerCase().includes(searchTerm) ||
-        JSON.stringify(log.context).toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    // Sort by timestamp (newest first)
-    filteredLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    
-    // Apply pagination
-    const offset = query.offset ?? 0;
-    const limit = query.limit ?? 100;
-    
-    return filteredLogs.slice(offset, offset + limit);
-  }
 
   /**
    * Aggregate logs by field

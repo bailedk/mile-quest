@@ -337,7 +337,7 @@ export class HealthCheckService implements IHealthCheckService {
   private async checkDatabasePool(): Promise<any> {
     try {
       // Get database statistics
-      const stats = await this.prisma?.$queryRaw`
+      const stats = await this.prisma.$queryRaw`
         SELECT 
           datname,
           numbackends,

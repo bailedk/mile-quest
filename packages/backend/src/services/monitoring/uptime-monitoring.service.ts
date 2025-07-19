@@ -164,23 +164,6 @@ export class UptimeMonitoringService implements IUptimeMonitoringService {
     };
   }
 
-    this.stopMonitoring(id);
-    this.checks.delete(id);
-    this.results.delete(id);
-
-    // Close any open incidents for this check
-    const openIncidents = Array.from(this.incidents.values())
-      .filter(incident => incident.checkId === id && incident.status === 'ongoing');
-    
-    for (const incident of openIncidents) {
-      incident.status = 'resolved';
-      incident.endTime = new Date();
-      incident.duration = incident.endTime.getTime() - incident.startTime.getTime();
-    }
-
-    this.logger.info('Uptime check deleted', { id, name: check.name });
-  }
-
   /**
    * Run a specific uptime check manually
    */
