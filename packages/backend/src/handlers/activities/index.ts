@@ -99,43 +99,46 @@ router.post('/', async (event, context, params) => {
     // Send real-time updates for each team
     try {
       for (const teamUpdate of result.teamUpdates) {
-        // Get full progress data
-        const progressData = await progressService.calculateTeamProgress(
-          teamUpdate.teamId,
-          { includeContributors: true, contributorLimit: 3 }
-        );
+        // Only process if team has an active goal
+        if (teamUpdate.teamGoalId) {
+          // Get full progress data
+          const progressData = await progressService.calculateTeamProgress(
+            teamUpdate.teamGoalId,
+            { includeContributors: true, contributorLimit: 3 }
+          );
 
-        // Check for milestones
-        const progressResult = await progressService.updateProgressAndCheckMilestones(
-          teamUpdate.teamId,
-          input.distance,
-          1,
-          input.duration
-        );
+          // Check for milestones
+          const progressResult = await progressService.updateProgressAndCheckMilestones(
+            teamUpdate.teamGoalId,
+            input.distance,
+            1,
+            input.duration
+          );
 
-        // Broadcast updates
-        await progressWebSocket.broadcastProgressUpdate(
-          teamUpdate.teamId,
-          teamUpdate.teamId,
-          progressData,
-          progressResult.milestoneReached
-        );
+          // Broadcast updates
+          await progressWebSocket.broadcastProgressUpdate(
+            teamUpdate.teamId,
+            teamUpdate.teamGoalId,
+            progressData,
+            progressResult.milestoneReached
+          );
 
-        // Also broadcast activity added event
-        await progressWebSocket.broadcastActivityAdded(
-          teamUpdate.teamId,
-          {
-            userId: user.sub,
-            userName: result.activity.user.name,
-            distance: input.distance,
-            duration: input.duration,
-          },
-          {
-            newTotalDistance: teamUpdate.newTotalDistance,
-            newPercentComplete: teamUpdate.newPercentComplete,
-            distanceAdded: input.distance,
-          }
-        );
+          // Also broadcast activity added event
+          await progressWebSocket.broadcastActivityAdded(
+            teamUpdate.teamId,
+            {
+              userId: user.sub,
+              userName: result.activity.user.name,
+              distance: input.distance,
+              duration: input.duration,
+            },
+            {
+              newTotalDistance: teamUpdate.newTotalDistance,
+              newPercentComplete: teamUpdate.newPercentComplete,
+              distanceAdded: input.distance,
+            }
+          );
+        }
       }
     } catch (wsError) {
       logger.error('Failed to send WebSocket updates', { error: wsError });
@@ -358,17 +361,20 @@ router.delete('/:id', async (event, context, params) => {
     // Send real-time updates for team progress decrease
     try {
       for (const teamUpdate of result.teamUpdates) {
-        // Broadcast the updated progress
-        const progressData = await progressService.calculateTeamProgress(
-          teamUpdate.teamId,
-          { includeContributors: true, contributorLimit: 3 }
-        );
+        // Only process if team has an active goal
+        if (teamUpdate.teamGoalId) {
+          // Broadcast the updated progress
+          const progressData = await progressService.calculateTeamProgress(
+            teamUpdate.teamGoalId,
+            { includeContributors: true, contributorLimit: 3 }
+          );
 
-        await progressWebSocket.broadcastProgressUpdate(
-          teamUpdate.teamId,
-          teamUpdate.teamId,
-          progressData
-        );
+          await progressWebSocket.broadcastProgressUpdate(
+            teamUpdate.teamId,
+            teamUpdate.teamGoalId,
+            progressData
+          );
+        }
       }
     } catch (wsError) {
       logger.error('Failed to send WebSocket updates for deletion', { error: wsError });

@@ -38,6 +38,7 @@ export interface ActivityListItem {
 
 export interface TeamProgressUpdate {
   teamId: string;
+  teamGoalId?: string;
   newTotalDistance: number;
   newPercentComplete: number;
 }

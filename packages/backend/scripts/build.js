@@ -16,6 +16,8 @@ const functions = [
   'teams',
   'activities',
   'dashboard',
+  'progress',
+  'scheduled',
 ];
 
 // Ensure dist directories exist
@@ -32,7 +34,12 @@ console.log('🚀 Building Lambda functions...\n');
 functions.forEach(func => {
   console.log(`📦 Building ${func}...`);
   
-  const cmd = `esbuild src/handlers/${func}/index.ts --bundle --platform=node --target=node20 --outfile=dist/lambda/${func}/index.js --external:@aws-sdk/* --external:pg-native --external:@prisma/client --external:.prisma/client`;
+  // Handle scheduled function differently
+  const entryPoint = func === 'scheduled' 
+    ? 'src/handlers/scheduled/progress-jobs.ts'
+    : `src/handlers/${func}/index.ts`;
+  
+  const cmd = `esbuild ${entryPoint} --bundle --platform=node --target=node20 --outfile=dist/lambda/${func}/index.js --external:@aws-sdk/* --external:pg-native --external:@prisma/client --external:.prisma/client`;
   
   try {
     execSync(cmd, { 

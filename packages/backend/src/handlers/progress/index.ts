@@ -1,28 +1,66 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent } from 'aws-lambda';
 import { createRouter } from '../../utils/router';
-import { withAuth } from '../../middleware/auth.middleware';
-import { PrismaClient } from '@prisma/client';
+import { verifyToken } from '../../utils/auth/jwt.utils';
+import { prisma } from '../../lib/database';
 import { ProgressService } from '../../services/progress';
 import { createLogger } from '../../services/logger';
 
-const prisma = new PrismaClient();
 const logger = createLogger('ProgressHandler');
 const progressService = new ProgressService(prisma);
 const router = createRouter();
 
+// Test route for debugging
+router.get('/test', async (event, context, params) => {
+  try {
+    const teamCount = await prisma.team.count();
+    const progressCount = await prisma.teamProgress.count();
+    
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        teamCount,
+        progressCount,
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error: any) {
+    logger.error('Test route error', { error });
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Test route failed',
+        message: error.message
+      }
+    };
+  }
+});
+
+// Helper to extract user from token
+const getUserFromEvent = (event: APIGatewayProxyEvent) => {
+  const authHeader = event.headers.Authorization || event.headers.authorization;
+  const token = authHeader?.split(' ')[1];
+  
+  if (!token) {
+    throw new Error('No token provided');
+  }
+  
+  return verifyToken(token);
+};
+
 /**
- * GET /api/progress/team/:teamId
+ * GET /progress/team/:teamId
  * Get progress for all goals of a team
  */
-router.get('/api/progress/team/:teamId', withAuth(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+router.get('/team/:teamId', async (event, context, params) => {
   try {
-    const { teamId } = event.pathParameters || {};
-    const userId = (event as any).userId;
+    const user = getUserFromEvent(event);
+    const { teamId } = params;
 
     if (!teamId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Team ID is required' }),
+        body: { error: 'Team ID is required' },
       };
     }
 
@@ -30,7 +68,7 @@ router.get('/api/progress/team/:teamId', withAuth(async (event: APIGatewayProxyE
     const membership = await prisma.teamMember.findFirst({
       where: {
         teamId,
-        userId,
+        userId: user.sub,
         leftAt: null,
       },
     });
@@ -38,7 +76,7 @@ router.get('/api/progress/team/:teamId', withAuth(async (event: APIGatewayProxyE
     if (!membership) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: 'Access denied' }),
+        body: { error: 'Access denied' },
       };
     }
 
@@ -54,30 +92,30 @@ router.get('/api/progress/team/:teamId', withAuth(async (event: APIGatewayProxyE
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ progress }),
+      body: { progress },
     };
   } catch (error) {
     logger.error('Failed to get team progress', { error });
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to get team progress' }),
+      body: { error: 'Failed to get team progress' },
     };
   }
-}));
+});
 
 /**
- * GET /api/progress/goal/:goalId
+ * GET /progress/goal/:goalId
  * Get detailed progress for a specific goal
  */
-router.get('/api/progress/goal/:goalId', withAuth(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+router.get('/goal/:goalId', async (event, context, params) => {
   try {
-    const { goalId } = event.pathParameters || {};
-    const userId = (event as any).userId;
+    const user = getUserFromEvent(event);
+    const { goalId } = params;
 
     if (!goalId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Goal ID is required' }),
+        body: { error: 'Goal ID is required' },
       };
     }
 
@@ -89,7 +127,7 @@ router.get('/api/progress/goal/:goalId', withAuth(async (event: APIGatewayProxyE
           include: {
             members: {
               where: {
-                userId,
+                userId: user.sub,
                 leftAt: null,
               },
             },
@@ -101,7 +139,7 @@ router.get('/api/progress/goal/:goalId', withAuth(async (event: APIGatewayProxyE
     if (!goal || goal.team.members.length === 0) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: 'Access denied' }),
+        body: { error: 'Access denied' },
       };
     }
 
@@ -114,31 +152,31 @@ router.get('/api/progress/goal/:goalId', withAuth(async (event: APIGatewayProxyE
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ progress }),
+      body: { progress },
     };
   } catch (error) {
     logger.error('Failed to get goal progress', { error });
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to get goal progress' }),
+      body: { error: 'Failed to get goal progress' },
     };
   }
-}));
+});
 
 /**
- * GET /api/progress/goal/:goalId/daily
+ * GET /progress/goal/:goalId/daily
  * Get daily progress summary for a goal
  */
-router.get('/api/progress/goal/:goalId/daily', withAuth(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+router.get('/goal/:goalId/daily', async (event, context, params) => {
   try {
-    const { goalId } = event.pathParameters || {};
+    const user = getUserFromEvent(event);
+    const { goalId } = params;
     const { days = '7' } = event.queryStringParameters || {};
-    const userId = (event as any).userId;
 
     if (!goalId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Goal ID is required' }),
+        body: { error: 'Goal ID is required' },
       };
     }
 
@@ -150,7 +188,7 @@ router.get('/api/progress/goal/:goalId/daily', withAuth(async (event: APIGateway
           include: {
             members: {
               where: {
-                userId,
+                userId: user.sub,
                 leftAt: null,
               },
             },
@@ -162,7 +200,7 @@ router.get('/api/progress/goal/:goalId/daily', withAuth(async (event: APIGateway
     if (!goal || goal.team.members.length === 0) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: 'Access denied' }),
+        body: { error: 'Access denied' },
       };
     }
 
@@ -174,31 +212,31 @@ router.get('/api/progress/goal/:goalId/daily', withAuth(async (event: APIGateway
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ summary }),
+      body: { summary },
     };
   } catch (error) {
     logger.error('Failed to get daily summary', { error });
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to get daily summary' }),
+      body: { error: 'Failed to get daily summary' },
     };
   }
-}));
+});
 
 /**
- * GET /api/progress/goal/:goalId/trend
+ * GET /progress/goal/:goalId/trend
  * Get progress trend analysis
  */
-router.get('/api/progress/goal/:goalId/trend', withAuth(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+router.get('/goal/:goalId/trend', async (event, context, params) => {
   try {
-    const { goalId } = event.pathParameters || {};
+    const user = getUserFromEvent(event);
+    const { goalId } = params;
     const { period = 'WEEK' } = event.queryStringParameters || {};
-    const userId = (event as any).userId;
 
     if (!goalId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Goal ID is required' }),
+        body: { error: 'Goal ID is required' },
       };
     }
 
@@ -210,7 +248,7 @@ router.get('/api/progress/goal/:goalId/trend', withAuth(async (event: APIGateway
           include: {
             members: {
               where: {
-                userId,
+                userId: user.sub,
                 leftAt: null,
               },
             },
@@ -222,7 +260,7 @@ router.get('/api/progress/goal/:goalId/trend', withAuth(async (event: APIGateway
     if (!goal || goal.team.members.length === 0) {
       return {
         statusCode: 403,
-        body: JSON.stringify({ error: 'Access denied' }),
+        body: { error: 'Access denied' },
       };
     }
 
@@ -234,16 +272,16 @@ router.get('/api/progress/goal/:goalId/trend', withAuth(async (event: APIGateway
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ trend }),
+      body: { trend },
     };
   } catch (error) {
     logger.error('Failed to get progress trend', { error });
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to get progress trend' }),
+      body: { error: 'Failed to get progress trend' },
     };
   }
-}));
+});
 
 // Export handler for Lambda
-export const handler = router.handler();
+export const handler = router.handle;

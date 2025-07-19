@@ -132,6 +132,7 @@ export class ActivityService {
           
           teamUpdates.push({
             teamId: membership.teamId,
+            teamGoalId: activeGoal.id,
             newTotalDistance: progress.totalDistance,
             newPercentComplete: Math.min(percentComplete, 100),
           });
@@ -363,6 +364,7 @@ export class ActivityService {
 
         teamUpdates.push({
           teamId: activity.teamId,
+          teamGoalId: activity.teamGoalId,
           newTotalDistance: progress.totalDistance,
           newPercentComplete: Math.min(percentComplete, 100),
         });

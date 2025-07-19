@@ -152,6 +152,12 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-DashboardFunction'
       RetentionInDays: !If [IsProduction, 30, 7]
 
+  ProgressFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-ProgressFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
   # Lambda Functions
   HealthFunction:
     Type: AWS::Serverless::Function
@@ -255,6 +261,59 @@ Resources:
             Path: /dashboard
             Method: GET
 
+  ProgressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/lambda/progress/
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ProgressFunctionLogGroup
+      Events:
+        ProgressProxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /progress/{proxy+}
+            Method: ANY
+
+  ScheduledFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-ScheduledFunction'
+      RetentionInDays: 7
+
+  ScheduledFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/lambda/scheduled/
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ScheduledFunctionLogGroup
+      Events:
+        DailySummarySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 8 * * ? *)'  # 8 AM UTC daily
+            Name: !Sub '${AWS::StackName}-${Stage}-DailySummary'
+            Description: 'Daily progress summary for all teams'
+            Input: '{"detail": {"jobType": "daily-summary"}}'
+        EncouragementCheckSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: 'rate(4 hours)'  # Every 4 hours
+            Name: !Sub '${AWS::StackName}-${Stage}-EncouragementCheck'
+            Description: 'Check teams that need encouragement'
+            Input: '{"detail": {"jobType": "encouragement-check"}}'
+        WeeklyCleanupSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 2 ? * SUN *)'  # 2 AM UTC on Sundays
+            Name: !Sub '${AWS::StackName}-${Stage}-WeeklyCleanup'
+            Description: 'Clean up old progress data'
+            Input: '{"detail": {"jobType": "cleanup"}}'
+
   # CloudWatch Dashboard for monitoring
   MileQuestDashboard:
     Type: AWS::CloudWatch::Dashboard
@@ -310,4 +369,6 @@ Outputs:
       Teams: /aws/lambda/${AWS::StackName}-${Stage}-TeamsFunction
       Activities: /aws/lambda/${AWS::StackName}-${Stage}-ActivitiesFunction
       Dashboard: /aws/lambda/${AWS::StackName}-${Stage}-DashboardFunction
+      Progress: /aws/lambda/${AWS::StackName}-${Stage}-ProgressFunction
+      Scheduled: /aws/lambda/${AWS::StackName}-${Stage}-ScheduledFunction
       API Gateway: /aws/apigateway/${AWS::StackName}-${Stage}

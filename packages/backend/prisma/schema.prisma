@@ -51,6 +51,8 @@ model Team {
 
   @@index([isPublic])
   @@index([createdById])
+  @@index([name, deletedAt])
+  @@index([isPublic, createdAt(sort: Desc)])
   @@map("teams")
 }
 
@@ -67,6 +69,8 @@ model TeamMember {
   @@unique([teamId, userId, leftAt])
   @@index([userId])
   @@index([teamId])
+  @@index([userId, leftAt, joinedAt(sort: Desc)])
+  @@index([teamId, userId, role])
   @@map("team_members")
 }
 
@@ -190,6 +194,7 @@ model TeamInvite {
   @@index([userId])
   @@index([status])
   @@index([code])
+  @@index([code, status, expiresAt])
   @@map("team_invites")
 }
 

@@ -34,7 +34,7 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
 };
 
 // Get current user (to be implemented in Sprint 1)
-router.get('/me', async (event, context, params) => {
+router.get('/me', async (_event, _context, _params) => {
   return {
     statusCode: 501,
     body: {
@@ -45,7 +45,7 @@ router.get('/me', async (event, context, params) => {
 });
 
 // Get user teams (BE-010)
-router.get('/me/teams', async (event, context, params) => {
+router.get('/me/teams', async (event, _context, _params) => {
   try {
     const user = getUserFromEvent(event);
     const teams = await teamService.getUserTeams(user.sub);
@@ -71,7 +71,7 @@ router.get('/me/teams', async (event, context, params) => {
 });
 
 // Get user activity stats
-router.get('/me/stats', async (event, context, params) => {
+router.get('/me/stats', async (event, _context, _params) => {
   try {
     const user = getUserFromEvent(event);
     const stats = await activityService.getUserStats(user.sub);
@@ -96,7 +96,7 @@ router.get('/me/stats', async (event, context, params) => {
   }
 });
 
-router.patch('/me', async (event, context, params) => {
+router.patch('/me', async (_event, _context, _params) => {
   return {
     statusCode: 501,
     body: {
@@ -106,7 +106,7 @@ router.patch('/me', async (event, context, params) => {
   };
 });
 
-router.get('/:id', async (event, context, params) => {
+router.get('/:id', async (_event, _context, params) => {
   return {
     statusCode: 501,
     body: {
@@ -117,4 +117,7 @@ router.get('/:id', async (event, context, params) => {
 });
 
 // Export handler
-export const handler = createHandler(router.handle.bind(router));
+export const handler = createHandler(router.handle.bind(router), {
+  functionName: 'UsersHandler',
+  enableCors: true,
+});
