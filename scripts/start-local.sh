@@ -10,14 +10,14 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Start PostgreSQL if not running
-if [ ! "$(docker ps -q -f name=milequest-postgres)" ]; then
-    if [ "$(docker ps -aq -f status=exited -f name=milequest-postgres)" ]; then
+if [ ! "$(docker ps -q -f name=mile-quest-db)" ]; then
+    if [ "$(docker ps -aq -f status=exited -f name=mile-quest-db)" ]; then
         echo "📦 Starting existing PostgreSQL container..."
-        docker start milequest-postgres
+        docker start mile-quest-db
     else
         echo "🐘 Creating new PostgreSQL container..."
         docker run -d \
-            --name milequest-postgres \
+            --name mile-quest-db \
             -e POSTGRES_PASSWORD=localdev \
             -e POSTGRES_DB=milequest \
             -p 5432:5432 \
