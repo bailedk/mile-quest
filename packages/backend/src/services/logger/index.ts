@@ -9,14 +9,60 @@
  */
 
 import { Logger } from '@aws-lambda-powertools/logger';
-import { config } from '../../config/environment';
 
-// Create base logger instance
-const baseLogger = new Logger({
-  serviceName: 'mile-quest-api',
-  logLevel: config.LOG_LEVEL.toUpperCase() as 'DEBUG' | 'INFO' | 'WARN' | 'ERROR',
-  environment: config.STAGE,
-});
+// Lazy initialization of base logger to avoid runtime errors
+let baseLogger: Logger | null = null;
+
+// Simple console logger as fallback
+class ConsoleLogger {
+  constructor(private readonly serviceName: string) {}
+  
+  createChild(_options: any) {
+    return this;
+  }
+  
+  appendKeys(_keys: any) {
+    // No-op for console logger
+  }
+  
+  debug(message: string, data?: any) {
+    console.debug(`[DEBUG] [${this.serviceName}] ${message}`, data);
+  }
+  
+  info(message: string, data?: any) {
+    console.info(`[INFO] [${this.serviceName}] ${message}`, data);
+  }
+  
+  warn(message: string, data?: any) {
+    console.warn(`[WARN] [${this.serviceName}] ${message}`, data);
+  }
+  
+  error(message: string, data?: any) {
+    console.error(`[ERROR] [${this.serviceName}] ${message}`, data);
+  }
+}
+
+function getBaseLogger(): Logger | ConsoleLogger {
+  if (!baseLogger) {
+    try {
+      // Try to get config safely
+      const logLevel = process.env.LOG_LEVEL?.toUpperCase() || 'INFO';
+      const stage = process.env.STAGE || 'dev';
+      
+      // Initialize logger with safe defaults
+      baseLogger = new Logger({
+        serviceName: 'mile-quest-api',
+        logLevel: logLevel as 'DEBUG' | 'INFO' | 'WARN' | 'ERROR',
+        environment: stage,
+      });
+    } catch (error) {
+      console.error('Failed to initialize AWS Lambda Powertools logger, using console fallback:', error);
+      // Use fallback console logger
+      return new ConsoleLogger('mile-quest-api') as any;
+    }
+  }
+  return baseLogger;
+}
 
 // Export types for use in other modules
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -26,16 +72,21 @@ export type LogContext = Record<string, any>;
  * Enhanced logger with additional context and utilities
  */
 export class MileQuestLogger {
-  private logger: Logger;
+  private logger: Logger | ConsoleLogger;
   private context: LogContext = {};
 
   constructor(private functionName: string) {
-    this.logger = baseLogger.createChild({
-      persistentLogAttributes: {
-        functionName,
-        version: process.env.AWS_LAMBDA_FUNCTION_VERSION || 'local',
-      },
-    });
+    try {
+      this.logger = getBaseLogger().createChild({
+        persistentLogAttributes: {
+          functionName,
+          version: process.env.AWS_LAMBDA_FUNCTION_VERSION || 'local',
+        },
+      });
+    } catch (error) {
+      console.error('Failed to create child logger:', error);
+      this.logger = getBaseLogger();
+    }
   }
 
   /**

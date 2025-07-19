@@ -17,12 +17,22 @@ import { createLogger } from '../../services/logger';
 // Validate environment on cold start
 validateEnvironment();
 
-// Initialize services
-const activityService = new ActivityService(prisma);
-const progressService = new ProgressService(prisma);
-const websocketService = createWebSocketService();
-const progressWebSocket = new ProgressWebSocketIntegration(progressService, websocketService);
-const logger = createLogger('ActivitiesHandler');
+// Initialize services lazily to avoid cold start issues
+let activityService: ActivityService;
+let progressService: ProgressService;
+let websocketService: ReturnType<typeof createWebSocketService>;
+let progressWebSocket: ProgressWebSocketIntegration;
+let logger: ReturnType<typeof createLogger>;
+
+function initializeServices() {
+  if (!activityService) {
+    activityService = new ActivityService(prisma);
+    progressService = new ProgressService(prisma);
+    websocketService = createWebSocketService();
+    progressWebSocket = new ProgressWebSocketIntegration(progressService, websocketService);
+    logger = createLogger('ActivitiesHandler');
+  }
+}
 
 // Create router
 const router = createRouter();
@@ -41,6 +51,8 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
 
 // Create activity (BE-014)
 router.post('/', async (event, context, params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     const input: CreateActivityInput = JSON.parse(event.body || '{}');
@@ -192,6 +204,8 @@ router.post('/', async (event, context, params) => {
 
 // List activities (BE-014)
 router.get('/', async (event, context, params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     
@@ -258,6 +272,8 @@ router.get('/', async (event, context, params) => {
 
 // Update activity (BE-014)
 router.patch('/:id', async (event, context, params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     const input: UpdateActivityInput = JSON.parse(event.body || '{}');
@@ -329,6 +345,8 @@ router.patch('/:id', async (event, context, params) => {
 
 // Delete activity (BE-014)
 router.delete('/:id', async (event, context, params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
 
@@ -406,6 +424,8 @@ router.delete('/:id', async (event, context, params) => {
 
 // Get user activity stats (BE-015)
 router.get('/stats', async (event, context, params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     const stats = await activityService.getUserStats(user.sub);
@@ -460,6 +480,8 @@ router.get('/stats', async (event, context, params) => {
 
 // Get activity summary by period (BE-015)
 router.get('/summary', async (event, context, params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     
