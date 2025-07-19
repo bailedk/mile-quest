@@ -78,7 +78,7 @@ export function LoginForm() {
           name="email"
           value={formData.email}
           onChange={handleChange}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
             validationErrors.email ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="john@example.com"
@@ -98,7 +98,7 @@ export function LoginForm() {
           name="password"
           value={formData.password}
           onChange={handleChange}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
             validationErrors.password ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder="••••••••"
