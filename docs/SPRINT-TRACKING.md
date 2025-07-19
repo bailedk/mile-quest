@@ -72,16 +72,16 @@
 
 ## 📋 Next Sprint: Sprint 5 - Real-time Features
 
-### Sprint 5 Status: 25% Complete 🚧
+### Sprint 5 Status: 50% Complete 🚧
 
 | Task ID | Description | Status | Owner | Notes |
 |---------|-------------|--------|-------|-------|
 | FE-502 | Real-time update hooks foundation | ✅ Complete | Frontend Dev | WebSocket hook infrastructure for Sprint 5 features |
 | FE-701 | Enhanced error handling | ✅ Complete | Frontend Dev | Comprehensive error handling across all features |
-| FE-503 | Live team presence indicators | 🔴 Ready | Frontend Dev | Show online team members |
+| FE-503 | Live team presence indicators | ✅ Complete | Frontend Dev | Show online team members |
 | FE-504 | Real-time activity notifications | 🔴 Ready | Frontend Dev | Push notifications for activities |
 | FE-505 | Live leaderboard updates | 🔴 Ready | Frontend Dev | Real-time ranking changes |
-| BE-020 | Presence tracking service | 🔴 Ready | Backend Dev | Track online users |
+| BE-020 | Presence tracking service | ✅ Complete | Backend Dev | Track online users |
 | BE-021 | Real-time notification system | 🔴 Ready | Backend Dev | WebSocket event broadcasting |
 | FE-506 | Achievement celebration UI | 🔴 Ready | Frontend Dev | Achievement unlock animations |
 | FE-507 | Live progress visualization | 🔴 Ready | Frontend Dev | Real-time goal progress updates |
@@ -117,6 +117,25 @@
   - ✅ Foundation ready for all Sprint 5 real-time features
 
 - **FE-701 Complete**: Enhanced error handling across all features for improved user experience
+
+- **FE-503 Complete**: Live team presence indicators with real-time online/offline status
+  - ✅ Implemented usePresence() hook for tracking online team members
+  - ✅ Real-time presence updates via WebSocket subscriptions with presence channel
+  - ✅ Online/offline member tracking with last seen timestamps
+  - ✅ Presence state management with team member online count
+  - ✅ Helper functions for presence queries (isUserOnline, getUserLastSeen, etc.)
+  - ✅ Comprehensive error handling and connection state awareness
+  - ✅ Multi-team presence support with automatic subscription management
+
+- **BE-020 Complete**: Presence tracking service for real-time user status
+  - ✅ PresenceService with comprehensive user connect/disconnect handling
+  - ✅ Team presence broadcasting via WebSocket with automatic updates
+  - ✅ Stale connection cleanup with 5-minute timeout detection
+  - ✅ Session tracking with unique session ID mapping
+  - ✅ Activity status updates (current activity, location tracking)
+  - ✅ Team presence statistics (online count, percentage calculations)
+  - ✅ Memory-efficient presence management with Map-based storage
+  - ✅ Integration with existing WebSocket abstraction layer
   - ✅ Enhanced global error boundary with better error categorization and user-friendly messaging:
     - Error categorization (chunk, network, data errors) with specific recovery actions
     - Contextual error titles and descriptions based on error type
@@ -292,7 +311,7 @@
 | Sprint 2 | Team Management | ✅ Complete | 100% |
 | Sprint 3 | Activity Tracking | ✅ Complete | 100% |
 | Sprint 4 | Dashboard | ✅ Complete | 100% |
-| Sprint 5 | Real-time | 🚧 In Progress | 12.5% |
+| Sprint 5 | Real-time | 🚧 In Progress | 50% |
 | Sprint 6 | PWA | ✅ Complete | 100% |
 | Sprint 7 | Polish | 🔴 Not Started | 0% |
 
