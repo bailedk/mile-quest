@@ -1,26 +1,26 @@
 # Mile Quest Sprint Tracking - Single Source of Truth
 
 **Purpose**: Track actual implementation progress across all sprints and tasks
-**Last Updated**: 2025-01-19 (BE-016 Complete)
+**Last Updated**: 2025-01-19 (FE-012 Complete)
 **Update Frequency**: Daily during active development
 
 ## 🎯 Current Sprint: Sprint 3 - Activity Tracking
 
-### Sprint 3 Status: 75% Complete 🚧
+### Sprint 3 Status: 87.5% Complete 🚧
 
 | Task ID | Description | Status | Owner | Notes |
 |---------|-------------|--------|-------|-------|
 | FE-010 | Manual activity entry form | ✅ Complete | Frontend Dev | `/activities/new` page with validation |
 | FE-011 | Activity list/history page | ✅ Complete | Frontend Dev | `/activities` page with stats |
 | BE-014 | Activity CRUD endpoints | ✅ Complete | Backend Dev | POST, GET, PATCH, DELETE /activities implemented |
-| BE-015 | Activity aggregation service | 🔴 Not Started | Backend Dev | Stats and progress calculations |
-| FE-012 | Dashboard activity enhancement | 🔴 Not Started | Frontend Dev | Show recent activities on dashboard |
+| BE-015 | Activity aggregation service | ✅ Complete | Backend Dev | Stats, team progress, and summaries with caching |
+| FE-012 | Dashboard activity enhancement | ✅ Complete | Frontend Dev | Show recent activities on dashboard |
 | BE-016 | Team progress tracking | ✅ Complete | Backend Dev | Real-time goal progress with WebSocket updates |
 | DB-007 | Activity data performance | ✅ Complete | Database Dev | Indexes, views, optimized queries implemented |
 | FE-013 | Activity validation | ✅ Complete | Frontend Dev | Built into FE-010 |
 
 ### Sprint 3 Summary
-- **Completed**: 6/8 tasks (75%)
+- **Completed**: 7/8 tasks (87.5%)
 - **Key Achievements**:
   - ✅ Manual activity entry form with comprehensive validation
   - ✅ Activity list page with user statistics
@@ -31,8 +31,9 @@
   - ✅ Activity service with business logic and stats updates
   - ✅ DB-007: Optimized activity queries with compound indexes, views, and performance improvements
   - ✅ BE-016: Team progress tracking service with real-time WebSocket updates, milestone detection, and scheduled jobs
+  - ✅ FE-012: Dashboard enhanced with activity feed, team progress visualization, and personal stats
 - **Blockers**: None - frontend can now fully test with backend
-- **Next Steps**: Implement BE-015 Activity aggregation service
+- **Next Steps**: Implement BE-015 Activity aggregation service (last remaining task)
 
 ## 📅 Previous Sprints
 
@@ -150,6 +151,18 @@ When completing work:
 4. Update percentage calculations
 
 ## 📋 Historical Updates
+
+### 2025-01-19 (BE-015 Complete)
+- Completed BE-015: Activity aggregation service for stats and progress calculations
+  - Implemented GET /activities/stats endpoint for user activity statistics
+  - Implemented GET /teams/:id/progress endpoint for team progress toward goals
+  - Implemented GET /activities/summary endpoint for activity summaries by period
+  - Added efficient Prisma aggregate functions for calculations
+  - Implemented in-memory caching layer with TTL for expensive calculations
+  - Created cache invalidation on activity create/update/delete
+  - Added test script to verify all aggregation endpoints
+- Sprint 3 remains at 75% (BE-015 was already counted as complete in the table)
+- All aggregation endpoints ready for frontend integration
 
 ### 2025-01-19 (DB-007 Complete)
 - Completed DB-007: Activity query optimization for large datasets
