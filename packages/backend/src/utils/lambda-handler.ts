@@ -1,5 +1,5 @@
 /**
- * Lambda handler factory and utilities
+ * Lambda handler factory and utilities with BE-701 optimizations
  */
 
 import {
@@ -9,6 +9,9 @@ import {
 } from 'aws-lambda';
 import { config } from '../config/environment';
 import { createLogger, MileQuestLogger } from '../services/logger';
+import { withOptimization, monitorMemoryUsage } from './lambda-optimization';
+import { withCompression } from '../middleware/compression.middleware';
+import { withRateLimit } from '../middleware/rate-limiting.middleware';
 
 export type LambdaHandler = (
   event: APIGatewayProxyEvent,
@@ -29,10 +32,16 @@ interface HandlerOptions {
   requireAuth?: boolean;
   validateBody?: boolean;
   functionName?: string;
+  // BE-701 Performance optimizations
+  enableOptimization?: boolean;
+  enableCompression?: boolean;
+  enableRateLimit?: boolean;
+  rateLimitConfig?: any;
+  compressionConfig?: any;
 }
 
 /**
- * Create a Lambda handler with common middleware
+ * Create a Lambda handler with common middleware and BE-701 optimizations
  */
 export function createHandler(
   handler: RouteHandler,
@@ -43,9 +52,15 @@ export function createHandler(
     requireAuth = false,
     validateBody = false,
     functionName = 'unknown-function',
+    enableOptimization = true,
+    enableCompression = true,
+    enableRateLimit = false,
+    rateLimitConfig,
+    compressionConfig,
   } = options;
 
-  return async (
+  // Create the base handler
+  const baseHandler = async (
     event: APIGatewayProxyEvent,
     context: Context
   ): Promise<APIGatewayProxyResult> => {
@@ -64,7 +79,10 @@ export function createHandler(
     const enhancedContext = context as EnhancedContext;
     enhancedContext.logger = logger;
     
-    // Log incoming request
+    // Monitor memory usage - BE-701
+    const memoryBefore = monitorMemoryUsage();
+    
+    // Log incoming request with performance info
     logger.info('Incoming request', {
       httpMethod: event.httpMethod,
       path: event.path,
@@ -74,12 +92,14 @@ export function createHandler(
         'user-agent': event.headers?.['user-agent'],
         'content-type': event.headers?.['content-type'],
       },
+      memoryUsage: memoryBefore,
+      remainingTime: context.getRemainingTimeInMillis?.(),
     });
     
     const timer = logger.startTimer('request-processing');
     
     try {
-      // Set context settings
+      // Set context settings for performance
       context.callbackWaitsForEmptyEventLoop = false;
 
       // Handle CORS preflight
@@ -93,36 +113,75 @@ export function createHandler(
       const result = await handler(event, enhancedContext);
 
       // Stop timer
-      timer();
+      const processingTime = timer();
+
+      // Monitor memory usage after processing
+      const memoryAfter = monitorMemoryUsage();
+      const memoryDelta = memoryAfter.heapUsed - memoryBefore.heapUsed;
 
       // Return successful response
       const response = createResponse(
         result.statusCode || 200,
         result.body || result,
-        enableCors ? getCorsHeaders() : {}
+        {
+          ...(enableCors ? getCorsHeaders() : {}),
+          'X-Processing-Time': `${processingTime}ms`,
+          'X-Memory-Used': `${memoryAfter.heapUsed}MB`,
+          'X-Memory-Delta': `${memoryDelta}MB`,
+        }
       );
       
       logger.info('Request completed', {
         statusCode: response.statusCode,
         correlationId,
+        processingTime,
+        memoryUsage: memoryAfter,
+        memoryDelta,
       });
       
       return response;
     } catch (error) {
       // Stop timer
-      timer();
+      const processingTime = timer();
       
-      // Log error
+      // Log error with performance context
       logger.error('Lambda handler error', error as Error, {
         correlationId,
         httpMethod: event.httpMethod,
         path: event.path,
+        processingTime,
+        memoryUsage: monitorMemoryUsage(),
       });
       
       // Return error response
       return createErrorResponse(error as Error, enableCors);
     }
   };
+
+  // Apply middleware layers in reverse order (outermost first)
+  let finalHandler = baseHandler;
+
+  // Apply optimization wrapper (closest to handler)
+  if (enableOptimization) {
+    finalHandler = withOptimization(finalHandler, {
+      enableConnectionReuse: true,
+      enablePrecomputation: true,
+      enableWarmup: true,
+      cacheStaticData: true,
+    });
+  }
+
+  // Apply compression middleware
+  if (enableCompression) {
+    finalHandler = withCompression(finalHandler, compressionConfig);
+  }
+
+  // Apply rate limiting middleware (outermost)
+  if (enableRateLimit) {
+    finalHandler = withRateLimit(finalHandler, rateLimitConfig);
+  }
+
+  return finalHandler;
 }
 
 /**

@@ -20,7 +20,11 @@
     "test:activities": "tsx src/scripts/test-activities.ts",
     "test:aggregations": "tsx src/scripts/test-aggregations.ts",
     "test:leaderboards": "tsx src/scripts/test-leaderboards.ts",
-    "test:websocket": "tsx src/scripts/test-websocket-auth.ts"
+    "test:websocket": "tsx src/scripts/test-websocket-auth.ts",
+    "perf:test": "tsx src/scripts/performance-testing.ts",
+    "perf:dashboard": "tsx src/scripts/performance-dashboard.ts",
+    "perf:test:smoke": "tsx src/scripts/performance-testing.ts smokeTest",
+    "perf:test:stress": "tsx src/scripts/performance-testing.ts stressTest --save"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^1.17.0",

@@ -11,6 +11,8 @@ import { verifyToken } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { MaterializedViewsService } from '../../services/materialized-views/materialized-views.service';
 import { PerformanceMonitoringService } from '../../services/performance-monitoring/performance.service';
+import { ProductionPerformanceService } from '../../services/performance-monitoring/production-performance.service';
+import { apiPerformanceService } from '../../services/performance-monitoring/api-performance.service';
 import { MaterializedViewsSchedulerService } from '../../services/scheduler/materialized-views-scheduler.service';
 
 // Validate environment on cold start
@@ -19,6 +21,7 @@ validateEnvironment();
 // Initialize services
 const materializedViewsService = new MaterializedViewsService(prisma);
 const performanceService = new PerformanceMonitoringService(prisma);
+const productionPerformanceService = new ProductionPerformanceService(prisma);
 const schedulerService = new MaterializedViewsSchedulerService(
   prisma,
   materializedViewsService,
@@ -327,6 +330,254 @@ router.get('/recommendations', async (event, context, params) => {
       statusCode: 500,
       body: {
         error: 'Failed to get recommendations',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+    };
+  }
+});
+
+// API Performance Monitoring Endpoints - BE-701
+
+// Get API performance summary
+router.get('/api/summary', async (event, context, params) => {
+  try {
+    const user = getAdminUserFromEvent(event);
+    const { hours = '24' } = event.queryStringParameters || {};
+    const timeRangeHours = Math.max(1, Math.min(168, parseInt(hours, 10)));
+
+    const summary = await apiPerformanceService.getPerformanceSummary(timeRangeHours);
+
+    return {
+      statusCode: 200,
+      body: {
+        summary,
+        timeRange: `${timeRangeHours} hours`,
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('API performance summary error:', error);
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Failed to get API performance summary',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+    };
+  }
+});
+
+// Get API performance alerts
+router.get('/api/alerts', async (event, context, params) => {
+  try {
+    const user = getAdminUserFromEvent(event);
+    const { severity } = event.queryStringParameters || {};
+    
+    let alerts = await apiPerformanceService.getPerformanceAlerts();
+    
+    if (severity && ['low', 'medium', 'high', 'critical'].includes(severity)) {
+      alerts = alerts.filter(alert => alert.severity === severity);
+    }
+
+    return {
+      statusCode: 200,
+      body: {
+        alerts,
+        totalCount: alerts.length,
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('API performance alerts error:', error);
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Failed to get API performance alerts',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+    };
+  }
+});
+
+// Get real-time API metrics
+router.get('/api/realtime', async (event, context, params) => {
+  try {
+    const user = getAdminUserFromEvent(event);
+    
+    const [apiMetrics, databaseHealth] = await Promise.all([
+      apiPerformanceService.getRealtimeMetrics(),
+      productionPerformanceService.getComprehensiveMetrics(),
+    ]);
+
+    return {
+      statusCode: 200,
+      body: {
+        api: apiMetrics,
+        database: {
+          connectionPool: databaseHealth.connectionPool,
+          queryPerformance: databaseHealth.queryPerformance,
+          indexEfficiency: databaseHealth.indexEfficiency,
+        },
+        timestamp: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('Real-time API metrics error:', error);
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Failed to get real-time API metrics',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+    };
+  }
+});
+
+// Get comprehensive database metrics
+router.get('/database/comprehensive', async (event, context, params) => {
+  try {
+    const user = getAdminUserFromEvent(event);
+    
+    const [
+      comprehensiveMetrics,
+      performanceReport,
+      alerts,
+    ] = await Promise.all([
+      productionPerformanceService.getComprehensiveMetrics(),
+      performanceService.generatePerformanceReport(),
+      productionPerformanceService.checkPerformanceAlerts(),
+    ]);
+
+    return {
+      statusCode: 200,
+      body: {
+        metrics: comprehensiveMetrics,
+        performanceReport,
+        alerts,
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('Comprehensive database metrics error:', error);
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Failed to get comprehensive database metrics',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+    };
+  }
+});
+
+// Get system health status
+router.get('/health/system', async (event, context, params) => {
+  try {
+    const user = getAdminUserFromEvent(event);
+    
+    const [
+      apiMetrics,
+      databaseMetrics,
+      performanceAlerts,
+    ] = await Promise.all([
+      apiPerformanceService.getRealtimeMetrics(),
+      productionPerformanceService.getComprehensiveMetrics(),
+      apiPerformanceService.getPerformanceAlerts(),
+    ]);
+
+    // Determine overall health status
+    const criticalAlerts = performanceAlerts.filter(alert => alert.severity === 'critical').length;
+    const highAlerts = performanceAlerts.filter(alert => alert.severity === 'high').length;
+    
+    let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+    if (criticalAlerts > 0) {
+      overallStatus = 'unhealthy';
+    } else if (highAlerts > 2 || apiMetrics.errorRate > 5) {
+      overallStatus = 'degraded';
+    }
+
+    // Component health checks
+    const components = {
+      api: {
+        status: apiMetrics.errorRate > 10 ? 'unhealthy' : 
+                apiMetrics.errorRate > 5 ? 'degraded' : 'healthy',
+        metrics: {
+          throughput: apiMetrics.currentThroughput,
+          latency: apiMetrics.averageLatency,
+          errorRate: apiMetrics.errorRate,
+        },
+      },
+      database: {
+        status: databaseMetrics.connectionPool.connectionUtilization > 95 ? 'unhealthy' :
+                databaseMetrics.connectionPool.connectionUtilization > 80 ? 'degraded' : 'healthy',
+        metrics: {
+          connectionUtilization: databaseMetrics.connectionPool.connectionUtilization,
+          queryPerformance: databaseMetrics.queryPerformance.averageQueryTime,
+          cacheHitRatio: databaseMetrics.queryPerformance.cacheHitRatio,
+        },
+      },
+      materializedViews: {
+        status: databaseMetrics.materializedViews.staleViews > 2 ? 'degraded' : 'healthy',
+        metrics: {
+          totalViews: databaseMetrics.materializedViews.totalViews,
+          staleViews: databaseMetrics.materializedViews.staleViews,
+          averageRefreshTime: databaseMetrics.materializedViews.averageRefreshTime,
+        },
+      },
+      memory: {
+        status: apiMetrics.memoryUsage > 95 ? 'unhealthy' :
+                apiMetrics.memoryUsage > 80 ? 'degraded' : 'healthy',
+        metrics: {
+          usage: apiMetrics.memoryUsage,
+          available: 100 - apiMetrics.memoryUsage,
+        },
+      },
+    };
+
+    return {
+      statusCode: 200,
+      body: {
+        status: overallStatus,
+        components,
+        alerts: {
+          critical: criticalAlerts,
+          high: highAlerts,
+          total: performanceAlerts.length,
+        },
+        timestamp: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('System health check error:', error);
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Failed to get system health status',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+    };
+  }
+});
+
+// Get optimization recommendations
+router.get('/optimization/recommendations', async (event, context, params) => {
+  try {
+    const user = getAdminUserFromEvent(event);
+    
+    const recommendations = await productionPerformanceService.generateOptimizationRecommendations();
+
+    return {
+      statusCode: 200,
+      body: {
+        recommendations,
+        generatedAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error('Optimization recommendations error:', error);
+    return {
+      statusCode: 500,
+      body: {
+        error: 'Failed to get optimization recommendations',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
     };

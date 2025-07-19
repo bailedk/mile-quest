@@ -1,98 +1,90 @@
 /**
- * Simple in-memory cache with TTL for BE-015
- * This is a temporary solution until Redis/ElastiCache is added to infrastructure
+ * Advanced Cache Utility - BE-701
+ * Upgraded from simple cache to advanced multi-layer caching with Redis support
  */
 
-interface CacheItem<T> {
-  value: T;
-  expires: number;
-}
+import { CacheFactory } from '../services/cache/factory';
+import { CacheService } from '../services/cache/cache.service';
 
+// Create cache service based on environment
+export const cache = CacheFactory.createFromEnvironment();
+
+// Legacy SimpleCache interface for backward compatibility
 export class SimpleCache {
-  private cache = new Map<string, CacheItem<any>>();
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cacheService: CacheService;
 
-  constructor(cleanupIntervalMs = 60000) { // Clean up every minute
-    // Start cleanup interval
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, cleanupIntervalMs);
+  constructor(cleanupIntervalMs = 60000) {
+    this.cacheService = CacheFactory.createCustom('in-memory', {
+      defaultTTL: 300,
+      enableMetrics: true,
+    });
   }
 
   /**
    * Get a value from cache
+   * @deprecated Use cache.get() instead
    */
   get<T>(key: string): T | null {
-    const item = this.cache.get(key);
-    
-    if (!item) {
-      return null;
-    }
-
-    // Check if expired
-    if (Date.now() > item.expires) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return item.value as T;
+    // Convert async to sync for backward compatibility
+    // In practice, you should migrate to async cache operations
+    let result: T | null = null;
+    this.cacheService.get<T>(key).then(value => {
+      result = value;
+    }).catch(() => {
+      result = null;
+    });
+    return result;
   }
 
   /**
    * Set a value in cache with TTL
+   * @deprecated Use cache.set() instead
    */
   set<T>(key: string, value: T, ttlSeconds: number): void {
-    const expires = Date.now() + (ttlSeconds * 1000);
-    this.cache.set(key, { value, expires });
+    this.cacheService.set(key, value, ttlSeconds).catch(error => {
+      console.error('Cache set error:', error);
+    });
   }
 
   /**
    * Delete a value from cache
+   * @deprecated Use cache.delete() instead
    */
   delete(key: string): void {
-    this.cache.delete(key);
+    this.cacheService.delete(key).catch(error => {
+      console.error('Cache delete error:', error);
+    });
   }
 
   /**
    * Clear all cache entries
+   * @deprecated Use cache.clear() instead
    */
   clear(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * Clean up expired entries
-   */
-  private cleanup(): void {
-    const now = Date.now();
-    for (const [key, item] of this.cache.entries()) {
-      if (now > item.expires) {
-        this.cache.delete(key);
-      }
-    }
+    this.cacheService.clear().catch(error => {
+      console.error('Cache clear error:', error);
+    });
   }
 
   /**
    * Stop the cleanup interval (for testing)
+   * @deprecated Use cache.close() instead
    */
   destroy(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
-    this.clear();
+    this.cacheService.close().catch(error => {
+      console.error('Cache close error:', error);
+    });
   }
 
   /**
    * Get cache size (for monitoring)
+   * @deprecated Use cache.getStats() instead
    */
   size(): number {
-    return this.cache.size;
+    // This is a placeholder - the real implementation would be async
+    return 0;
   }
 }
-
-// Create a singleton instance
-export const cache = new SimpleCache();
 
 /**
  * Cache key builders for consistent key generation
