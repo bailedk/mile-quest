@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 // Hook for swipe gesture detection
 export function useSwipeGesture(
@@ -232,62 +232,279 @@ export function InfiniteScroll({
   );
 }
 
-// Touch-friendly card component with haptic feedback simulation
+// Enhanced touch-friendly card component with improved haptic feedback
 interface TouchCardProps {
   children: React.ReactNode;
   onClick?: () => void;
+  onLongPress?: () => void;
   className?: string;
   pressEffect?: boolean;
+  hapticFeedback?: 'light' | 'medium' | 'heavy' | boolean;
+  longPressDelay?: number;
+  disabled?: boolean;
 }
 
 export function TouchCard({ 
   children, 
   onClick, 
+  onLongPress,
   className = '',
-  pressEffect = true 
+  pressEffect = true,
+  hapticFeedback = true,
+  longPressDelay = 500,
+  disabled = false
 }: TouchCardProps) {
   const [isPressed, setIsPressed] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const touchStartTimeRef = useRef<number>(0);
 
-  const handleTouchStart = () => {
+  const triggerHapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy' | boolean = true) => {
+    if (!hapticFeedback || disabled) return;
+    
+    // Use Vibration API for basic haptic feedback
+    if ('vibrate' in navigator && typeof type === 'boolean' && type) {
+      navigator.vibrate(10);
+      return;
+    }
+    
+    // Use Web Vibration API with different patterns for different feedback types
+    if ('vibrate' in navigator && typeof type === 'string') {
+      const patterns = {
+        light: [5],
+        medium: [10],
+        heavy: [15, 10, 15]
+      };
+      navigator.vibrate(patterns[type] || [10]);
+    }
+  }, [hapticFeedback, disabled]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (disabled) return;
+    
+    touchStartTimeRef.current = Date.now();
+    
     if (pressEffect) {
       setIsPressed(true);
-      // Simulate haptic feedback on supported devices
-      if ('vibrate' in navigator) {
-        navigator.vibrate(10);
-      }
+      triggerHapticFeedback('light');
     }
-  };
+    
+    // Start long press timer
+    if (onLongPress) {
+      const timer = setTimeout(() => {
+        triggerHapticFeedback('heavy');
+        onLongPress();
+        setIsPressed(false);
+      }, longPressDelay);
+      setLongPressTimer(timer);
+    }
+  }, [disabled, pressEffect, triggerHapticFeedback, onLongPress, longPressDelay]);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
+    if (disabled) return;
+    
+    const touchDuration = Date.now() - touchStartTimeRef.current;
+    
     if (pressEffect) {
       setIsPressed(false);
     }
-    if (onClick) {
+    
+    // Clear long press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
+    // Only trigger click if it wasn't a long press
+    if (onClick && touchDuration < longPressDelay) {
+      triggerHapticFeedback('medium');
       onClick();
     }
-  };
+  }, [disabled, pressEffect, longPressTimer, onClick, longPressDelay, triggerHapticFeedback]);
 
-  const handleTouchCancel = () => {
+  const handleTouchCancel = useCallback(() => {
     if (pressEffect) {
       setIsPressed(false);
     }
-  };
+    
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }, [pressEffect, longPressTimer]);
 
   return (
     <div
       className={`
         ${className}
-        ${onClick ? 'cursor-pointer select-none' : ''}
+        ${onClick || onLongPress ? 'cursor-pointer select-none' : ''}
         ${pressEffect && isPressed ? 'scale-95 opacity-90' : ''}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         transition-all duration-150 ease-out
         touch-manipulation
+        min-h-[44px] min-w-[44px]
       `}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}
     >
       {children}
     </div>
+  );
+}
+
+// Enhanced swipe gesture hook with better sensitivity and multi-direction support
+export function useAdvancedSwipeGesture(
+  onSwipeLeft?: () => void,
+  onSwipeRight?: () => void,
+  onSwipeUp?: () => void,
+  onSwipeDown?: () => void,
+  options: {
+    threshold?: number;
+    velocityThreshold?: number;
+    preventScroll?: boolean;
+    enableDiagonal?: boolean;
+  } = {}
+) {
+  const {
+    threshold = 50,
+    velocityThreshold = 0.3,
+    preventScroll = false,
+    enableDiagonal = false
+  } = options;
+
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number; time: number } | null>(null);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+      time: Date.now()
+    });
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (preventScroll && touchStart) {
+      const currentX = e.targetTouches[0].clientX;
+      const currentY = e.targetTouches[0].clientY;
+      const distanceX = Math.abs(currentX - touchStart.x);
+      const distanceY = Math.abs(currentY - touchStart.y);
+      
+      // Prevent scroll if there's significant horizontal movement
+      if (distanceX > distanceY && distanceX > 10) {
+        e.preventDefault();
+      }
+    }
+    
+    setTouchEnd({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+      time: Date.now()
+    });
+  }, [touchStart, preventScroll]);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+
+    const distanceX = touchStart.x - touchEnd.x;
+    const distanceY = touchStart.y - touchEnd.y;
+    const timeDiff = touchEnd.time - touchStart.time;
+    const velocity = Math.sqrt(distanceX * distanceX + distanceY * distanceY) / timeDiff;
+    
+    // Check if gesture meets velocity threshold
+    if (velocity < velocityThreshold) return;
+    
+    const absDistanceX = Math.abs(distanceX);
+    const absDistanceY = Math.abs(distanceY);
+    
+    const isLeftSwipe = distanceX > threshold;
+    const isRightSwipe = distanceX < -threshold;
+    const isUpSwipe = distanceY > threshold;
+    const isDownSwipe = distanceY < -threshold;
+
+    if (enableDiagonal) {
+      // Allow diagonal swipes
+      if (isLeftSwipe && onSwipeLeft) onSwipeLeft();
+      if (isRightSwipe && onSwipeRight) onSwipeRight();
+      if (isUpSwipe && onSwipeUp) onSwipeUp();
+      if (isDownSwipe && onSwipeDown) onSwipeDown();
+    } else {
+      // Prioritize primary direction
+      if (absDistanceX > absDistanceY) {
+        if (isLeftSwipe && onSwipeLeft) onSwipeLeft();
+        if (isRightSwipe && onSwipeRight) onSwipeRight();
+      } else {
+        if (isUpSwipe && onSwipeUp) onSwipeUp();
+        if (isDownSwipe && onSwipeDown) onSwipeDown();
+      }
+    }
+  }, [touchStart, touchEnd, threshold, velocityThreshold, enableDiagonal, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown]);
+
+  return {
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+  };
+}
+
+// Touch-optimized button component with proper touch targets
+interface TouchButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  onLongPress?: () => void;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  className?: string;
+  hapticFeedback?: boolean;
+}
+
+export function TouchButton({
+  children,
+  onClick,
+  onLongPress,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  className = '',
+  hapticFeedback = true
+}: TouchButtonProps) {
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-all duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-offset-2';
+  
+  const variantClasses = {
+    primary: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white',
+    secondary: 'bg-gray-200 hover:bg-gray-300 focus:ring-gray-500 text-gray-900',
+    ghost: 'bg-transparent hover:bg-gray-100 focus:ring-gray-500 text-gray-700'
+  };
+  
+  const sizeClasses = {
+    sm: 'min-h-[44px] px-3 py-2 text-sm',
+    md: 'min-h-[44px] px-4 py-2 text-base',
+    lg: 'min-h-[48px] px-6 py-3 text-lg'
+  };
+
+  return (
+    <TouchCard
+      onClick={onClick}
+      onLongPress={onLongPress}
+      disabled={disabled}
+      hapticFeedback={hapticFeedback}
+      className={`
+        ${baseClasses}
+        ${variantClasses[variant]}
+        ${sizeClasses[size]}
+        ${className}
+      `}
+    >
+      {children}
+    </TouchCard>
   );
 }

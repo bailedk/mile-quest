@@ -91,10 +91,12 @@ export class PusherConnectionManager extends BaseAWSService {
     this.startHealthChecking();
     this.startCleanupProcess();
 
-    console.info('PusherConnectionManager initialized', {
-      config: this.connectionConfig,
-      cluster: this.cluster
-    });
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('PusherConnectionManager initialized', {
+        config: this.connectionConfig,
+        cluster: this.cluster
+      });
+    }
   }
 
   /**
@@ -134,12 +136,14 @@ export class PusherConnectionManager extends BaseAWSService {
       // Update status to connected
       await this.updateConnectionStatus(connectionId, ConnectionStatus.CONNECTED);
 
-      console.info('Connection registered', {
-        connectionId,
-        socketId,
-        userId,
-        teamId
-      });
+      if (process.env.NODE_ENV !== 'test') {
+        console.info('Connection registered', {
+          connectionId,
+          socketId,
+          userId,
+          teamId
+        });
+      }
 
       return connection;
     });
@@ -163,11 +167,13 @@ export class PusherConnectionManager extends BaseAWSService {
       this.connections.delete(connectionId);
       this.monitoring.removeConnection(connectionId);
 
-      console.info('Connection removed', {
-        connectionId,
-        socketId: connection.socketId,
-        userId: connection.userId
-      });
+      if (process.env.NODE_ENV !== 'test') {
+        console.info('Connection removed', {
+          connectionId,
+          socketId: connection.socketId,
+          userId: connection.userId
+        });
+      }
     });
   }
 
@@ -244,11 +250,13 @@ export class PusherConnectionManager extends BaseAWSService {
 
       this.subscriptions.get(channel)!.push(subscription);
 
-      console.info('Channel subscription added', {
-        connectionId,
-        channel,
-        userId: connection.userId
-      });
+      if (process.env.NODE_ENV !== 'test') {
+        console.info('Channel subscription added', {
+          connectionId,
+          channel,
+          userId: connection.userId
+        });
+      }
     });
   }
 
@@ -277,11 +285,13 @@ export class PusherConnectionManager extends BaseAWSService {
         }
       }
 
-      console.info('Channel subscription removed', {
-        connectionId,
-        channel,
-        userId: connection.userId
-      });
+      if (process.env.NODE_ENV !== 'test') {
+        console.info('Channel subscription removed', {
+          connectionId,
+          channel,
+          userId: connection.userId
+        });
+      }
     });
   }
 
@@ -316,13 +326,15 @@ export class PusherConnectionManager extends BaseAWSService {
         const latency = Date.now() - startTime;
         this.monitoring.recordMessage(event.socketId || '', latency);
 
-        console.info('Event sent successfully', {
-          eventId: event.eventId,
-          channel: event.channel,
-          event: event.event,
-          subscriberCount: subscriptions.length,
-          latency
-        });
+        if (process.env.NODE_ENV !== 'test') {
+          console.info('Event sent successfully', {
+            eventId: event.eventId,
+            channel: event.channel,
+            event: event.event,
+            subscriberCount: subscriptions.length,
+            latency
+          });
+        }
 
         return {
           success: true,
@@ -341,11 +353,13 @@ export class PusherConnectionManager extends BaseAWSService {
         };
         errors.push(deliveryError);
 
-        console.error('Event delivery failed', {
-          eventId: event.eventId,
-          channel: event.channel,
-          error: error instanceof Error ? error.message : error
-        });
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Event delivery failed', {
+            eventId: event.eventId,
+            channel: event.channel,
+            error: error instanceof Error ? error.message : error
+          });
+        }
 
         return {
           success: false,
@@ -477,7 +491,9 @@ export class PusherConnectionManager extends BaseAWSService {
     this.subscriptions.clear();
     this.connectionPool = [];
 
-    console.info('PusherConnectionManager destroyed');
+    if (process.env.NODE_ENV !== 'test') {
+      console.info('PusherConnectionManager destroyed');
+    }
   }
 
   private initializePusher(): void {
@@ -538,7 +554,9 @@ export class PusherConnectionManager extends BaseAWSService {
       try {
         await this.performHealthCheck();
       } catch (error) {
-        console.error('Health check failed', { error });
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Health check failed', { error });
+        }
         this.monitoring.recordError('healthCheck');
       }
     }, this.connectionConfig.heartbeatInterval);

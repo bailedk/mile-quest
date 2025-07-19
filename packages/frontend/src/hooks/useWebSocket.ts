@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createWebSocketService, WebSocketService, WebSocketConnectionState } from '@/services/websocket';
+import { createWebSocketService, WebSocketService, WebSocketConnectionState, WebSocketConnectionInfo } from '@/services/websocket';
 import { useAuth } from './useAuth';
 
 interface UseWebSocketOptions {
   autoConnect?: boolean;
   reconnectOnAuthChange?: boolean;
+  enableMetrics?: boolean;
+  onConnectionChange?: (info: WebSocketConnectionInfo) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface WebSocketMetrics {
+  connectionAttempts: number;
+  reconnectAttempts: number;
+  totalDowntime: number;
+  lastConnectionTime: number | null;
+  averageLatency: number | null;
 }
 
 interface UseWebSocketReturn {
@@ -14,10 +25,19 @@ interface UseWebSocketReturn {
   connect: () => Promise<void>;
   disconnect: () => void;
   error: Error | null;
+  connectionInfo: WebSocketConnectionInfo;
+  metrics: WebSocketMetrics;
+  retry: () => Promise<void>;
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
-  const { autoConnect = true, reconnectOnAuthChange = true } = options;
+  const { 
+    autoConnect = true, 
+    reconnectOnAuthChange = true, 
+    enableMetrics = false,
+    onConnectionChange,
+    onError 
+  } = options;
   const { user, token } = useAuth();
   
   const [service, setService] = useState<WebSocketService | null>(null);
@@ -25,9 +45,25 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     WebSocketConnectionState.DISCONNECTED
   );
   const [error, setError] = useState<Error | null>(null);
+  const [connectionInfo, setConnectionInfo] = useState<WebSocketConnectionInfo>({
+    state: WebSocketConnectionState.DISCONNECTED,
+    socketId: null,
+    connectedAt: null,
+    reconnectAttempts: 0,
+    lastError: null,
+    isOnline: navigator.onLine,
+  });
+  const [metrics, setMetrics] = useState<WebSocketMetrics>({
+    connectionAttempts: 0,
+    reconnectAttempts: 0,
+    totalDowntime: 0,
+    lastConnectionTime: null,
+    averageLatency: null,
+  });
   
   const serviceRef = useRef<WebSocketService | null>(null);
   const cleanupFunctions = useRef<(() => void)[]>([]);
+  const disconnectedAtRef = useRef<number | null>(null);
 
   // Create WebSocket service
   const createService = useCallback(() => {
@@ -52,12 +88,71 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
       // Set up event listeners
       const stateChangeCleanup = newService.onConnectionStateChange((state) => {
+        const now = Date.now();
         setConnectionState(state);
+        
+        // Update connection info
+        const newConnectionInfo: WebSocketConnectionInfo = {
+          state,
+          socketId: newService.getSocketId(),
+          connectedAt: state === WebSocketConnectionState.CONNECTED ? now : connectionInfo.connectedAt,
+          reconnectAttempts: state === WebSocketConnectionState.RECONNECTING 
+            ? connectionInfo.reconnectAttempts + 1 
+            : connectionInfo.reconnectAttempts,
+          lastError: error,
+          isOnline: navigator.onLine,
+        };
+        setConnectionInfo(newConnectionInfo);
+        
+        // Update metrics if enabled
+        if (enableMetrics) {
+          setMetrics(prev => {
+            const updates: Partial<WebSocketMetrics> = {};
+            
+            if (state === WebSocketConnectionState.CONNECTED) {
+              updates.lastConnectionTime = now;
+              if (disconnectedAtRef.current) {
+                updates.totalDowntime = prev.totalDowntime + (now - disconnectedAtRef.current);
+                disconnectedAtRef.current = null;
+              }
+            } else if (state === WebSocketConnectionState.DISCONNECTED || state === WebSocketConnectionState.FAILED) {
+              if (!disconnectedAtRef.current) {
+                disconnectedAtRef.current = now;
+              }
+            }
+            
+            if (state === WebSocketConnectionState.RECONNECTING) {
+              updates.reconnectAttempts = prev.reconnectAttempts + 1;
+            }
+            
+            return { ...prev, ...updates };
+          });
+        }
+        
+        // Call connection change callback
+        if (onConnectionChange) {
+          onConnectionChange(newConnectionInfo);
+        }
       });
 
       const errorCleanup = newService.onError((err) => {
         setError(err);
         console.error('WebSocket error:', err);
+        
+        // Update connection info with error
+        setConnectionInfo(prev => ({
+          ...prev,
+          lastError: {
+            code: 'connection_error',
+            message: err.message,
+            originalError: err,
+          }
+        }));
+        
+        // Call error callback
+        if (onError) {
+          onError(err);
+        }
       });
 
       cleanupFunctions.current = [stateChangeCleanup, errorCleanup];
@@ -83,13 +178,47 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
 
     try {
       setError(null);
+      
+      // Update metrics
+      if (enableMetrics) {
+        setMetrics(prev => ({
+          ...prev,
+          connectionAttempts: prev.connectionAttempts + 1
+        }));
+      }
+      
       await serviceRef.current!.connect();
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Connection failed');
       setError(error);
+      
+      // Update connection info with error
+      setConnectionInfo(prev => ({
+        ...prev,
+        lastError: {
+          code: 'connection_failed',
+          message: error.message,
+          originalError: error,
+        }
+      }));
+      
       throw error;
     }
-  }, [createService]);
+  }, [createService, enableMetrics]);
+
+  // Retry function - force reconnection
+  const retry = useCallback(async () => {
+    // Disconnect first if connected
+    if (serviceRef.current) {
+      disconnect();
+    }
+    
+    // Wait a moment for cleanup
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Attempt to reconnect
+    return connect();
+  }, [disconnect, connect]);
 
   // Disconnect function
   const disconnect = useCallback(() => {
@@ -183,5 +312,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     connect,
     disconnect,
     error,
+    connectionInfo,
+    metrics,
+    retry,
   };
 }

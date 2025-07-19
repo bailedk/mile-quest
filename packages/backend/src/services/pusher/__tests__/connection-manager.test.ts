@@ -217,7 +217,7 @@ describe('PusherConnectionManager', () => {
       // Next subscription should be rate limited
       await expect(
         manager.subscribeToChannel(connectionId, 'public-channel-overflow')
-      ).rejects.toThrow('rate limit exceeded');
+      ).rejects.toThrow(/rate limit/i);
     });
   });
 

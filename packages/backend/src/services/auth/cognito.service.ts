@@ -23,6 +23,7 @@ import {
   AttributeType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
+import { RetryHandler, RetryConfigs } from '../aws/retry-handler';
 import { BaseAWSService, ServiceConfig, ServiceMetrics } from '../aws/base-service';
 import {
   AuthService,
@@ -46,6 +47,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
   private clientId: string;
   private jwtVerifier: any;
   private currentSession: AuthSession | null = null;
+  private retryHandler: RetryHandler;
 
   constructor(config?: AuthConfig & ServiceConfig, metrics?: ServiceMetrics) {
     super('CognitoAuth', config, metrics);
@@ -66,12 +68,18 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
       clientId: this.clientId,
     });
 
+    // Initialize retry handler with auth-specific configuration
+    this.retryHandler = new RetryHandler({
+      ...RetryConfigs.auth,
+      ...(config?.retryConfig || {}),
+    });
+
     this.validateConfig();
   }
 
   async signIn({ email, password }: SignInParams): Promise<AuthSession> {
     return this.executeWithMetrics('signIn', async () => {
-      try {
+      return this.retryHandler.execute(async () => {
         const response = await this.client.send(
           new InitiateAuthCommand({
             ClientId: this.clientId,
@@ -88,9 +96,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
         }
 
         return this.createSessionFromTokens(response.AuthenticationResult);
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
@@ -109,7 +115,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
 
   async signUp({ email, password, name, attributes }: SignUpParams): Promise<AuthUser> {
     return this.executeWithMetrics('signUp', async () => {
-      try {
+      return this.retryHandler.execute(async () => {
         const userAttributes: AttributeType[] = [
           { Name: 'email', Value: email },
           { Name: 'name', Value: name },
@@ -138,15 +144,13 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
           createdAt: new Date(),
           attributes,
         };
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
   async confirmSignUp({ email, code }: ConfirmSignUpParams): Promise<void> {
     return this.executeWithMetrics('confirmSignUp', async () => {
-      try {
+      return this.retryHandler.execute(async () => {
         await this.client.send(
           new ConfirmSignUpCommand({
             ClientId: this.clientId,
@@ -154,45 +158,39 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
             ConfirmationCode: code,
           })
         );
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
   async resendConfirmationCode(email: string): Promise<void> {
     return this.executeWithMetrics('resendConfirmationCode', async () => {
-      try {
+      return this.retryHandler.execute(async () => {
         await this.client.send(
           new ResendConfirmationCodeCommand({
             ClientId: this.clientId,
             Username: email,
           })
         );
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
   async forgotPassword({ email }: ForgotPasswordParams): Promise<void> {
     return this.executeWithMetrics('forgotPassword', async () => {
-      try {
+      return this.retryHandler.execute(async () => {
         await this.client.send(
           new ForgotPasswordCommand({
             ClientId: this.clientId,
             Username: email,
           })
         );
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
   async resetPassword({ email, code, newPassword }: ResetPasswordParams): Promise<void> {
     return this.executeWithMetrics('resetPassword', async () => {
-      try {
+      return this.retryHandler.execute(async () => {
         await this.client.send(
           new ConfirmForgotPasswordCommand({
             ClientId: this.clientId,
@@ -201,9 +199,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
             Password: newPassword,
           })
         );
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
@@ -211,7 +207,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
     return this.executeWithMetrics('changePassword', async () => {
       const accessToken = await this.getAccessToken();
       
-      try {
+      return this.retryHandler.execute(async () => {
         await this.client.send(
           new ChangePasswordCommand({
             AccessToken: accessToken,
@@ -219,9 +215,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
             ProposedPassword: newPassword,
           })
         );
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
@@ -259,13 +253,13 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
         throw new AuthError('No refresh token available', AuthErrorCode.SESSION_EXPIRED);
       }
 
-      try {
+      return this.retryHandler.execute(async () => {
         const response = await this.client.send(
           new InitiateAuthCommand({
             ClientId: this.clientId,
             AuthFlow: 'REFRESH_TOKEN_AUTH',
             AuthParameters: {
-              REFRESH_TOKEN: this.currentSession.refreshToken,
+              REFRESH_TOKEN: this.currentSession!.refreshToken!,
             },
           })
         );
@@ -276,9 +270,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
 
         this.currentSession = await this.createSessionFromTokens(response.AuthenticationResult);
         return this.currentSession;
-      } catch (error) {
-        throw this.mapError(error);
-      }
+      });
     });
   }
 
@@ -523,6 +515,7 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
     };
 
     this.currentSession = session;
+    this.setupRefreshTimer();
     return session;
   }
 
@@ -547,5 +540,61 @@ export class CognitoAuthService extends BaseAWSService implements AuthService {
   private isTokenExpiredError(error: any): boolean {
     return error.name === 'NotAuthorizedException' && 
            error.message?.includes('expired');
+  }
+
+  private mapCognitoUserType(user: UserType): AuthUser {
+    const attributes: Record<string, string> = {};
+    user.Attributes?.forEach((attr: AttributeType) => {
+      if (attr.Name && attr.Value) {
+        attributes[attr.Name] = attr.Value;
+      }
+    });
+
+    return {
+      id: user.Username || attributes.sub,
+      email: attributes.email,
+      name: attributes.name,
+      emailVerified: attributes.email_verified === 'true',
+      createdAt: user.UserCreateDate || new Date(),
+      attributes,
+    };
+  }
+
+  private async shouldRefreshToken(): Promise<boolean> {
+    if (!this.currentSession) {
+      return false;
+    }
+
+    const now = new Date();
+    const expiryTime = new Date(this.currentSession.expiresAt.getTime() - (this.refreshThreshold * 1000));
+    
+    return now >= expiryTime;
+  }
+
+  private setupRefreshTimer(): void {
+    if (!this.currentSession || !this.autoRefresh) {
+      return;
+    }
+
+    this.clearRefreshTimer();
+
+    const refreshTime = this.currentSession.expiresAt.getTime() - (this.refreshThreshold * 1000) - Date.now();
+    
+    if (refreshTime > 0) {
+      this.refreshTimer = setTimeout(async () => {
+        try {
+          await this.autoRefreshToken();
+        } catch (error) {
+          console.error('Auto-refresh failed:', error);
+        }
+      }, refreshTime);
+    }
+  }
+
+  private clearRefreshTimer(): void {
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = undefined;
+    }
   }
 }

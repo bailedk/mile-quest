@@ -141,6 +141,19 @@ body {
     touch-action: manipulation;
   }
   
+  /* Touch panning optimizations */
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+  
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+  
+  .touch-pinch-zoom {
+    touch-action: pinch-zoom;
+  }
+  
   /* Prevent text selection on touch elements */
   .no-select {
     -webkit-user-select: none;
@@ -155,10 +168,59 @@ body {
     overscroll-behavior: contain;
   }
   
+  /* Enhanced momentum scrolling for lists */
+  .momentum-scroll-list {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+  }
+  
   /* Optimized for mobile viewport */
   .mobile-viewport {
     min-height: 100vh;
     min-height: 100dvh; /* Dynamic viewport height for better mobile support */
+  }
+  
+  /* Touch-optimized button styles */
+  .touch-button {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Prevent elastic bounce on iOS */
+  .no-bounce {
+    overscroll-behavior: none;
+  }
+  
+  /* Optimize for gesture navigation */
+  .gesture-optimized {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  
+  /* Better touch feedback */
+  .touch-highlight {
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Performance optimizations for scrolling */
+  .scroll-optimized {
+    will-change: scroll-position;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  /* Optimized transforms for touch interactions */
+  .touch-transform {
+    will-change: transform;
+    transform: translateZ(0);
   }
 }
 

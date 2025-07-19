@@ -169,7 +169,9 @@ export class PusherAuthHandler {
       };
 
     } catch (error) {
-      console.error('Channel authorization error:', error);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Channel authorization error:', error);
+      }
       return {
         success: false,
         error: 'Authorization check failed',

@@ -3,7 +3,9 @@ export { BottomNavigation, defaultNavItems, useBottomNavigation } from './Bottom
 export { MobileHeader } from './MobileHeader';
 export { 
   useSwipeGesture, 
+  useAdvancedSwipeGesture,
   PullToRefresh, 
   InfiniteScroll, 
-  TouchCard 
+  TouchCard,
+  TouchButton
 } from './TouchInteractions';

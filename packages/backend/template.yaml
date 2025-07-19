@@ -45,6 +45,15 @@ Parameters:
     Default: "INFO"
     AllowedValues: ["DEBUG", "INFO", "WARN", "ERROR"]
     Description: Logging level for Lambda functions
+  PusherKey:
+    Type: String
+    Description: Pusher application key for WebSocket connections
+    Default: "mock-pusher-key"
+  PusherSecret:
+    Type: String
+    Description: Pusher application secret for WebSocket authentication
+    NoEcho: true
+    Default: "mock-pusher-secret"
 
 Conditions:
   IsProduction: !Equals [!Ref Stage, "prod"]
@@ -162,6 +171,12 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-LeaderboardsFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  WebSocketFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-WebSocketFunction'
       RetentionInDays: !If [IsProduction, 30, 7]
 
   # Lambda Functions
@@ -311,6 +326,32 @@ Resources:
             Path: /teams/{teamId}/leaderboard/rank
             Method: GET
 
+  WebSocketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/lambda/websocket/
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref WebSocketFunctionLogGroup
+      Environment:
+        Variables:
+          PUSHER_SECRET: !Ref PusherSecret
+          PUSHER_KEY: !Ref PusherKey
+      Events:
+        WebSocketAuthPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /websocket/auth
+            Method: POST
+        WebSocketTokenGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /websocket/token
+            Method: GET
+
   ScheduledFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -404,5 +445,6 @@ Outputs:
       Activities: /aws/lambda/${AWS::StackName}-${Stage}-ActivitiesFunction
       Dashboard: /aws/lambda/${AWS::StackName}-${Stage}-DashboardFunction
       Progress: /aws/lambda/${AWS::StackName}-${Stage}-ProgressFunction
+      WebSocket: /aws/lambda/${AWS::StackName}-${Stage}-WebSocketFunction
       Scheduled: /aws/lambda/${AWS::StackName}-${Stage}-ScheduledFunction
       API Gateway: /aws/apigateway/${AWS::StackName}-${Stage}

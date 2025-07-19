@@ -81,10 +81,15 @@ export interface AuthService {
   verifyToken(token: string): Promise<AuthUser>;
   getIdToken(): Promise<string>;
   getAccessToken(): Promise<string>;
+  getRefreshToken(): Promise<string>;
+  isTokenExpired(token?: string): Promise<boolean>;
+  autoRefreshToken(): Promise<AuthSession | null>;
   
   // User Management
   updateUserAttributes(params: UpdateUserAttributesParams): Promise<void>;
   deleteUser(): Promise<void>;
+  enableUser(userId: string): Promise<void>;
+  disableUser(userId: string): Promise<void>;
   
   // Admin Operations (for backend services)
   adminGetUser(userId: string): Promise<AuthUser>;
@@ -92,6 +97,9 @@ export interface AuthService {
   adminDeleteUser(userId: string): Promise<void>;
   adminUpdateUserAttributes(userId: string, attributes: Record<string, any>): Promise<void>;
   adminResetUserPassword(userId: string, password: string): Promise<void>;
+  adminEnableUser(userId: string): Promise<void>;
+  adminDisableUser(userId: string): Promise<void>;
+  adminListUsers(limit?: number, paginationToken?: string): Promise<{ users: AuthUser[]; nextToken?: string }>;
 }
 
 export interface AuthConfig {
@@ -109,6 +117,14 @@ export interface AuthConfig {
     redirectSignOut: string;
     responseType: string;
   };
+  retryConfig?: {
+    maxRetries?: number;
+    baseDelay?: number;
+    maxDelay?: number;
+    retryableErrors?: string[];
+  };
+  autoRefresh?: boolean;
+  refreshThreshold?: number; // seconds before expiry to auto-refresh
 }
 
 export class AuthError extends Error {
@@ -150,4 +166,7 @@ export enum AuthErrorCode {
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
   NOT_AUTHORIZED = 'NOT_AUTHORIZED',
   LIMIT_EXCEEDED = 'LIMIT_EXCEEDED',
+  USER_DISABLED = 'USER_DISABLED',
+  TEMPORARY_PASSWORD = 'TEMPORARY_PASSWORD',
+  MFA_REQUIRED = 'MFA_REQUIRED',
 }

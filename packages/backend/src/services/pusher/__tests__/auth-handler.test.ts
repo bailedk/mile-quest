@@ -155,14 +155,14 @@ describe('PusherAuthHandler', () => {
 
   describe('Channel Authorization', () => {
     it('should authorize user-specific private channels', async () => {
-      const result = await authHandler.authorizeChannel('private-user-123', 'user-123');
+      const result = await authHandler.authorizeChannel('private-user-123', '123');
 
       expect(result.success).toBe(true);
       expect(result.permissions).toBeDefined();
     });
 
     it('should reject access to other users private channels', async () => {
-      const result = await authHandler.authorizeChannel('private-user-123', 'user-456');
+      const result = await authHandler.authorizeChannel('private-user-123', '456');
 
       expect(result.success).toBe(false);
       expect(result.errorCode).toBeDefined();

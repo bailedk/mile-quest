@@ -21,8 +21,11 @@ interface MockUser {
   user: AuthUser;
   password: string;
   confirmed: boolean;
+  enabled: boolean;
   resetCode?: string;
   confirmationCode?: string;
+  mfaEnabled?: boolean;
+  temporaryPassword?: boolean;
 }
 
 export class MockAuthService implements AuthService {
@@ -30,6 +33,10 @@ export class MockAuthService implements AuthService {
   private sessions: Map<string, AuthSession> = new Map();
   private currentSession: AuthSession | null = null;
   private mockDelay: number = 0;
+  private autoRefresh: boolean = true;
+  private refreshThreshold: number = 300;
+  private errorSimulation: Map<string, Error> = new Map();
+  private callHistory: Array<{ method: string; params: any; timestamp: Date }> = [];
 
   constructor() {
     // Add some default test users
@@ -43,6 +50,7 @@ export class MockAuthService implements AuthService {
       },
       password: 'password123',
       confirmed: true,
+      enabled: true,
     });
   }
 
@@ -66,13 +74,47 @@ export class MockAuthService implements AuthService {
     return Array.from(this.users.values());
   }
 
+  simulateError(method: string, error: Error): void {
+    this.errorSimulation.set(method, error);
+  }
+
+  clearErrorSimulation(method?: string): void {
+    if (method) {
+      this.errorSimulation.delete(method);
+    } else {
+      this.errorSimulation.clear();
+    }
+  }
+
+  getCallHistory(): Array<{ method: string; params: any; timestamp: Date }> {
+    return [...this.callHistory];
+  }
+
+  clearCallHistory(): void {
+    this.callHistory = [];
+  }
+
+  setAutoRefresh(enabled: boolean): void {
+    this.autoRefresh = enabled;
+  }
+
+  setRefreshThreshold(seconds: number): void {
+    this.refreshThreshold = seconds;
+  }
+
   // AuthService implementation
   async signIn({ email, password }: SignInParams): Promise<AuthSession> {
+    this.recordCall('signIn', { email });
     await this.delay();
+    this.checkErrorSimulation('signIn');
     
     const mockUser = this.users.get(email);
     if (!mockUser) {
       throw new AuthError('User not found', AuthErrorCode.USER_NOT_FOUND);
+    }
+
+    if (!mockUser.enabled) {
+      throw new AuthError('User account is disabled', AuthErrorCode.USER_DISABLED);
     }
 
     if (mockUser.password !== password) {
@@ -81,6 +123,14 @@ export class MockAuthService implements AuthService {
 
     if (!mockUser.confirmed) {
       throw new AuthError('User not confirmed', AuthErrorCode.USER_NOT_CONFIRMED);
+    }
+
+    if (mockUser.temporaryPassword) {
+      throw new AuthError('Temporary password must be changed', AuthErrorCode.TEMPORARY_PASSWORD);
+    }
+
+    if (mockUser.mfaEnabled) {
+      throw new AuthError('MFA required', AuthErrorCode.MFA_REQUIRED);
     }
 
     const session = this.createMockSession(mockUser.user);
@@ -105,6 +155,7 @@ export class MockAuthService implements AuthService {
       user: googleUser,
       password: 'google-oauth',
       confirmed: true,
+      enabled: true,
     };
 
     this.addMockUser(mockUser);
@@ -122,10 +173,17 @@ export class MockAuthService implements AuthService {
   }
 
   async signUp({ email, password, name, attributes }: SignUpParams): Promise<AuthUser> {
+    this.recordCall('signUp', { email, name });
     await this.delay();
+    this.checkErrorSimulation('signUp');
     
     if (this.users.has(email)) {
       throw new AuthError('User already exists', AuthErrorCode.USER_EXISTS);
+    }
+
+    // Simple password validation
+    if (password.length < 8) {
+      throw new AuthError('Password must be at least 8 characters', AuthErrorCode.INVALID_PASSWORD);
     }
 
     const user: AuthUser = {
@@ -141,6 +199,7 @@ export class MockAuthService implements AuthService {
       user,
       password,
       confirmed: false,
+      enabled: true,
       confirmationCode: '123456',
     };
 
@@ -346,6 +405,7 @@ export class MockAuthService implements AuthService {
       user,
       password: params.password,
       confirmed: true,
+      enabled: true,
     };
 
     this.addMockUser(mockUser);
@@ -383,7 +443,9 @@ export class MockAuthService implements AuthService {
   }
 
   async adminResetUserPassword(userId: string, password: string): Promise<void> {
+    this.recordCall('adminResetUserPassword', { userId });
     await this.delay();
+    this.checkErrorSimulation('adminResetUserPassword');
     
     const mockUser = this.users.get(userId);
     if (!mockUser) {
@@ -391,12 +453,129 @@ export class MockAuthService implements AuthService {
     }
 
     mockUser.password = password;
+    mockUser.temporaryPassword = true; // Require password change on next login
+  }
+
+  async getRefreshToken(): Promise<string> {
+    if (!this.currentSession?.refreshToken) {
+      throw new AuthError('No refresh token available', AuthErrorCode.SESSION_EXPIRED);
+    }
+    return this.currentSession.refreshToken;
+  }
+
+  async isTokenExpired(token?: string): Promise<boolean> {
+    const tokenToCheck = token || this.currentSession?.idToken;
+    if (!tokenToCheck) {
+      return true;
+    }
+
+    const session = this.sessions.get(tokenToCheck);
+    if (!session) {
+      return true;
+    }
+
+    return new Date() > session.expiresAt;
+  }
+
+  async autoRefreshToken(): Promise<AuthSession | null> {
+    if (!this.currentSession || !this.autoRefresh) {
+      return null;
+    }
+
+    if (await this.shouldRefreshToken()) {
+      try {
+        return await this.refreshSession();
+      } catch (error) {
+        this.currentSession = null;
+        throw error;
+      }
+    }
+
+    return this.currentSession;
+  }
+
+  async enableUser(userId: string): Promise<void> {
+    this.recordCall('enableUser', { userId });
+    await this.delay();
+    this.checkErrorSimulation('enableUser');
+    
+    const mockUser = this.users.get(userId);
+    if (!mockUser) {
+      throw new AuthError('User not found', AuthErrorCode.USER_NOT_FOUND);
+    }
+
+    mockUser.enabled = true;
+  }
+
+  async disableUser(userId: string): Promise<void> {
+    this.recordCall('disableUser', { userId });
+    await this.delay();
+    this.checkErrorSimulation('disableUser');
+    
+    const mockUser = this.users.get(userId);
+    if (!mockUser) {
+      throw new AuthError('User not found', AuthErrorCode.USER_NOT_FOUND);
+    }
+
+    mockUser.enabled = false;
+  }
+
+  async adminEnableUser(userId: string): Promise<void> {
+    return this.enableUser(userId);
+  }
+
+  async adminDisableUser(userId: string): Promise<void> {
+    return this.disableUser(userId);
+  }
+
+  async adminListUsers(limit: number = 60, paginationToken?: string): Promise<{ users: AuthUser[]; nextToken?: string }> {
+    this.recordCall('adminListUsers', { limit, paginationToken });
+    await this.delay();
+    this.checkErrorSimulation('adminListUsers');
+    
+    const allUsers = Array.from(this.users.values())
+      .filter(mockUser => mockUser.user.id.startsWith('user-') || mockUser.user.id.startsWith('admin-'))
+      .map(mockUser => mockUser.user);
+    
+    const startIndex = paginationToken ? parseInt(paginationToken, 10) : 0;
+    const endIndex = Math.min(startIndex + limit, allUsers.length);
+    const users = allUsers.slice(startIndex, endIndex);
+    
+    const nextToken = endIndex < allUsers.length ? endIndex.toString() : undefined;
+    
+    return { users, nextToken };
   }
 
   // Helper methods
   private async delay(): Promise<void> {
     if (this.mockDelay > 0) {
       await new Promise(resolve => setTimeout(resolve, this.mockDelay));
+    }
+  }
+
+  private async shouldRefreshToken(): Promise<boolean> {
+    if (!this.currentSession) {
+      return false;
+    }
+
+    const now = new Date();
+    const expiryTime = new Date(this.currentSession.expiresAt.getTime() - (this.refreshThreshold * 1000));
+    
+    return now >= expiryTime;
+  }
+
+  private recordCall(method: string, params: any): void {
+    this.callHistory.push({
+      method,
+      params,
+      timestamp: new Date(),
+    });
+  }
+
+  private checkErrorSimulation(method: string): void {
+    const error = this.errorSimulation.get(method);
+    if (error) {
+      throw error;
     }
   }
 
