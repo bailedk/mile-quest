@@ -2,12 +2,18 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/auth.store';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const { isAuthenticated, user, signOut } = useAuthStore();
   
-  // TODO: Replace with actual auth state
-  const isAuthenticated = false;
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
+  };
   
   return (
     <header className="bg-white border-b border-gray-200">
@@ -37,7 +43,10 @@ export function Header() {
                 <Link href="/profile" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
                   Profile
                 </Link>
-                <button className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
+                <button 
+                  onClick={handleSignOut}
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium"
+                >
                   Sign Out
                 </button>
               </>
@@ -95,7 +104,10 @@ export function Header() {
                   <Link href="/profile" className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600">
                     Profile
                   </Link>
-                  <button className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600">
+                  <button 
+                    onClick={handleSignOut}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+                  >
                     Sign Out
                   </button>
                 </>

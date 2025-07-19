@@ -193,5 +193,82 @@ export class ApiError extends Error {
   }
 }
 
+// Authentication types
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  idToken: string;
+  expiresIn: number;
+  tokenType: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+  emailVerified: boolean;
+  preferredUnits?: 'miles' | 'kilometers';
+  timezone?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Auth request/response schemas
+export const RegisterSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(100),
+  name: z.string().min(1).max(100),
+  preferredUnits: z.enum(['miles', 'kilometers']).optional().default('miles'),
+  timezone: z.string().optional(),
+});
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+export const RefreshTokenSchema = z.object({
+  refreshToken: z.string(),
+});
+
+export const VerifyEmailSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6),
+});
+
+export const ResetPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const ConfirmPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string(),
+  newPassword: z.string().min(8).max(100),
+});
+
+// Auth response types
+export interface RegisterResponse {
+  user: AuthUser;
+  message: string;
+}
+
+export interface LoginResponse {
+  user: AuthUser;
+  tokens: AuthTokens;
+}
+
+export interface RefreshResponse {
+  tokens: AuthTokens;
+}
+
+export interface LogoutResponse {
+  message: string;
+}
+
+export interface VerifyEmailResponse {
+  message: string;
+}
+
 // Type exports for Prisma generated types (when available)
 // export type { User, Team, Activity, TeamGoal } from '@prisma/client';
