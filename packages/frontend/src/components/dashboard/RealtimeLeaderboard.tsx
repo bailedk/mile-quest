@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { formatDistance } from '@/services/activity.service';
 import { useRealtimeLeaderboard, LeaderboardEntry, LeaderboardUpdate } from '@/hooks/useRealtimeLeaderboard';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { GracefulFeature, NetworkAware } from '@/components/graceful/GracefulDegradation';
+import { ErrorState, LoadingError, ListSkeleton } from '@/components/LoadingSpinner';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
 
 interface RealtimeLeaderboardProps {
   initialEntries: LeaderboardEntry[];
@@ -29,6 +32,15 @@ export function RealtimeLeaderboard({
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
   const [updatedEntries, setUpdatedEntries] = useState<Set<string>>(new Set());
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const errorHandler = useErrorHandler({
+    enableRetry: true,
+    maxRetries: 3,
+    onError: (error) => {
+      console.error('Leaderboard error:', error);
+    }
+  });
 
   const { isConnected, connectionState, error, refreshLeaderboard } = useRealtimeLeaderboard(teamId, {
     refreshInterval,
@@ -37,7 +49,7 @@ export function RealtimeLeaderboard({
       handleLeaderboardUpdate(update);
     },
     onError: (error) => {
-      console.error('Leaderboard real-time error:', error);
+      errorHandler.handleError(error, 'RealtimeLeaderboard');
     },
   });
 
@@ -92,6 +104,60 @@ export function RealtimeLeaderboard({
     }
   };
 
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await refreshLeaderboard();
+      errorHandler.clearError();
+    } catch (err) {
+      errorHandler.handleError(err, 'LeaderboardRetry');
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  // Show error state if there's a persistent error
+  if (errorHandler.error && !errorHandler.canRetry && entries.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <ErrorState
+          title="Leaderboard Unavailable"
+          message="Unable to load the leaderboard at the moment. Please try again later."
+          icon="📊"
+          action={{
+            label: 'Reload',
+            onClick: () => window.location.reload()
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Show loading error with retry option
+  if (errorHandler.error && errorHandler.canRetry) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <LoadingError
+          resource="leaderboard"
+          onRetry={handleRetry}
+        />
+      </div>
+    );
+  }
+
+  // Show skeleton while loading initially
+  if (entries.length === 0 && errorHandler.isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Leaderboard</h3>
+        </div>
+        <ListSkeleton items={5} hasAvatar={false} />
+      </div>
+    );
+  }
+
+  // Show empty state
   if (entries.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
@@ -108,42 +174,80 @@ export function RealtimeLeaderboard({
         </div>
         <div className="text-center py-8">
           <p className="text-gray-500">No leaderboard data available yet.</p>
+          <button
+            onClick={handleRetry}
+            className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            disabled={isRetrying}
+          >
+            {isRetrying ? 'Loading...' : 'Load Leaderboard'}
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Leaderboard</h3>
-        
-        <div className="flex items-center space-x-2">
-          {isConnected && (
-            <span className="text-xs text-green-600 flex items-center">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-              Live
-            </span>
-          )}
-          
-          {showConnectionStatus && (
-            <ConnectionStatus 
-              connectionState={connectionState}
-              error={error}
-              size="sm"
-              showText={!isConnected}
-            />
-          )}
-          
-          <button
-            onClick={refreshLeaderboard}
-            className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none"
-            title="Refresh leaderboard"
-          >
-            🔄
-          </button>
+    <NetworkAware
+      offlineFallback={
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <span className="text-yellow-600 mr-2">🌐</span>
+              <div>
+                <h4 className="text-sm font-medium text-yellow-800">You're offline</h4>
+                <p className="text-sm text-yellow-700">Showing last known leaderboard data</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4">
+            {entries.map((entry, index) => (
+              <div key={entry.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                    {showRankings ? getRankIcon(entry.rank) : index + 1}
+                  </div>
+                  <span className="font-medium text-gray-700">{entry.userName}</span>
+                </div>
+                <span className="text-sm text-gray-600">
+                  {formatDistance(entry.totalDistance, userPreferredUnits)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      }
+    >
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Leaderboard</h3>
+          
+          <div className="flex items-center space-x-2">
+            {isConnected && (
+              <span className="text-xs text-green-600 flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                Live
+              </span>
+            )}
+            
+            {showConnectionStatus && (
+              <ConnectionStatus 
+                connectionState={connectionState}
+                error={error}
+                size="sm"
+                showText={!isConnected}
+              />
+            )}
+            
+            <button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50"
+              title="Refresh leaderboard"
+            >
+              {isRetrying ? '⏳' : '🔄'}
+            </button>
+          </div>
+        </div>
 
       <div className="space-y-3">
         {entries.map((entry, index) => {
@@ -225,5 +329,43 @@ export function RealtimeLeaderboard({
         )}
       </div>
     </div>
+    </NetworkAware>
+  );
+}
+
+// Enhanced version with graceful degradation wrapper
+export function GracefulRealtimeLeaderboard(props: RealtimeLeaderboardProps) {
+  return (
+    <GracefulFeature
+      feature="realtime-leaderboard"
+      errorMessage="The live leaderboard feature is temporarily unavailable. You can still view basic team statistics."
+      retryable={true}
+      timeout={15000}
+      fallback={
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Statistics</h3>
+          <div className="space-y-3">
+            {props.initialEntries.slice(0, props.maxEntries || 10).map((entry, index) => (
+              <div key={entry.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                    #{entry.rank}
+                  </div>
+                  <span className="font-medium text-gray-700">{entry.userName}</span>
+                </div>
+                <span className="text-sm text-gray-600">
+                  {formatDistance(entry.totalDistance, props.userPreferredUnits || 'miles')}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500">Refresh the page to try loading live updates</p>
+          </div>
+        </div>
+      }
+    >
+      <RealtimeLeaderboard {...props} />
+    </GracefulFeature>
   );
 }

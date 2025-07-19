@@ -102,6 +102,9 @@ export const cacheKeys = {
   teamProgress: (teamId: string) => `team:progress:${teamId}`,
   activitySummary: (userId: string, period: string, teamId?: string) => 
     `activity:summary:${userId}:${period}${teamId ? `:${teamId}` : ''}`,
+  userNotificationStats: (userId: string) => `notification:stats:${userId}`,
+  userNotificationPreferences: (userId: string) => `notification:preferences:${userId}`,
+  notificationTemplate: (key: string) => `notification:template:${key}`,
 };
 
 /**
@@ -112,4 +115,7 @@ export const cacheTTL = {
   teamProgress: 300, // 5 minutes
   activitySummary: 600, // 10 minutes
   leaderboard: 900, // 15 minutes
+  notificationStats: 300, // 5 minutes
+  notificationPreferences: 1800, // 30 minutes
+  notificationTemplate: 3600, // 1 hour
 };

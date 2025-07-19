@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/utils/responsiveUtils';
 import { ProgressLineChart, GoalProgressChart, ActivityBarChart, SwipeableChart } from '@/components/charts';
@@ -87,32 +87,48 @@ export default function DashboardPage() {
   const { connect } = useWebSocketContext();
   const { isConnected, connectionState, error, isOnline, wasOffline } = useWebSocketStatus();
 
+  // Memoize callbacks to prevent infinite re-renders
+  const handleActivityUpdate = useCallback((update: any) => {
+    console.log('Dashboard received activity update:', update);
+    // Refresh dashboard data when new activities arrive
+    refresh();
+  }, [refresh]);
+
+  const handleActivityError = useCallback((error: Error) => {
+    console.error('Realtime activity error:', error);
+  }, []);
+
+  const handleAchievement = useCallback((achievement: Achievement) => {
+    setAchievements(prev => [...prev, achievement]);
+  }, []);
+
+  const handleRealtimeError = useCallback((error: Error) => {
+    console.error('Realtime updates error:', error);
+  }, []);
+
   // Real-time activity updates for the selected team
   useRealtimeActivities(selectedTeamId, {
-    onActivity: (update) => {
-      console.log('Dashboard received activity update:', update);
-      // Refresh dashboard data when new activities arrive
-      refresh();
-    },
-    onError: (error) => {
-      console.error('Realtime activity error:', error);
-    },
+    onActivity: handleActivityUpdate,
+    onError: handleActivityError,
     enableLogging: process.env.NODE_ENV === 'development',
   });
 
+  // Memoize channels to prevent infinite re-renders
+  const realtimeChannels = useMemo(() => {
+    if (selectedTeamId && user) {
+      return [`team-${selectedTeamId}`, `user-${user.id}`, 'global-achievements'];
+    } else if (user) {
+      return [`user-${user.id}`, 'global-achievements'];
+    } else {
+      return [];
+    }
+  }, [selectedTeamId, user?.id]);
+
   // Real-time updates for general events
   useRealtimeUpdates({
-    channels: selectedTeamId && user ? [
-      `team-${selectedTeamId}`,
-      `user-${user.id}`,
-      'global-achievements'
-    ] : user ? [`user-${user.id}`, 'global-achievements'] : [],
-    onAchievement: (achievement) => {
-      setAchievements(prev => [...prev, achievement]);
-    },
-    onError: (error) => {
-      console.error('Realtime updates error:', error);
-    },
+    channels: realtimeChannels,
+    onAchievement: handleAchievement,
+    onError: handleRealtimeError,
     enableLogging: process.env.NODE_ENV === 'development',
   });
   

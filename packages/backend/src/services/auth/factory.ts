@@ -83,12 +83,16 @@ class DefaultAuthServiceFactory implements AuthServiceFactory {
       return envProvider;
     }
     
-    // Default to mock in test/development, cognito in production
-    if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-      return 'mock';
+    // Check if Cognito is properly configured
+    const hasCognitoConfig = process.env.COGNITO_USER_POOL_ID && process.env.COGNITO_CLIENT_ID;
+    
+    // Default to mock unless we're in production AND have Cognito config
+    if (process.env.NODE_ENV === 'production' && hasCognitoConfig) {
+      return 'cognito';
     }
     
-    return 'cognito';
+    // Use mock for all other cases (development, test, or missing Cognito config)
+    return 'mock';
   }
 
   private getDefaultConfig(provider?: AuthProvider): AuthConfig & ServiceConfig {

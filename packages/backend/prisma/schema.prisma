@@ -9,23 +9,25 @@ datasource db {
 }
 
 model User {
-  id              String            @id @default(uuid())
-  email           String            @unique
-  name            String
-  avatarUrl       String?
-  emailVerified   Boolean           @default(false)
-  cognitoId       String            @unique
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  deletedAt       DateTime?
-  activities      Activity[]
-  createdGoals    TeamGoal[]        @relation("GoalCreator")
-  sentInvites     TeamInvite[]      @relation("InviteSender")
-  receivedInvites TeamInvite[]      @relation("InviteRecipient")
-  teamMemberships TeamMember[]
-  createdTeams    Team[]            @relation("TeamCreator")
-  achievements    UserAchievement[]
-  stats           UserStats?
+  id                      String                    @id @default(uuid())
+  email                   String                    @unique
+  name                    String
+  avatarUrl               String?
+  emailVerified           Boolean                   @default(false)
+  cognitoId               String                    @unique
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  deletedAt               DateTime?
+  activities              Activity[]
+  createdGoals            TeamGoal[]                @relation("GoalCreator")
+  sentInvites             TeamInvite[]              @relation("InviteSender")
+  receivedInvites         TeamInvite[]              @relation("InviteRecipient")
+  teamMemberships         TeamMember[]
+  createdTeams            Team[]                    @relation("TeamCreator")
+  achievements            UserAchievement[]
+  stats                   UserStats?
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
 
   @@index([email])
   @@index([cognitoId])
@@ -268,4 +270,165 @@ enum AchievementCategory {
   SPEED
   TEAM
   SPECIAL
+}
+
+model NotificationTemplate {
+  id           String                 @id @default(uuid())
+  key          String                 @unique
+  name         String
+  description  String?
+  category     NotificationCategory
+  priority     NotificationPriority   @default(MEDIUM)
+  subject      String
+  content      String
+  emailContent String?
+  variables    Json                   @default("[]")
+  isActive     Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  notifications Notification[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("notification_templates")
+}
+
+model Notification {
+  id               String                @id @default(uuid())
+  userId           String
+  templateId       String?
+  type             NotificationType
+  category         NotificationCategory
+  priority         NotificationPriority  @default(MEDIUM)
+  title            String
+  content          String
+  data             Json?
+  channels         NotificationChannel[] @default([REALTIME])
+  status           NotificationStatus    @default(PENDING)
+  scheduledFor     DateTime?
+  sentAt           DateTime?
+  readAt           DateTime?
+  clickedAt        DateTime?
+  expiresAt        DateTime?
+  retryCount       Int                   @default(0)
+  maxRetries       Int                   @default(3)
+  lastError        String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  user             User                  @relation(fields: [userId], references: [id])
+  template         NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([category])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, scheduledFor])
+  @@index([expiresAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id               String               @id @default(uuid())
+  userId           String
+  category         NotificationCategory
+  channels         NotificationChannel[]
+  isEnabled        Boolean              @default(true)
+  quietHoursStart  String?              // Format: "HH:MM"
+  quietHoursEnd    String?              // Format: "HH:MM"
+  timezone         String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  user             User                 @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category])
+  @@index([userId])
+  @@index([category])
+  @@map("notification_preferences")
+}
+
+model NotificationBatch {
+  id               String                  @id @default(uuid())
+  name             String?
+  description      String?
+  type             NotificationType
+  category         NotificationCategory
+  totalCount       Int                     @default(0)
+  sentCount        Int                     @default(0)
+  failedCount      Int                     @default(0)
+  status           NotificationBatchStatus @default(PENDING)
+  scheduledFor     DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([type])
+  @@index([category])
+  @@map("notification_batches")
+}
+
+enum NotificationType {
+  ACTIVITY_CREATED
+  ACTIVITY_MILESTONE
+  TEAM_MEMBER_JOINED
+  TEAM_GOAL_CREATED
+  TEAM_GOAL_COMPLETED
+  TEAM_GOAL_MILESTONE
+  ACHIEVEMENT_EARNED
+  ACHIEVEMENT_STREAK
+  SYSTEM_ANNOUNCEMENT
+  SYSTEM_UPDATE
+  SYSTEM_MAINTENANCE
+  REMINDER_ACTIVITY
+  REMINDER_GOAL_DEADLINE
+  INVITE_RECEIVED
+  INVITE_ACCEPTED
+  LEADERBOARD_POSITION
+}
+
+enum NotificationCategory {
+  ACTIVITY
+  TEAM
+  ACHIEVEMENT
+  SYSTEM
+  REMINDER
+  SOCIAL
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationChannel {
+  REALTIME
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SCHEDULED
+  SENT
+  DELIVERED
+  READ
+  CLICKED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum NotificationBatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
 }

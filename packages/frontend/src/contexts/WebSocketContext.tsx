@@ -174,6 +174,12 @@ export function useWebSocketStatus() {
     retry 
   } = useWebSocketContext();
 
+  // Pre-calculate derived states to avoid reference issues
+  const isReconnecting = connectionState === WebSocketConnectionState.RECONNECTING;
+  const isFailed = connectionState === WebSocketConnectionState.FAILED;
+  const hasError = !!error;
+  const isOffline = !isOnline;
+
   return {
     // Basic state
     isConnected,
@@ -190,10 +196,10 @@ export function useWebSocketStatus() {
     retry,
     
     // Derived states
-    isOffline: !isOnline,
-    isReconnecting: connectionState === WebSocketConnectionState.RECONNECTING,
-    isFailed: connectionState === WebSocketConnectionState.FAILED,
-    hasError: !!error,
+    isOffline,
+    isReconnecting,
+    isFailed,
+    hasError,
     canRetry: !isConnected && !isReconnecting,
     
     // Connection quality indicators

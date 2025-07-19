@@ -1,60 +1,42 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/patterns/Button';
+import { useFormValidation, ValidatedInput, validationRules } from '@/components/forms/FormValidation';
+import { ErrorMessage } from '@/components/error';
 
 export function LoginForm() {
   const router = useRouter();
   const { signIn, isLoading, error, clearError } = useAuthStore();
   
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
+  const {
+    values,
+    errors,
+    isValid,
+    setValue,
+    validateAll,
+    getFieldProps
+  } = useFormValidation(
+    { email: '', password: '' },
+    {
+      email: validationRules.email,
+      password: [{ required: true, message: 'Password is required' }] // Simplified for login
     }
-    
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    }
-    
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     
-    if (!validateForm()) return;
+    if (!validateAll()) return;
 
     try {
-      await signIn(formData.email, formData.password);
+      await signIn(values.email, values.password);
       router.push('/dashboard');
     } catch (err) {
       // Error is handled by the store
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -63,49 +45,40 @@ export function LoginForm() {
       <h2 className="text-2xl font-bold mb-6 text-center">Sign In</h2>
       
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-          {error.message}
+        <div className="mb-4">
+          <ErrorMessage
+            variant="error"
+            message={error.message}
+            dismissible
+            onDismiss={clearError}
+          />
         </div>
       )}
 
-      <div className="mb-4">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email Address
-        </label>
-        <input
+      <div className="space-y-4 mb-6">
+        <ValidatedInput
+          {...getFieldProps('email')}
           type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            validationErrors.email ? 'border-red-500' : 'border-gray-300'
-          }`}
+          label="Email Address"
           placeholder="john@example.com"
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+            </svg>
+          }
         />
-        {validationErrors.email && (
-          <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-        )}
-      </div>
 
-      <div className="mb-6">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password
-        </label>
-        <input
+        <ValidatedInput
+          {...getFieldProps('password')}
           type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            validationErrors.password ? 'border-red-500' : 'border-gray-300'
-          }`}
+          label="Password"
           placeholder="••••••••"
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          }
         />
-        {validationErrors.password && (
-          <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
-        )}
       </div>
 
       <div className="mb-6 flex items-center justify-between">
@@ -124,7 +97,7 @@ export function LoginForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading}
+        disabled={isLoading || !isValid}
       >
         {isLoading ? 'Signing In...' : 'Sign In'}
       </Button>

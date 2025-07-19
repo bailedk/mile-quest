@@ -163,14 +163,36 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
 
     // Find channels to remove (in lastChannels but not in currentChannels)
     const channelsToRemove = lastChannels.filter(channel => !currentChannels.includes(channel));
-    channelsToRemove.forEach(channel => unsubscribeFromChannel(channel));
+    channelsToRemove.forEach(channel => {
+      const unsubscribe = subscriptionsRef.current.get(channel);
+      if (unsubscribe) {
+        log('Unsubscribing from channel', channel);
+        unsubscribe();
+        subscriptionsRef.current.delete(channel);
+      }
+    });
 
     // Find channels to add (in currentChannels but not in lastChannels)
     const channelsToAdd = currentChannels.filter(channel => !lastChannels.includes(channel));
 
     // Subscribe to new channels if connected
     if (isConnected && connectionState === WebSocketConnectionState.CONNECTED) {
-      channelsToAdd.forEach(channel => subscribeToChannel(channel));
+      channelsToAdd.forEach(channel => {
+        if (!service) return;
+        
+        try {
+          log('Subscribing to channel', channel);
+          const unsubscribe = service.subscribe(channel, handleMessage(channel));
+          subscriptionsRef.current.set(channel, unsubscribe);
+          log('Successfully subscribed to channel', channel);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error('Subscription failed');
+          console.error(`Failed to subscribe to channel ${channel}:`, err);
+          if (onError) {
+            onError(err);
+          }
+        }
+      });
     }
 
     lastChannelsRef.current = currentChannels;
@@ -181,15 +203,37 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
       const unsubscribedChannels = currentChannels.filter(
         channel => !subscriptionsRef.current.has(channel)
       );
-      unsubscribedChannels.forEach(channel => subscribeToChannel(channel));
+      unsubscribedChannels.forEach(channel => {
+        if (!service) return;
+        
+        try {
+          log('Subscribing to channel', channel);
+          const unsubscribe = service.subscribe(channel, handleMessage(channel));
+          subscriptionsRef.current.set(channel, unsubscribe);
+          log('Successfully subscribed to channel', channel);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error('Subscription failed');
+          console.error(`Failed to subscribe to channel ${channel}:`, err);
+          if (onError) {
+            onError(err);
+          }
+        }
+      });
     }
 
     // Cleanup on unmount or channel change
     return () => {
       // Only unsubscribe from removed channels
-      channelsToRemove.forEach(channel => unsubscribeFromChannel(channel));
+      channelsToRemove.forEach(channel => {
+        const unsubscribe = subscriptionsRef.current.get(channel);
+        if (unsubscribe) {
+          log('Unsubscribing from channel', channel);
+          unsubscribe();
+          subscriptionsRef.current.delete(channel);
+        }
+      });
     };
-  }, [channels, isConnected, connectionState, subscribeToChannel, unsubscribeFromChannel]);
+  }, [channels, isConnected, connectionState, service, handleMessage, onError, log]);
 
   // Handle WebSocket errors
   useEffect(() => {

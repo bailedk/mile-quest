@@ -206,6 +206,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     }
   }, [createService, enableMetrics]);
 
+  // Disconnect function
+  const disconnect = useCallback(() => {
+    if (serviceRef.current) {
+      serviceRef.current.disconnect();
+    }
+    
+    // Clean up event listeners
+    cleanupFunctions.current.forEach(cleanup => cleanup());
+    cleanupFunctions.current = [];
+  }, []);
+
   // Retry function - force reconnection
   const retry = useCallback(async () => {
     // Disconnect first if connected
@@ -219,17 +230,6 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     // Attempt to reconnect
     return connect();
   }, [disconnect, connect]);
-
-  // Disconnect function
-  const disconnect = useCallback(() => {
-    if (serviceRef.current) {
-      serviceRef.current.disconnect();
-    }
-    
-    // Clean up event listeners
-    cleanupFunctions.current.forEach(cleanup => cleanup());
-    cleanupFunctions.current = [];
-  }, []);
 
   // Initialize service on mount or when auth changes
   useEffect(() => {

@@ -137,17 +137,183 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Log error to error reporting service (e.g., Sentry, LogRocket)
+ * Enhanced error logging with categorization and user context
  */
 export function logError(error: unknown, context?: Record<string, any>): void {
-  // In production, this would send to an error reporting service
-  console.error('Error logged:', {
-    error,
-    context,
-    timestamp: new Date().toISOString(),
-    url: typeof window !== 'undefined' ? window.location.href : 'server',
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
-  });
+  const errorData = {
+    // Error details
+    error: {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    },
+    
+    // Context information
+    context: {
+      ...context,
+      timestamp: new Date().toISOString(),
+      url: typeof window !== 'undefined' ? window.location.href : 'server',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
+      
+      // Browser/device info
+      ...(typeof window !== 'undefined' && {
+        viewport: {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        },
+        screen: {
+          width: window.screen?.width,
+          height: window.screen?.height,
+        },
+        connection: (navigator as any)?.connection ? {
+          effectiveType: (navigator as any).connection.effectiveType,
+          downlink: (navigator as any).connection.downlink,
+        } : undefined,
+      }),
+    },
+    
+    // Error categorization
+    category: categorizeErrorForLogging(error),
+    severity: getSeverityLevel(error),
+    
+    // User context (if available)
+    user: getUserContextForLogging(),
+  };
+
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.group('🚨 Error Logged');
+    console.error('Error:', error);
+    console.log('Context:', errorData.context);
+    console.log('Category:', errorData.category);
+    console.log('Severity:', errorData.severity);
+    console.groupEnd();
+  }
+
+  // In production, send to error reporting service
+  if (process.env.NODE_ENV === 'production') {
+    // This would integrate with services like Sentry, LogRocket, or custom analytics
+    try {
+      // Example: Sentry.captureException(error, { extra: errorData });
+      // Example: LogRocket.captureException(error);
+      
+      // For now, send to a custom endpoint or console
+      console.error('Production Error:', errorData);
+      
+      // Could also send to analytics
+      sendErrorToAnalytics(errorData);
+    } catch (loggingError) {
+      console.error('Failed to log error:', loggingError);
+    }
+  }
+}
+
+/**
+ * Categorize errors for better logging and monitoring
+ */
+function categorizeErrorForLogging(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.statusCode >= 500) return 'server_error';
+    if (error.statusCode >= 400) return 'client_error';
+    return 'api_error';
+  }
+  
+  if (error instanceof NetworkError) return 'network_error';
+  if (error instanceof AuthenticationError) return 'auth_error';
+  if (error instanceof AuthorizationError) return 'auth_error';
+  if (error instanceof ValidationError) return 'validation_error';
+  
+  if (error instanceof Error) {
+    if (error.name === 'ChunkLoadError') return 'chunk_load_error';
+    if (error.name === 'TypeError') return 'type_error';
+    if (error.name === 'ReferenceError') return 'reference_error';
+    if (error.name === 'SyntaxError') return 'syntax_error';
+  }
+  
+  return 'unknown_error';
+}
+
+/**
+ * Determine error severity level
+ */
+function getSeverityLevel(error: unknown): 'low' | 'medium' | 'high' | 'critical' {
+  if (error instanceof ApiError) {
+    if (error.statusCode >= 500) return 'high';
+    if (error.statusCode === 401) return 'medium';
+    if (error.statusCode >= 400) return 'low';
+  }
+  
+  if (error instanceof NetworkError) return 'medium';
+  if (error instanceof AuthenticationError) return 'medium';
+  if (error instanceof ValidationError) return 'low';
+  
+  if (error instanceof Error) {
+    if (error.name === 'ChunkLoadError') return 'medium';
+    if (error.name === 'TypeError' && error.message.includes('Cannot read')) return 'high';
+  }
+  
+  return 'medium';
+}
+
+/**
+ * Get user context for error logging (without PII)
+ */
+function getUserContextForLogging(): Record<string, any> | undefined {
+  if (typeof window === 'undefined') return undefined;
+  
+  try {
+    // This would integrate with your auth system
+    // For now, return basic session info without PII
+    return {
+      isAuthenticated: localStorage.getItem('auth_token') ? true : false,
+      sessionDuration: getSessionDuration(),
+      // Don't include email, name, or other PII
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Get session duration for context
+ */
+function getSessionDuration(): number | undefined {
+  if (typeof window === 'undefined') return undefined;
+  
+  try {
+    const sessionStart = localStorage.getItem('session_start');
+    if (sessionStart) {
+      return Date.now() - parseInt(sessionStart);
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  
+  return undefined;
+}
+
+/**
+ * Send error data to analytics service
+ */
+function sendErrorToAnalytics(errorData: any): void {
+  // This would integrate with your analytics service
+  // Example: Google Analytics, Mixpanel, etc.
+  
+  try {
+    // Example analytics event
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'exception', {
+        description: errorData.error.name,
+        fatal: errorData.severity === 'critical',
+        custom_map: {
+          category: errorData.category,
+          severity: errorData.severity,
+        }
+      });
+    }
+  } catch {
+    // Ignore analytics errors
+  }
 }
 
 /**

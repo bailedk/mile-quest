@@ -18,6 +18,7 @@ export * from './aws/base-service';
 export * from './progress';
 export * from './achievement';
 export * from './goal';
+export * from './notification';
 
 /**
  * Initialize all services and register them in the service registry

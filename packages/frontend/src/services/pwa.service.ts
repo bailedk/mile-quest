@@ -43,16 +43,20 @@ class PWAService {
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private swRegistration: ServiceWorkerRegistration | null = null;
   private isServiceWorkerSupported = false;
-  private isNotificationSupported = false;
+  private notificationSupported = false;
   private installPromptShown = false;
 
   constructor() {
-    this.isServiceWorkerSupported = 'serviceWorker' in navigator;
-    this.isNotificationSupported = 'Notification' in window;
-    
+    // Only initialize browser APIs if we're in a browser environment
     if (typeof window !== 'undefined') {
+      this.isServiceWorkerSupported = 'serviceWorker' in navigator;
+      this.notificationSupported = 'Notification' in window;
       this.setupInstallPromptListener();
       this.setupAppInstalledListener();
+    } else {
+      // Server-side safe defaults
+      this.isServiceWorkerSupported = false;
+      this.notificationSupported = false;
     }
   }
 
@@ -243,7 +247,7 @@ class PWAService {
    * Request notification permission
    */
   async requestNotificationPermission(): Promise<NotificationPermission> {
-    if (!this.isNotificationSupported) {
+    if (!this.notificationSupported) {
       console.warn('[PWA] Notifications not supported');
       return 'denied';
     }
@@ -447,7 +451,7 @@ class PWAService {
    * Get notification permission status
    */
   getNotificationPermission(): NotificationPermission {
-    return this.isNotificationSupported ? Notification.permission : 'denied';
+    return this.notificationSupported ? Notification.permission : 'denied';
   }
 
   /**
@@ -461,7 +465,7 @@ class PWAService {
    * Check if notifications are supported
    */
   isNotificationSupported(): boolean {
-    return this.isNotificationSupported;
+    return this.notificationSupported;
   }
 }
 

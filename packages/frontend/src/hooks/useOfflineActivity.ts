@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { pwaService } from '@/services/pwa.service';
-import { ActivityService } from '@/services/activity.service';
+import { activityService } from '@/services/activity.service';
 
 interface OfflineActivity {
   id: string;
@@ -49,7 +49,7 @@ export function useOfflineActivity() {
     if (isOnline) {
       try {
         // Try to submit online first
-        const result = await ActivityService.createActivity(activityData);
+        const result = await activityService.createActivity(activityData);
         
         // Show success notification if available
         if (pwaService.getNotificationPermission() === 'granted') {
@@ -116,7 +116,7 @@ export function useOfflineActivity() {
         );
 
         try {
-          await ActivityService.createActivity(activity.data);
+          await activityService.createActivity(activity.data);
           
           // Mark as synced
           setOfflineActivities(prev => 

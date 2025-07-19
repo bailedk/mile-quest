@@ -113,7 +113,7 @@ export function useDashboard(options: UseDashboardOptions = {}) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [autoRefresh, refreshInterval, state.data, state.isLoading, loadDashboard]);
+  }, [autoRefresh, refreshInterval, state.data, state.isLoading]); // Removed loadDashboard to prevent infinite loops
 
   // Initial load when component mounts or user changes
   useEffect(() => {
@@ -138,7 +138,7 @@ export function useDashboard(options: UseDashboardOptions = {}) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [isAuthenticated, user?.id, loadDashboard]);
+  }, [isAuthenticated, user?.id]); // Removed loadDashboard to prevent infinite loops
 
   // Cleanup on unmount
   useEffect(() => {

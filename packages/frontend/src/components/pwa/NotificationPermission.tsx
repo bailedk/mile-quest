@@ -38,6 +38,11 @@ export function NotificationPermission({
   }, [autoRequest]);
 
   const handleRequestPermission = async () => {
+    if (!pwaService || typeof pwaService.isNotificationSupported !== 'function') {
+      console.warn('PWA service not available');
+      return;
+    }
+    
     if (!pwaService.isNotificationSupported()) {
       console.warn('Notifications not supported on this device');
       return;
@@ -84,7 +89,7 @@ export function NotificationPermission({
     }
   };
 
-  if (!pwaService.isNotificationSupported()) {
+  if (!pwaService || typeof pwaService.isNotificationSupported !== 'function' || !pwaService.isNotificationSupported()) {
     return null;
   }
 
