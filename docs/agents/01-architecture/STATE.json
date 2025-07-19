@@ -4,7 +4,7 @@
   "currentVersion": "2.1",
   "previousVersion": "2.0",
   "status": "active",
-  "lastUpdated": "2025-01-15",
+  "lastUpdated": "2025-01-19",
   "lastModifiedBy": "Architecture Agent",
   "description": "System architecture and technical infrastructure design",
   "activeDocuments": [
@@ -46,6 +46,11 @@
     {
       "name": "infrastructure-cost-monitoring.md",
       "description": "Ongoing infrastructure cost tracking and projections",
+      "version": "2.1"
+    },
+    {
+      "name": "css-architecture-analysis.md",
+      "description": "Comprehensive CSS/SCSS architecture analysis and recommendations",
       "version": "2.1"
     }
   ],

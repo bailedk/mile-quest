@@ -2,26 +2,173 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Custom Properties for Theme */
 :root {
+  /* Colors */
+  --color-primary: #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-light: #3B82F6;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Neutrals */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+  
+  /* Semantic colors */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827;
+  --surface: #F9FAFB;
+  --border: #E5E7EB;
+  
+  /* Spacing */
+  --space-unit: 4px;
+  
+  /* Transitions */
+  --transition-base: 200ms ease;
+  --transition-fast: 100ms ease;
+  --transition-slow: 500ms ease;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
 }
 
+/* Dark mode preparation (future enhancement) */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0F172A;
+    --foreground: #F9FAFB;
+    --surface: #1E293B;
+    --border: #334155;
   }
 }
 
+/* Base Styles */
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 
+               Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Focus Styles for Accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbar Styles (Webkit browsers) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-500);
+}
+
+/* Utility Layers */
 @layer utilities {
+  /* Text Balance */
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Container Query Support (future) */
+  @supports (container-type: inline-size) {
+    .container-query {
+      container-type: inline-size;
+    }
+  }
+  
+  /* Performance Optimizations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  
+  /* Layout Containment */
+  .contain-layout {
+    contain: layout;
+  }
+  
+  .contain-paint {
+    contain: paint;
+  }
+  
+  .contain-strict {
+    contain: strict;
+  }
+}
+
+/* Animation Utilities */
+@layer utilities {
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  
+  /* Smooth scroll */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  /* Hide non-essential elements */
+  nav,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure good print layout */
+  main {
+    width: 100%;
+  }
+  
+  /* Avoid page breaks inside elements */
+  h1, h2, h3, h4, h5, h6,
+  p, figure, blockquote {
+    break-inside: avoid;
   }
 }

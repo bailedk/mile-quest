@@ -20,6 +20,7 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Infrastructure Diagram MVP | 📌 Current | 2.0 | `01-architecture/current/infrastructure-diagram-mvp.md` | Current infrastructure visualization |
 | Tech Stack MVP | 📌 Current | 2.0 | `01-architecture/current/tech-stack-mvp.md` | Current technology choices |
 | Architecture Decisions | 📌 Current | 2.0 | `01-architecture/current/architecture-decisions-v2.md` | Rationale for simplifications |
+| CSS Architecture Analysis | 📌 Current | 2.1 | `01-architecture/current/css-architecture-analysis.md` | CSS/SCSS architecture recommendations |
 | Original Architecture | 📚 Historical | 1.0 | `01-architecture/versions/v1.0/aws-architecture.md` | Initial Aurora/ElastiCache design |
 | Original Infrastructure | 📚 Historical | 1.0 | `01-architecture/versions/v1.0/infrastructure-diagram.md` | Complex infrastructure diagram |
 | Original Tech Stack | 📚 Historical | 1.0 | `01-architecture/versions/v1.0/tech-stack.md` | Original technology choices |
@@ -33,6 +34,7 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Mobile Gesture Interactions | 📌 Current | 2.1 | `02-ui-ux/current/mobile-gesture-interactions.md` | Touch interactions and gestures |
 | Component Specifications | 📌 Current | 2.2 | `02-ui-ux/current/component-specifications.md` | Implementation-ready component specs |
 | Achievement Notifications | 📌 Current | 2.2 | `02-ui-ux/current/achievement-notification-patterns.md` | Gamification notification patterns |
+| CSS/SCSS Best Practices | 📌 Current | 2.3 | `02-ui-ux/current/css-scss-best-practices.md` | CSS architecture patterns for Next.js |
 | Original Wireframes | 📚 Historical | 1.0 | `02-ui-ux/versions/v1.0/wireframes.md` | Full-feature wireframes |
 | User Journeys | 📌 Current | 1.0 | `02-ui-ux/current/user-journeys.md` | User flow documentation |
 
@@ -102,6 +104,7 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Recommendations | 📌 Current | 1.0 | `12-review-enhancement/recommendations-summary.md` | Simplification recommendations |
 | Architecture Review | 📌 Current | 1.0 | `12-review-enhancement/architecture-review.md` | Architecture evaluation |
 | UI/UX Review | 📌 Current | 1.0 | `12-review-enhancement/ui-ux-review.md` | Design evaluation |
+| CSS Strategy Synthesis | 📌 Current | 1.2 | `12-review-enhancement/current/css-strategy-synthesis.md` | Unified CSS strategy recommendation |
 
 ### 13. Compliance Agent
 | Document | Status | Version | Location | Purpose |
@@ -187,6 +190,7 @@ This manifest provides a comprehensive index of all project documentation, indic
 | Agent Orchestration | `/AGENTS.md` | Agent roles and status | Project Manager |
 | Claude Context | `/CLAUDE.md` | AI assistant context | All Agents |
 | Documentation Guidelines | `/docs/GUIDELINES.md` | How to update docs | All Agents |
+| CSS Architecture | `/docs/CSS-ARCHITECTURE.md` | CSS/SCSS implementation guidelines | Frontend Dev |
 | Sprint Tracking | `/docs/SPRINT-TRACKING.md` | Single source of truth for dev progress | All Agents |
 | Tracking Guide | `/docs/TRACKING-GUIDE.md` | Simplified tracking system guide | All Agents |
 | Local Development | `/docs/LOCAL-DEVELOPMENT-GUIDE.md` | Local dev environment setup | DevOps |
@@ -226,8 +230,8 @@ This manifest provides a comprehensive index of all project documentation, indic
 ## Version Control
 
 ### Current Versions by Agent
-- Architecture: 2.0 (MVP Simplified)
-- UI/UX Design: 2.0 (MVP Aligned)
+- Architecture: 2.1 (CSS Architecture Analysis Added)
+- UI/UX Design: 2.3 (CSS Best Practices Added)
 - Data Model: 1.0 (Complete)
 - Review & Enhancement: 1.0
 - Compliance: 1.0 (Complete)
@@ -240,5 +244,5 @@ Each agent's version history is in:
 
 ---
 
-**Last Updated**: 2025-01-15
+**Last Updated**: 2025-01-19
 **Next Review**: When API Designer Agent begins

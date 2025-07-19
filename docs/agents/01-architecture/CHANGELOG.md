@@ -2,6 +2,27 @@
 
 All notable changes to the Architecture documentation will be documented in this file.
 
+## [2.1] - 2025-01-19
+
+### Added (2025-01-19)
+- **CSS Architecture Analysis**: Comprehensive analysis of CSS/SCSS approaches for Next.js
+- `css-architecture-analysis.md` - Complete CSS architecture recommendations including:
+  - Build pipeline and tooling analysis (Turbopack vs Webpack)
+  - Bundle optimization strategies
+  - Runtime vs build-time CSS processing comparison
+  - Caching and CDN optimization approaches
+  - CSS splitting and lazy loading patterns
+  - Integration with Next.js App Router, RSC, and ISR
+  - Performance monitoring and metrics
+
+### Key CSS Architecture Recommendations
+- Primary: Tailwind CSS with JIT compilation for utility-first approach
+- Secondary: CSS Modules for complex component-specific styles
+- Build Tool: Turbopack (Next.js 15+) with Lightning CSS
+- Zero-runtime CSS strategy for optimal serverless performance
+- Aggressive caching with content-based hashing
+- Core Web Vitals monitoring with CSS-specific metrics
+
 ## [2.1] - 2025-01-15
 
 ### Added

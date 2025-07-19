@@ -276,8 +276,61 @@ To trace dependencies:
 3. Review CHANGELOG.md for breaking changes
 4. Consult integration documents
 
+## CSS and Styling Guidelines
+
+### CSS Architecture
+
+Mile Quest follows a **Tailwind CSS + CSS Modules** hybrid approach:
+
+1. **Use Tailwind CSS for 90% of styling needs**
+   - Layout, spacing, typography, colors
+   - Responsive design with mobile-first approach
+   - State modifiers (hover, focus, active)
+   - Simple animations and transitions
+
+2. **Use CSS Modules only when necessary (10%)**
+   - Complex keyframe animations
+   - Third-party component overrides
+   - Styles that cannot be expressed with utilities
+
+### CSS Best Practices
+
+1. **Component Styling Pattern**
+   ```tsx
+   // Use composable className patterns
+   const baseClasses = 'font-semibold rounded-lg';
+   const sizeClasses = { sm: 'px-4 py-2', md: 'px-6 py-3' };
+   const variantClasses = { primary: 'bg-primary text-white' };
+   ```
+
+2. **Mobile-First Responsive Design**
+   ```tsx
+   // Start with mobile, add breakpoints for larger screens
+   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+   ```
+
+3. **Performance Guidelines**
+   - Keep initial CSS < 20KB compressed
+   - Use CSS containment for complex components
+   - Avoid runtime CSS-in-JS libraries
+
+4. **File Organization**
+   - Global styles in `app/globals.css`
+   - Component styles co-located with components
+   - Shared animations in `styles/animations.css`
+
+### CSS Documentation
+
+When documenting CSS decisions:
+1. Update `/docs/CSS-ARCHITECTURE.md` for architectural changes
+2. Include CSS examples in component documentation
+3. Document any custom utility classes
+4. Note performance implications of CSS choices
+
+See the full [CSS Architecture Guidelines](/docs/CSS-ARCHITECTURE.md) for detailed patterns and examples.
+
 ---
 
 **Remember**: Good documentation is a living system. Keep it current, clear, and connected.
 
-**Last Updated**: 2025-01-12
+**Last Updated**: 2025-01-19

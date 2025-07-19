@@ -1,10 +1,10 @@
 {
   "agent": "UI/UX Design",
   "agentNumber": 2,
-  "currentVersion": "2.2",
-  "previousVersion": "2.1",
+  "currentVersion": "2.3",
+  "previousVersion": "2.2",
   "status": "active",
-  "lastUpdated": "2025-01-15",
+  "lastUpdated": "2025-01-19",
   "lastModifiedBy": "UI/UX Design Agent",
   "description": "User interface design, user experience flows, and design system",
   "activeDocuments": [
@@ -57,6 +57,11 @@
       "name": "achievement-notification-patterns.md",
       "description": "Achievement notification design patterns and celebration animations",
       "version": "2.2"
+    },
+    {
+      "name": "css-scss-best-practices.md",
+      "description": "CSS/SCSS architecture patterns and best practices for Next.js React applications",
+      "version": "1.0"
     }
   ],
   "supersededDocuments": [
