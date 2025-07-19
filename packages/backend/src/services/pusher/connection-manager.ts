@@ -91,8 +91,8 @@ export class PusherConnectionManager extends BaseAWSService {
     this.startHealthChecking();
     this.startCleanupProcess();
 
-    this.logger.info('PusherConnectionManager initialized', {
-      config: this.config,
+    console.info('PusherConnectionManager initialized', {
+      config: this.connectionConfig,
       cluster: this.cluster
     });
   }
@@ -108,7 +108,7 @@ export class PusherConnectionManager extends BaseAWSService {
   ): Promise<PusherConnection> {
     return this.executeWithMetrics('registerConnection', async () => {
       // Check connection limits
-      if (this.connections.size >= this.config.maxConnections) {
+      if (this.connections.size >= this.connectionConfig.maxConnections) {
         throw new PusherConnectionError(
           'Connection pool exhausted',
           PusherErrorCode.CONNECTION_POOL_EXHAUSTED
@@ -134,7 +134,7 @@ export class PusherConnectionManager extends BaseAWSService {
       // Update status to connected
       await this.updateConnectionStatus(connectionId, ConnectionStatus.CONNECTED);
 
-      this.logger.info('Connection registered', {
+      console.info('Connection registered', {
         connectionId,
         socketId,
         userId,
@@ -163,7 +163,7 @@ export class PusherConnectionManager extends BaseAWSService {
       this.connections.delete(connectionId);
       this.monitoring.removeConnection(connectionId);
 
-      this.logger.info('Connection removed', {
+      console.info('Connection removed', {
         connectionId,
         socketId: connection.socketId,
         userId: connection.userId
@@ -244,7 +244,7 @@ export class PusherConnectionManager extends BaseAWSService {
 
       this.subscriptions.get(channel)!.push(subscription);
 
-      this.logger.info('Channel subscription added', {
+      console.info('Channel subscription added', {
         connectionId,
         channel,
         userId: connection.userId
@@ -277,7 +277,7 @@ export class PusherConnectionManager extends BaseAWSService {
         }
       }
 
-      this.logger.info('Channel subscription removed', {
+      console.info('Channel subscription removed', {
         connectionId,
         channel,
         userId: connection.userId
@@ -316,7 +316,7 @@ export class PusherConnectionManager extends BaseAWSService {
         const latency = Date.now() - startTime;
         this.monitoring.recordMessage(event.socketId || '', latency);
 
-        this.logger.info('Event sent successfully', {
+        console.info('Event sent successfully', {
           eventId: event.eventId,
           channel: event.channel,
           event: event.event,
@@ -341,7 +341,7 @@ export class PusherConnectionManager extends BaseAWSService {
         };
         errors.push(deliveryError);
 
-        this.logger.error('Event delivery failed', {
+        console.error('Event delivery failed', {
           eventId: event.eventId,
           channel: event.channel,
           error: error instanceof Error ? error.message : error
@@ -477,7 +477,7 @@ export class PusherConnectionManager extends BaseAWSService {
     this.subscriptions.clear();
     this.connectionPool = [];
 
-    this.logger.info('PusherConnectionManager destroyed');
+    console.info('PusherConnectionManager destroyed');
   }
 
   private initializePusher(): void {
@@ -486,13 +486,11 @@ export class PusherConnectionManager extends BaseAWSService {
       key: this.key,
       secret: this.secret,
       cluster: this.cluster,
-      useTLS: true,
-      host: `api-${this.cluster}.pusherapp.com`,
-      port: 443
+      useTLS: true
     });
 
     // Initialize connection pool if enabled
-    if (this.config.enableConnectionPooling) {
+    if (this.connectionConfig.enableConnectionPooling) {
       this.initializeConnectionPool();
     }
   }
@@ -532,7 +530,7 @@ export class PusherConnectionManager extends BaseAWSService {
   }
 
   private startHealthChecking(): void {
-    if (!this.config.enableHealthMonitoring) {
+    if (!this.connectionConfig.enableHealthMonitoring) {
       return;
     }
 
@@ -540,10 +538,10 @@ export class PusherConnectionManager extends BaseAWSService {
       try {
         await this.performHealthCheck();
       } catch (error) {
-        this.logger.error('Health check failed', { error });
+        console.error('Health check failed', { error });
         this.monitoring.recordError('healthCheck');
       }
-    }, this.config.heartbeatInterval);
+    }, this.connectionConfig.heartbeatInterval);
   }
 
   private startCleanupProcess(): void {
@@ -569,6 +567,55 @@ export class PusherConnectionManager extends BaseAWSService {
       await this.pusher.get({ path: '/channels' });
     } catch (error) {
       throw new Error(`Pusher health check failed: ${error}`);
+    }
+  }
+
+  protected mapError(error: any): Error {
+    if (error instanceof PusherConnectionError) {
+      return error;
+    }
+
+    const statusCode = error.status || error.statusCode;
+    const errorMessage = error.message || 'An unknown error occurred';
+
+    switch (statusCode) {
+      case 400:
+        return new PusherConnectionError(
+          'Invalid request parameters',
+          PusherErrorCode.SERVICE_UNAVAILABLE,
+          undefined,
+          error
+        );
+      case 401:
+      case 403:
+        return new PusherConnectionError(
+          'Authentication failed',
+          PusherErrorCode.AUTHENTICATION_FAILED,
+          undefined,
+          error
+        );
+      case 429:
+        return new PusherConnectionError(
+          'Rate limit exceeded',
+          PusherErrorCode.RATE_LIMITED,
+          undefined,
+          error
+        );
+      default:
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+          return new PusherConnectionError(
+            'Network error',
+            PusherErrorCode.CONNECTION_FAILED,
+            undefined,
+            error
+          );
+        }
+        return new PusherConnectionError(
+          errorMessage,
+          PusherErrorCode.UNKNOWN_ERROR,
+          undefined,
+          error
+        );
     }
   }
 }

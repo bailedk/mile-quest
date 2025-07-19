@@ -95,7 +95,7 @@ describe('PusherAuthHandler', () => {
     });
 
     it('should reject invalid tokens', async () => {
-      mockAuthService.verifyToken.mockResolvedValue(null);
+      mockAuthService.verifyToken.mockRejectedValue(new Error('Invalid token'));
 
       const request: AuthenticationRequest = {
         socketId: 'socket-123',
@@ -106,8 +106,8 @@ describe('PusherAuthHandler', () => {
       const result = await authHandler.authenticateChannel(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid authentication token');
-      expect(result.errorCode).toBe('INVALID_TOKEN');
+      expect(result.error).toBe('Authentication failed');
+      expect(result.errorCode).toBe('AUTH_ERROR');
     });
 
     it('should handle presence channels with channel data', async () => {

@@ -5,3 +5,4 @@ export { QuickActions } from './QuickActions';
 export { TeamProgressCard } from './TeamProgressCard';
 export { ActivityFeedItem } from './ActivityFeedItem';
 export { LeaderboardItem } from './LeaderboardItem';
+export { RealtimeLeaderboard } from './RealtimeLeaderboard';

@@ -50,10 +50,8 @@ export default function DashboardPage() {
   const teams = mockTeams;
 
   // WebSocket connection for real-time updates
-  const { isConnected, connectionState, connect, error } = useWebSocket({
-    autoConnect: true,
-    reconnectOnAuthChange: true,
-  });
+  const { connect } = useWebSocketContext();
+  const { isConnected, connectionState, error, isOnline, wasOffline } = useWebSocketStatus();
 
   // Real-time activity updates for the selected team
   const realtimeActivities = useRealtimeActivities(selectedTeamId, {
@@ -170,6 +168,30 @@ export default function DashboardPage() {
             error={error}
             onRetry={handleConnectionRetry}
           />
+
+          {/* Offline Status Banner */}
+          {!isOnline && (
+            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-gray-500 rounded-full" />
+                <span className="text-sm font-medium">
+                  You're currently offline. Data will sync when you reconnect.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Reconnection Success Banner */}
+          {isOnline && wasOffline && isConnected && (
+            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <span className="text-sm font-medium">
+                  Back online! Live updates restored.
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Achievement Notifications */}
           <AchievementNotificationManager

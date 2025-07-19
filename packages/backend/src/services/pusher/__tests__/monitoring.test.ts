@@ -171,17 +171,30 @@ describe('PusherMonitoring', () => {
       expect(health.lastCheck).toBeInstanceOf(Date);
     });
 
-    it('should mark as degraded with high error rate', () => {
-      // Record messages and errors to create error rate
-      for (let i = 0; i < 10; i++) {
+    it('should mark as degraded with moderate error rate', () => {
+      // Record messages and errors to create error rate between 5-10%
+      for (let i = 0; i < 100; i++) {
         monitoring.recordMessage('conn-1');
       }
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 7; i++) {
         monitoring.recordError('message');
       }
 
       const health = monitoring.getHealthStatus();
       expect(health.status).toBe('degraded');
+    });
+
+    it('should mark as unhealthy with high error rate', () => {
+      // Record messages and errors to create error rate > 10%
+      for (let i = 0; i < 10; i++) {
+        monitoring.recordMessage('conn-1');
+      }
+      for (let i = 0; i < 2; i++) {
+        monitoring.recordError('message');
+      }
+
+      const health = monitoring.getHealthStatus();
+      expect(health.status).toBe('unhealthy');
     });
   });
 
