@@ -23,7 +23,7 @@ class DefaultAuthServiceFactory implements AuthServiceFactory {
     config?: AuthConfig & ServiceConfig,
     metrics?: ServiceMetrics
   ): AuthService {
-    const authProvider = provider || (process.env.AUTH_PROVIDER as AuthProvider) || 'cognito';
+    const authProvider = provider || (process.env.AUTH_PROVIDER as AuthProvider) || 'mock';
 
     switch (authProvider) {
       case 'cognito':

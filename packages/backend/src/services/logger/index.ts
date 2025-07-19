@@ -206,3 +206,4 @@ export function withLogger(handler: Function, functionName: string) {
 
 // Export a default logger for utilities and services
 export const defaultLogger = createLogger('mile-quest-service');
+export const logger = defaultLogger;

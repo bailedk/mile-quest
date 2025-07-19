@@ -45,7 +45,19 @@ async function seed() {
   // Create test users
   console.log('👥 Creating users...');
   const users = await Promise.all([
-    // Active users
+    // Mock auth test user (matches backend mock service)
+    prisma.user.create({
+      data: {
+        id: 'test-user-1',
+        email: 'test@example.com',
+        name: 'Test User',
+        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test',
+        cognitoId: 'test-user-1',
+        emailVerified: true,
+        createdAt: randomDate(90),
+      },
+    }),
+    // Additional active users
     prisma.user.create({
       data: {
         id: 'user-1',
