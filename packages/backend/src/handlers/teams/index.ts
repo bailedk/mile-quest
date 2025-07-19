@@ -9,6 +9,7 @@ import { verifyToken } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { CreateTeamInput, UpdateTeamInput, JoinTeamInput } from '../../services/team/types';
+import { ActivityService } from '../../services/activity/activity.service';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
 // Validate environment on cold start
@@ -16,6 +17,7 @@ validateEnvironment();
 
 // Initialize services
 const teamService = new TeamService(prisma);
+const activityService = new ActivityService(prisma);
 
 // Create router
 const router = createRouter();
@@ -104,6 +106,83 @@ router.get('/:id', async (event, context, params) => {
     return {
       statusCode: 500,
       body: { error: 'Failed to fetch team' },
+    };
+  }
+});
+
+// Get team progress (BE-015)
+router.get('/:id/progress', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const teamProgress = await activityService.getTeamProgress(params.id, user.sub);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: teamProgress,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+    if (error.message === 'Team not found') {
+      return {
+        statusCode: 404,
+        body: {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: error.message,
+          },
+        },
+      };
+    }
+    if (error.message === 'User is not a member of this team') {
+      return {
+        statusCode: 403,
+        body: {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: error.message,
+          },
+        },
+      };
+    }
+    if (error.message === 'Team has no active goal' || error.message === 'Team progress not found') {
+      return {
+        statusCode: 404,
+        body: {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: error.message,
+          },
+        },
+      };
+    }
+    
+    console.error('Error getting team progress:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get team progress',
+        },
+      },
     };
   }
 });

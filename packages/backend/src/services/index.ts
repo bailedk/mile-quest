@@ -15,6 +15,7 @@ export * from './email';
 export * from './config';
 export * from './logger';
 export * from './aws/base-service';
+export * from './progress';
 
 /**
  * Initialize all services and register them in the service registry

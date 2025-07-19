@@ -7,7 +7,12 @@ import {
   CreateActivityResult,
   DeleteActivityResult,
   TeamProgressUpdate,
+  UserActivityStats,
+  TeamProgressInfo,
+  ActivitySummaryPeriod,
+  ActivitySummaryOptions,
 } from './types';
+import { cache, cacheKeys, cacheTTL } from '../../utils/cache';
 
 export class ActivityService {
   constructor(private prisma: PrismaClient) {}
@@ -165,6 +170,12 @@ export class ActivityService {
           name: m.team.name,
         })),
       };
+
+      // Invalidate relevant caches
+      cache.delete(cacheKeys.userStats(userId));
+      teamUpdates.forEach(update => {
+        cache.delete(cacheKeys.teamProgress(update.teamId));
+      });
 
       return {
         activity: activityWithTeams,
@@ -357,6 +368,12 @@ export class ActivityService {
         });
       }
 
+      // Invalidate relevant caches
+      cache.delete(cacheKeys.userStats(userId));
+      teamUpdates.forEach(update => {
+        cache.delete(cacheKeys.teamProgress(update.teamId));
+      });
+
       return {
         deleted: true,
         teamUpdates,
@@ -371,5 +388,405 @@ export class ActivityService {
     const km = distance / 1000;
     const minutes = duration / 60;
     return km > 0 ? minutes / km : 0;
+  }
+
+  // Aggregation methods for BE-015
+  async getUserStats(userId: string): Promise<UserActivityStats> {
+    // Check cache first
+    const cacheKey = cacheKeys.userStats(userId);
+    const cached = cache.get<UserActivityStats>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    // Get user stats from the UserStats table
+    const userStats = await this.prisma.userStats.findUnique({
+      where: { userId },
+    });
+
+    // Get weekly stats (last 7 days)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const weeklyAgg = await this.prisma.activity.aggregate({
+      where: {
+        userId,
+        startTime: { gte: weekAgo },
+      },
+      _sum: {
+        distance: true,
+        duration: true,
+      },
+      _count: true,
+    });
+
+    // Get monthly stats (last 30 days)
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+
+    const monthlyAgg = await this.prisma.activity.aggregate({
+      where: {
+        userId,
+        startTime: { gte: monthAgo },
+      },
+      _sum: {
+        distance: true,
+        duration: true,
+      },
+      _count: true,
+    });
+
+    // Calculate averages
+    const totalDistance = userStats?.totalDistance || 0;
+    const totalDuration = userStats?.totalDuration || 0;
+    const totalActivities = userStats?.totalActivities || 0;
+
+    const averagePace = totalDistance > 0 ? this.calculatePace(totalDistance, totalDuration) : 0;
+    const averageDistance = totalActivities > 0 ? totalDistance / totalActivities : 0;
+
+    const stats: UserActivityStats = {
+      totalDistance,
+      totalDuration,
+      totalActivities,
+      averagePace,
+      averageDistance,
+      currentStreak: userStats?.currentStreak || 0,
+      longestStreak: userStats?.longestStreak || 0,
+      lastActivityDate: userStats?.lastActivityAt || null,
+      weeklyStats: {
+        distance: weeklyAgg._sum.distance || 0,
+        duration: weeklyAgg._sum.duration || 0,
+        activities: weeklyAgg._count,
+      },
+      monthlyStats: {
+        distance: monthlyAgg._sum.distance || 0,
+        duration: monthlyAgg._sum.duration || 0,
+        activities: monthlyAgg._count,
+      },
+    };
+
+    // Cache the result
+    cache.set(cacheKey, stats, cacheTTL.userStats);
+
+    return stats;
+  }
+
+  async getTeamProgress(teamId: string, userId: string): Promise<TeamProgressInfo> {
+    // Check cache first
+    const cacheKey = cacheKeys.teamProgress(teamId);
+    const cached = cache.get<TeamProgressInfo>(cacheKey);
+    if (cached) {
+      // Still need to verify user is a member
+      const isMember = await this.prisma.teamMember.findFirst({
+        where: {
+          teamId,
+          userId,
+          leftAt: null,
+        },
+      });
+      if (!isMember) {
+        throw new Error('User is not a member of this team');
+      }
+      return cached;
+    }
+    // Get team with active goal
+    const team = await this.prisma.team.findFirst({
+      where: {
+        id: teamId,
+        deletedAt: null,
+      },
+      include: {
+        goals: {
+          where: {
+            status: 'ACTIVE',
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+          include: {
+            progress: true,
+          },
+        },
+        members: {
+          where: {
+            leftAt: null,
+          },
+        },
+      },
+    });
+
+    if (!team) {
+      throw new Error('Team not found');
+    }
+
+    // Check if user is a member
+    const isMember = team.members.some(m => m.userId === userId);
+    if (!isMember) {
+      throw new Error('User is not a member of this team');
+    }
+
+    const activeGoal = team.goals[0];
+    if (!activeGoal) {
+      throw new Error('Team has no active goal');
+    }
+
+    const progress = activeGoal.progress;
+    if (!progress) {
+      throw new Error('Team progress not found');
+    }
+
+    // Calculate days remaining
+    const now = new Date();
+    const endDate = activeGoal.targetDate || new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // Default 90 days
+    const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Calculate average daily distance
+    const daysSinceStart = Math.max(1, Math.ceil((now.getTime() - activeGoal.startedAt!.getTime()) / (1000 * 60 * 60 * 24)));
+    const averageDailyDistance = progress.totalDistance / daysSinceStart;
+
+    // Calculate projected completion date
+    let projectedCompletionDate: Date | null = null;
+    if (averageDailyDistance > 0) {
+      const remainingDistance = activeGoal.targetDistance - progress.totalDistance;
+      const daysToComplete = remainingDistance / averageDailyDistance;
+      projectedCompletionDate = new Date(now.getTime() + daysToComplete * 24 * 60 * 60 * 1000);
+    }
+
+    // Get top contributors
+    const memberContributions = await this.prisma.activity.groupBy({
+      by: ['userId'],
+      where: {
+        teamId,
+        teamGoalId: activeGoal.id,
+      },
+      _sum: {
+        distance: true,
+      },
+      orderBy: {
+        _sum: {
+          distance: 'desc',
+        },
+      },
+      take: 5,
+    });
+
+    // Get user details for top contributors
+    const topContributorIds = memberContributions.map(c => c.userId);
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: topContributorIds },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const userMap = new Map(users.map(u => [u.id, u]));
+    const topContributors = memberContributions.map(c => ({
+      userId: c.userId,
+      name: userMap.get(c.userId)?.name || 'Unknown',
+      distance: c._sum.distance || 0,
+      percentage: progress.totalDistance > 0 ? ((c._sum.distance || 0) / progress.totalDistance) * 100 : 0,
+    }));
+
+    // Count active members (those who have logged activities)
+    const activeMembers = await this.prisma.activity.findMany({
+      where: {
+        teamId,
+        teamGoalId: activeGoal.id,
+      },
+      select: {
+        userId: true,
+      },
+      distinct: ['userId'],
+    });
+
+    const percentComplete = (progress.totalDistance / activeGoal.targetDistance) * 100;
+
+    const result: TeamProgressInfo = {
+      team: {
+        id: team.id,
+        name: team.name,
+        goalDistance: activeGoal.targetDistance,
+        startDate: activeGoal.startedAt!,
+        endDate: endDate,
+      },
+      progress: {
+        totalDistance: progress.totalDistance,
+        percentComplete: Math.min(percentComplete, 100),
+        currentSegmentIndex: progress.currentSegmentIndex,
+        distanceToNextWaypoint: progress.segmentProgress,
+        averageDailyDistance,
+        projectedCompletionDate,
+        daysRemaining,
+        lastActivityAt: progress.lastActivityAt,
+      },
+      memberStats: {
+        totalMembers: team.members.length,
+        activeMembers: activeMembers.length,
+        topContributors,
+      },
+    };
+
+    // Cache the result
+    cache.set(cacheKey, result, cacheTTL.teamProgress);
+
+    return result;
+  }
+
+  async getActivitySummary(
+    userId: string,
+    options: ActivitySummaryOptions
+  ): Promise<ActivitySummaryPeriod[]> {
+    const { period, startDate, endDate, teamId, limit = 12 } = options;
+
+    // Check cache first
+    const cacheKey = cacheKeys.activitySummary(userId, period, teamId);
+    const cached = cache.get<ActivitySummaryPeriod[]>(cacheKey);
+    if (cached && !startDate && !endDate) {
+      // Only use cache if no custom date range specified
+      return cached;
+    }
+
+    // Determine date range
+    let queryStartDate: Date;
+    let queryEndDate: Date;
+
+    if (startDate && endDate) {
+      queryStartDate = new Date(startDate);
+      queryEndDate = new Date(endDate);
+    } else {
+      queryEndDate = new Date();
+      if (period === 'daily') {
+        queryStartDate = new Date();
+        queryStartDate.setDate(queryStartDate.getDate() - limit);
+      } else if (period === 'weekly') {
+        queryStartDate = new Date();
+        queryStartDate.setDate(queryStartDate.getDate() - (limit * 7));
+      } else {
+        queryStartDate = new Date();
+        queryStartDate.setMonth(queryStartDate.getMonth() - limit);
+      }
+    }
+
+    // Build where clause
+    const where: Prisma.ActivityWhereInput = {
+      userId,
+      startTime: {
+        gte: queryStartDate,
+        lte: queryEndDate,
+      },
+      ...(teamId && { teamId }),
+    };
+
+    // Get all activities in the date range
+    const activities = await this.prisma.activity.findMany({
+      where,
+      select: {
+        distance: true,
+        duration: true,
+        startTime: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+    });
+
+    // Group activities by period
+    const periodMap = new Map<string, ActivitySummaryPeriod>();
+
+    activities.forEach(activity => {
+      const periodKey = this.getPeriodKey(activity.startTime, period);
+      const existing = periodMap.get(periodKey);
+
+      if (existing) {
+        existing.totalDistance += activity.distance;
+        existing.totalDuration += activity.duration;
+        existing.totalActivities += 1;
+      } else {
+        const { start, end } = this.getPeriodBounds(activity.startTime, period);
+        periodMap.set(periodKey, {
+          startDate: start,
+          endDate: end,
+          totalDistance: activity.distance,
+          totalDuration: activity.duration,
+          totalActivities: 1,
+          averagePace: 0,
+          averageDistance: 0,
+          activeDays: 1,
+        });
+      }
+    });
+
+    // Calculate averages and active days for each period
+    const summaries = Array.from(periodMap.values()).map(summary => {
+      summary.averagePace = summary.totalDistance > 0 
+        ? this.calculatePace(summary.totalDistance, summary.totalDuration) 
+        : 0;
+      summary.averageDistance = summary.totalActivities > 0 
+        ? summary.totalDistance / summary.totalActivities 
+        : 0;
+
+      // Count unique days with activities
+      const daysWithActivity = new Set(
+        activities
+          .filter(a => 
+            a.startTime >= summary.startDate && 
+            a.startTime <= summary.endDate
+          )
+          .map(a => a.startTime.toDateString())
+      );
+      summary.activeDays = daysWithActivity.size;
+
+      return summary;
+    });
+
+    // Sort by start date descending and limit
+    const result = summaries
+      .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())
+      .slice(0, limit);
+
+    // Cache the result if no custom date range
+    if (!startDate && !endDate) {
+      cache.set(cacheKey, result, cacheTTL.activitySummary);
+    }
+
+    return result;
+  }
+
+  private getPeriodKey(date: Date, period: 'daily' | 'weekly' | 'monthly'): string {
+    if (period === 'daily') {
+      return date.toISOString().split('T')[0];
+    } else if (period === 'weekly') {
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      return weekStart.toISOString().split('T')[0];
+    } else {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+  }
+
+  private getPeriodBounds(date: Date, period: 'daily' | 'weekly' | 'monthly'): { start: Date; end: Date } {
+    if (period === 'daily') {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    } else if (period === 'weekly') {
+      const start = new Date(date);
+      start.setDate(date.getDate() - date.getDay());
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    } else {
+      const start = new Date(date.getFullYear(), date.getMonth(), 1);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
   }
 }

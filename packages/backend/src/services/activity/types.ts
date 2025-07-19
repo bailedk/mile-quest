@@ -51,3 +51,74 @@ export interface DeleteActivityResult {
   deleted: boolean;
   teamUpdates: TeamProgressUpdate[];
 }
+
+// Aggregation types for BE-015
+export interface UserActivityStats {
+  totalDistance: number;
+  totalDuration: number;
+  totalActivities: number;
+  averagePace: number;
+  averageDistance: number;
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate: Date | null;
+  weeklyStats: {
+    distance: number;
+    duration: number;
+    activities: number;
+  };
+  monthlyStats: {
+    distance: number;
+    duration: number;
+    activities: number;
+  };
+}
+
+export interface TeamProgressInfo {
+  team: {
+    id: string;
+    name: string;
+    goalDistance: number;
+    startDate: Date;
+    endDate: Date;
+  };
+  progress: {
+    totalDistance: number;
+    percentComplete: number;
+    currentSegmentIndex: number;
+    distanceToNextWaypoint: number;
+    averageDailyDistance: number;
+    projectedCompletionDate: Date | null;
+    daysRemaining: number;
+    lastActivityAt: Date | null;
+  };
+  memberStats: {
+    totalMembers: number;
+    activeMembers: number;
+    topContributors: {
+      userId: string;
+      name: string;
+      distance: number;
+      percentage: number;
+    }[];
+  };
+}
+
+export interface ActivitySummaryPeriod {
+  startDate: Date;
+  endDate: Date;
+  totalDistance: number;
+  totalDuration: number;
+  totalActivities: number;
+  averagePace: number;
+  averageDistance: number;
+  activeDays: number;
+}
+
+export interface ActivitySummaryOptions {
+  period: 'daily' | 'weekly' | 'monthly';
+  startDate?: string;
+  endDate?: string;
+  teamId?: string;
+  limit?: number;
+}

@@ -10,12 +10,19 @@ import { prisma } from '../../lib/database';
 import { ActivityService } from '../../services/activity/activity.service';
 import { CreateActivityInput, UpdateActivityInput } from '../../services/activity/types';
 import { APIGatewayProxyEvent } from 'aws-lambda';
+import { ProgressService, ProgressWebSocketIntegration } from '../../services/progress';
+import { createWebSocketService } from '../../services/websocket';
+import { createLogger } from '../../services/logger';
 
 // Validate environment on cold start
 validateEnvironment();
 
 // Initialize services
 const activityService = new ActivityService(prisma);
+const progressService = new ProgressService(prisma);
+const websocketService = createWebSocketService();
+const progressWebSocket = new ProgressWebSocketIntegration(progressService, websocketService);
+const logger = createLogger('ActivitiesHandler');
 
 // Create router
 const router = createRouter();
@@ -76,6 +83,52 @@ router.post('/', async (event, context, params) => {
     }
 
     const result = await activityService.createActivity(user.sub, input);
+
+    // Send real-time updates for each team
+    try {
+      for (const teamUpdate of result.teamUpdates) {
+        // Get full progress data
+        const progressData = await progressService.calculateTeamProgress(
+          teamUpdate.teamId,
+          { includeContributors: true, contributorLimit: 3 }
+        );
+
+        // Check for milestones
+        const progressResult = await progressService.updateProgressAndCheckMilestones(
+          teamUpdate.teamId,
+          input.distance,
+          1,
+          input.duration
+        );
+
+        // Broadcast updates
+        await progressWebSocket.broadcastProgressUpdate(
+          teamUpdate.teamId,
+          teamUpdate.teamId,
+          progressData,
+          progressResult.milestoneReached
+        );
+
+        // Also broadcast activity added event
+        await progressWebSocket.broadcastActivityAdded(
+          teamUpdate.teamId,
+          {
+            userId: user.sub,
+            userName: result.activity.user.name,
+            distance: input.distance,
+            duration: input.duration,
+          },
+          {
+            newTotalDistance: teamUpdate.newTotalDistance,
+            newPercentComplete: teamUpdate.newPercentComplete,
+            distanceAdded: input.distance,
+          }
+        );
+      }
+    } catch (wsError) {
+      logger.error('Failed to send WebSocket updates', { error: wsError });
+      // Don't fail the request if WebSocket fails
+    }
 
     return {
       statusCode: 201,
@@ -284,6 +337,26 @@ router.delete('/:id', async (event, context, params) => {
       user.sub
     );
 
+    // Send real-time updates for team progress decrease
+    try {
+      for (const teamUpdate of result.teamUpdates) {
+        // Broadcast the updated progress
+        const progressData = await progressService.calculateTeamProgress(
+          teamUpdate.teamId,
+          { includeContributors: true, contributorLimit: 3 }
+        );
+
+        await progressWebSocket.broadcastProgressUpdate(
+          teamUpdate.teamId,
+          teamUpdate.teamId,
+          progressData
+        );
+      }
+    } catch (wsError) {
+      logger.error('Failed to send WebSocket updates for deletion', { error: wsError });
+      // Don't fail the request if WebSocket fails
+    }
+
     return {
       statusCode: 200,
       body: {
@@ -325,6 +398,139 @@ router.delete('/:id', async (event, context, params) => {
         error: {
           code: 'INTERNAL_ERROR',
           message: 'Failed to delete activity',
+        },
+      },
+    };
+  }
+});
+
+// Get user activity stats (BE-015)
+router.get('/stats', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const stats = await activityService.getUserStats(user.sub);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: {
+          stats: {
+            totalDistance: stats.totalDistance,
+            totalDuration: stats.totalDuration,
+            totalActivities: stats.totalActivities,
+            averagePace: stats.averagePace,
+            averageDistance: stats.averageDistance,
+            currentStreak: stats.currentStreak,
+            longestStreak: stats.longestStreak,
+            lastActivityDate: stats.lastActivityDate?.toISOString() || null,
+            weeklyStats: stats.weeklyStats,
+            monthlyStats: stats.monthlyStats,
+          },
+        },
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+    
+    console.error('Error getting user stats:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get user stats',
+        },
+      },
+    };
+  }
+});
+
+// Get activity summary by period (BE-015)
+router.get('/summary', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const period = queryParams.period as 'daily' | 'weekly' | 'monthly' || 'weekly';
+    
+    // Validate period
+    if (!['daily', 'weekly', 'monthly'].includes(period)) {
+      return {
+        statusCode: 400,
+        body: {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid period. Must be daily, weekly, or monthly',
+          },
+        },
+      };
+    }
+
+    const options = {
+      period,
+      startDate: queryParams.startDate,
+      endDate: queryParams.endDate,
+      teamId: queryParams.teamId,
+      limit: queryParams.limit ? parseInt(queryParams.limit) : undefined,
+    };
+
+    const summaries = await activityService.getActivitySummary(user.sub, options);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: {
+          summaries: summaries.map(summary => ({
+            startDate: summary.startDate.toISOString(),
+            endDate: summary.endDate.toISOString(),
+            totalDistance: summary.totalDistance,
+            totalDuration: summary.totalDuration,
+            totalActivities: summary.totalActivities,
+            averagePace: summary.averagePace,
+            averageDistance: summary.averageDistance,
+            activeDays: summary.activeDays,
+          })),
+        },
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+    
+    console.error('Error getting activity summary:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get activity summary',
         },
       },
     };

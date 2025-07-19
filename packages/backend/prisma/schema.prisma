@@ -115,11 +115,28 @@ model Activity {
   achievementsEarned UserAchievement[]
 
   @@unique([source, externalId])
+  // Single column indexes
   @@index([userId])
   @@index([teamId])
   @@index([teamGoalId])
   @@index([startTime])
   @@index([isPrivate])
+  @@index([createdAt])
+  
+  // Compound indexes for common query patterns
+  // For user activity lists with date filtering
+  @@index([userId, startTime(sort: Desc)])
+  // For team activity lists
+  @@index([teamId, startTime(sort: Desc)])
+  // For filtering by user, team, and date
+  @@index([userId, teamId, startTime(sort: Desc)])
+  // For public activities (leaderboards)
+  @@index([isPrivate, startTime(sort: Desc)])
+  // For team leaderboards excluding private activities
+  @@index([teamId, isPrivate, startTime(sort: Desc)])
+  // For cursor-based pagination
+  @@index([createdAt(sort: Desc), id])
+  
   @@map("activities")
 }
 

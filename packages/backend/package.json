@@ -14,7 +14,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx src/scripts/seed.ts"
+    "db:seed": "tsx src/scripts/seed.ts",
+    "test:activities": "tsx src/scripts/test-activities.ts",
+    "test:aggregations": "tsx src/scripts/test-aggregations.ts"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "^1.17.0",
@@ -41,6 +43,7 @@
     "@types/aws-lambda": "^8.10.131",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/pg": "^8.10.9",
+    "axios": "^1.6.0",
     "esbuild": "^0.19.8",
     "jest": "^29.7.0",
     "prisma": "^5.7.0",
