@@ -8,17 +8,15 @@
  * - Error context
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
+// Temporarily disable AWS Lambda Powertools due to initialization issues
+// import { Logger } from '@aws-lambda-powertools/logger';
 
-// Lazy initialization of base logger to avoid runtime errors
-let baseLogger: Logger | null = null;
-
-// Simple console logger as fallback
+// Simple console logger implementation
 class ConsoleLogger {
   constructor(private readonly serviceName: string) {}
   
   createChild(_options: any) {
-    return this;
+    return new ConsoleLogger(this.serviceName);
   }
   
   appendKeys(_keys: any) {
@@ -26,42 +24,51 @@ class ConsoleLogger {
   }
   
   debug(message: string, data?: any) {
-    console.debug(`[DEBUG] [${this.serviceName}] ${message}`, data);
+    if (process.env.LOG_LEVEL?.toLowerCase() === 'debug') {
+      console.log(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'DEBUG',
+        service: this.serviceName,
+        message,
+        ...data
+      }));
+    }
   }
   
   info(message: string, data?: any) {
-    console.info(`[INFO] [${this.serviceName}] ${message}`, data);
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'INFO',
+      service: this.serviceName,
+      message,
+      ...data
+    }));
   }
   
   warn(message: string, data?: any) {
-    console.warn(`[WARN] [${this.serviceName}] ${message}`, data);
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'WARN',
+      service: this.serviceName,
+      message,
+      ...data
+    }));
   }
   
   error(message: string, data?: any) {
-    console.error(`[ERROR] [${this.serviceName}] ${message}`, data);
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'ERROR',
+      service: this.serviceName,
+      message,
+      ...data
+    }));
   }
 }
 
-function getBaseLogger(): Logger | ConsoleLogger {
-  if (!baseLogger) {
-    try {
-      // Try to get config safely
-      const logLevel = process.env.LOG_LEVEL?.toUpperCase() || 'INFO';
-      const stage = process.env.STAGE || 'dev';
-      
-      // Initialize logger with safe defaults
-      baseLogger = new Logger({
-        serviceName: 'mile-quest-api',
-        logLevel: logLevel as 'DEBUG' | 'INFO' | 'WARN' | 'ERROR',
-        environment: stage,
-      });
-    } catch (error) {
-      console.error('Failed to initialize AWS Lambda Powertools logger, using console fallback:', error);
-      // Use fallback console logger
-      return new ConsoleLogger('mile-quest-api') as any;
-    }
-  }
-  return baseLogger;
+// Always use console logger for now
+function getBaseLogger(): ConsoleLogger {
+  return new ConsoleLogger('mile-quest-api');
 }
 
 // Export types for use in other modules
@@ -72,21 +79,13 @@ export type LogContext = Record<string, any>;
  * Enhanced logger with additional context and utilities
  */
 export class MileQuestLogger {
-  private logger: Logger | ConsoleLogger;
+  private logger: ConsoleLogger;
   private context: LogContext = {};
 
   constructor(private functionName: string) {
-    try {
-      this.logger = getBaseLogger().createChild({
-        persistentLogAttributes: {
-          functionName,
-          version: process.env.AWS_LAMBDA_FUNCTION_VERSION || 'local',
-        },
-      });
-    } catch (error) {
-      console.error('Failed to create child logger:', error);
-      this.logger = getBaseLogger();
-    }
+    this.logger = getBaseLogger();
+    this.context.functionName = functionName;
+    this.context.version = process.env.AWS_LAMBDA_FUNCTION_VERSION || 'local';
   }
 
   /**
@@ -123,19 +122,20 @@ export class MileQuestLogger {
    * Log methods
    */
   debug(message: string, data?: LogContext): void {
-    this.logger.debug(message, data || {});
+    this.logger.debug(message, { ...this.context, ...data });
   }
 
   info(message: string, data?: LogContext): void {
-    this.logger.info(message, data || {});
+    this.logger.info(message, { ...this.context, ...data });
   }
 
   warn(message: string, data?: LogContext): void {
-    this.logger.warn(message, data || {});
+    this.logger.warn(message, { ...this.context, ...data });
   }
 
   error(message: string, error?: Error | unknown, data?: LogContext): void {
     const errorData: LogContext = {
+      ...this.context,
       ...data,
       error: error instanceof Error ? {
         name: error.name,

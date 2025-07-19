@@ -8,6 +8,7 @@ import { validateEnvironment } from '../../config/environment';
 import { verifyToken } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
+import { ActivityService } from '../../services/activity/activity.service';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 
 // Validate environment on cold start
@@ -15,6 +16,7 @@ validateEnvironment();
 
 // Initialize services
 const teamService = new TeamService(prisma);
+const activityService = new ActivityService(prisma);
 
 // Create router
 const router = createRouter();
@@ -64,6 +66,32 @@ router.get('/me/teams', async (event, context, params) => {
     return {
       statusCode: 500,
       body: { error: 'Failed to fetch teams' },
+    };
+  }
+});
+
+// Get user activity stats
+router.get('/me/stats', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const stats = await activityService.getUserStats(user.sub);
+    
+    return {
+      statusCode: 200,
+      body: stats,
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
+    console.error('Error fetching user stats:', error);
+    return {
+      statusCode: 500,
+      body: { error: 'Failed to fetch user stats' },
     };
   }
 });
