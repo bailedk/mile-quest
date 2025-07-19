@@ -6,9 +6,14 @@ import {
   TeamWithMembers,
   TeamListItem
 } from './types';
+import { GoalService } from '../goal/goal.service';
 
 export class TeamService {
-  constructor(private prisma: PrismaClient) {}
+  private goalService: GoalService;
+
+  constructor(private prisma: PrismaClient) {
+    this.goalService = new GoalService(prisma);
+  }
 
   async getUserTeams(userId: string): Promise<TeamListItem[]> {
     const memberships = await this.prisma.teamMember.findMany({
@@ -116,10 +121,13 @@ export class TeamService {
       throw new Error('Team name already exists');
     }
 
+    // Extract goal from input
+    const { goal, ...teamInput } = input;
+
     // Create team and add creator as admin
     const team = await this.prisma.team.create({
       data: {
-        ...input,
+        ...teamInput,
         createdById: userId,
         members: {
           create: {
@@ -151,6 +159,24 @@ export class TeamService {
         },
       },
     });
+
+    // Create goal if provided
+    if (goal) {
+      try {
+        await this.goalService.createTeamGoal(team.id, userId, {
+          name: goal.name,
+          description: goal.description,
+          startLocation: goal.startLocation,
+          endLocation: goal.endLocation,
+          waypoints: goal.waypoints,
+          targetDate: goal.targetDate,
+        });
+      } catch (error) {
+        // If goal creation fails, we should still return the team
+        // but log the error for debugging
+        console.error('Failed to create goal during team creation:', error);
+      }
+    }
 
     return team;
   }

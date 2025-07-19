@@ -111,4 +111,5 @@ export const cacheTTL = {
   userStats: 300, // 5 minutes
   teamProgress: 300, // 5 minutes
   activitySummary: 600, // 10 minutes
+  leaderboard: 900, // 15 minutes
 };

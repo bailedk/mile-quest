@@ -13,7 +13,7 @@ export class PusherWebSocketService implements WebSocketService {
   async connect(): Promise<void> {
     if (this.pusher) return;
 
-    this.pusher = new Pusher(this.config.key!, {
+    this.pusher = new Pusher(this.config.key || '', {
       cluster: this.config.cluster,
       authEndpoint: this.config.authEndpoint,
       auth: this.config.auth,

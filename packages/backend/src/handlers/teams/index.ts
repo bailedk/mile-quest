@@ -10,6 +10,8 @@ import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { CreateTeamInput, UpdateTeamInput, JoinTeamInput } from '../../services/team/types';
 import { ActivityService } from '../../services/activity/activity.service';
+import { GoalService } from '../../services/goal/goal.service';
+import { CreateGoalInput, UpdateGoalInput } from '../../services/goal/types';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
 // Validate environment on cold start
@@ -18,6 +20,7 @@ validateEnvironment();
 // Initialize services
 const teamService = new TeamService(prisma);
 const activityService = new ActivityService(prisma);
+const goalService = new GoalService(prisma);
 
 // Create router
 const router = createRouter();
@@ -298,6 +301,315 @@ router.post('/join', async (event, context, params) => {
     return {
       statusCode: 500,
       body: { error: 'Failed to join team' },
+    };
+  }
+});
+
+// Create team goal (INT-006)
+router.post('/:id/goals', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const input: CreateGoalInput = JSON.parse(event.body || '{}');
+
+    // Validate input
+    if (!input.name || input.name.trim().length < 3) {
+      return {
+        statusCode: 400,
+        body: {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Goal name must be at least 3 characters long',
+          },
+        },
+      };
+    }
+
+    if (!input.startLocation || !input.endLocation) {
+      return {
+        statusCode: 400,
+        body: {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Start and end locations are required',
+          },
+        },
+      };
+    }
+
+    const goal = await goalService.createTeamGoal(params.id, user.sub, input);
+
+    return {
+      statusCode: 201,
+      body: {
+        success: true,
+        data: goal,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+    if (error.message === 'Team not found or user is not a member') {
+      return {
+        statusCode: 403,
+        body: {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: error.message,
+          },
+        },
+      };
+    }
+    if (error.message.includes('Route calculation failed')) {
+      return {
+        statusCode: 400,
+        body: {
+          success: false,
+          error: {
+            code: 'ROUTE_ERROR',
+            message: error.message,
+          },
+        },
+      };
+    }
+
+    console.error('Error creating team goal:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to create team goal',
+        },
+      },
+    };
+  }
+});
+
+// Get team goals
+router.get('/:id/goals', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const goals = await goalService.getTeamGoals(params.id, user.sub);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: goals,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+
+    console.error('Error getting team goals:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get team goals',
+        },
+      },
+    };
+  }
+});
+
+// Get active team goal
+router.get('/:id/goals/active', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const goal = await goalService.getTeamActiveGoal(params.id, user.sub);
+
+    if (!goal) {
+      return {
+        statusCode: 404,
+        body: {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'No active goal found for this team',
+          },
+        },
+      };
+    }
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: goal,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+
+    console.error('Error getting active team goal:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get active team goal',
+        },
+      },
+    };
+  }
+});
+
+// Create separate handler for goal-specific operations
+router.get('/goals/:goalId/progress', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const progress = await goalService.getGoalProgress(params.goalId, user.sub);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: progress,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+    if (error.message === 'Goal not found or user does not have access') {
+      return {
+        statusCode: 404,
+        body: {
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: error.message,
+          },
+        },
+      };
+    }
+
+    console.error('Error getting goal progress:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to get goal progress',
+        },
+      },
+    };
+  }
+});
+
+// Update team goal
+router.patch('/goals/:goalId', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const input: UpdateGoalInput = JSON.parse(event.body || '{}');
+
+    const goal = await goalService.updateTeamGoal(params.goalId, user.sub, input);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: goal,
+      },
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        },
+      };
+    }
+    if (error.message === 'Goal not found or user does not have permission') {
+      return {
+        statusCode: 403,
+        body: {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: error.message,
+          },
+        },
+      };
+    }
+    if (error.message.includes('Route calculation failed')) {
+      return {
+        statusCode: 400,
+        body: {
+          success: false,
+          error: {
+            code: 'ROUTE_ERROR',
+            message: error.message,
+          },
+        },
+      };
+    }
+
+    console.error('Error updating team goal:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to update team goal',
+        },
+      },
     };
   }
 });

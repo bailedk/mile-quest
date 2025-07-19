@@ -15,6 +15,31 @@ export interface CreateTeamInput {
   avatarUrl?: string;
   isPublic?: boolean;
   maxMembers?: number;
+  goal?: {
+    name: string;
+    description?: string;
+    startLocation: {
+      lat: number;
+      lng: number;
+      address?: string;
+    };
+    endLocation: {
+      lat: number;
+      lng: number;
+      address?: string;
+    };
+    waypoints?: Array<{
+      id: string;
+      position: {
+        lat: number;
+        lng: number;
+      };
+      address?: string;
+      order: number;
+      isLocked?: boolean;
+    }>;
+    targetDate?: Date;
+  };
 }
 
 export interface UpdateTeamInput {

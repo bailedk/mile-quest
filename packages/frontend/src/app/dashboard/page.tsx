@@ -6,6 +6,7 @@ import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { TeamProgressOverview } from '@/components/dashboard/TeamProgressOverview';
 import { RecentActivities } from '@/components/dashboard/RecentActivities';
 import { QuickActions } from '@/components/dashboard/QuickActions';
+import { ProgressLineChart, GoalProgressChart, ActivityBarChart } from '@/components/charts';
 import { formatDistance } from '@/services/activity.service';
 import { 
   mockUser, 
@@ -15,6 +16,11 @@ import {
   mockDashboardStats,
   mockTeamMembers 
 } from '@/utils/mockData';
+import { 
+  generateDailyProgressData, 
+  generateWeeklyProgressData, 
+  generateActivityBreakdownData 
+} from '@/utils/chartMockData';
 
 // Helper function to get relative time
 function getRelativeTime(timestamp: string): string {
@@ -32,10 +38,16 @@ function getRelativeTime(timestamp: string): string {
 export default function DashboardPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [chartView, setChartView] = useState<'daily' | 'weekly'>('daily');
   
   // Use mock data instead of API calls
   const user = mockUser;
   const teams = mockTeams;
+  
+  // Generate chart data
+  const dailyProgressData = generateDailyProgressData();
+  const weeklyProgressData = generateWeeklyProgressData();
+  const activityBreakdownData = generateActivityBreakdownData();
   
   // Set default team when component mounts
   useEffect(() => {
@@ -197,6 +209,71 @@ export default function DashboardPage() {
             >
               Log Today's Walk
             </Link>
+
+            {/* Progress Charts Section */}
+            <div className="space-y-6">
+              {/* Goal Progress Chart */}
+              {selectedTeam && teamProgress && (
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Goal Progress</h3>
+                  <GoalProgressChart
+                    currentDistance={teamProgress.totalDistance}
+                    targetDistance={teamProgress.targetDistance}
+                    userPreferredUnits={user.preferredUnits}
+                    height={240}
+                    className="w-full"
+                  />
+                </div>
+              )}
+
+              {/* Activity Breakdown Chart */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Activity</h3>
+                <ActivityBarChart
+                  data={activityBreakdownData}
+                  userPreferredUnits={user.preferredUnits}
+                  height={280}
+                  className="w-full"
+                  showActivityCount={false}
+                />
+              </div>
+
+              {/* Progress Over Time Chart */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Progress Over Time</h3>
+                  <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setChartView('daily')}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                        chartView === 'daily'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Daily
+                    </button>
+                    <button
+                      onClick={() => setChartView('weekly')}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                        chartView === 'weekly'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Weekly
+                    </button>
+                  </div>
+                </div>
+                <ProgressLineChart
+                  data={chartView === 'daily' ? dailyProgressData : weeklyProgressData}
+                  userPreferredUnits={user.preferredUnits}
+                  showCumulative={chartView === 'weekly'}
+                  height={280}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
             {/* Additional Stats Cards for better visualization */}
             <div className="grid grid-cols-2 gap-4">

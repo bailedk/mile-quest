@@ -79,9 +79,13 @@ model TeamGoal {
   teamId         String
   name           String
   description    String?
-  targetDistance Float
+  targetDistance Float         // Total distance in meters
   targetDate     DateTime?
-  routeData      Json
+  startLocation  Json          // { lat: number, lng: number, address?: string }
+  endLocation    Json          // { lat: number, lng: number, address?: string }
+  waypoints      Json[]        // Array of waypoint objects
+  routePolyline  String        // Encoded polyline for the entire route
+  routeData      Json          // Additional route metadata (segments, bounds, etc.)
   status         GoalStatus    @default(DRAFT)
   createdById    String
   startedAt      DateTime?
@@ -95,6 +99,7 @@ model TeamGoal {
 
   @@index([teamId])
   @@index([status])
+  @@index([teamId, status])
   @@map("team_goals")
 }
 

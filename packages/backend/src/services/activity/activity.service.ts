@@ -13,9 +13,15 @@ import {
   ActivitySummaryOptions,
 } from './types';
 import { cache, cacheKeys, cacheTTL } from '../../utils/cache';
+import { LeaderboardService } from '../leaderboard/leaderboard.service';
+import { AchievementService } from '../achievement';
 
 export class ActivityService {
-  constructor(private prisma: PrismaClient) {}
+  private achievementService: AchievementService;
+
+  constructor(private prisma: PrismaClient) {
+    this.achievementService = new AchievementService(prisma);
+  }
 
   async createActivity(
     userId: string,
@@ -178,9 +184,16 @@ export class ActivityService {
         cache.delete(cacheKeys.teamProgress(update.teamId));
       });
 
+      // Detect new achievements after activity creation
+      const newAchievements = await this.achievementService.detectNewAchievements(
+        userId, 
+        activity
+      );
+
       return {
         activity: activityWithTeams,
         teamUpdates,
+        newAchievements,
       };
     });
 

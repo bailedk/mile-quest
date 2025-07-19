@@ -9,6 +9,7 @@ import { verifyToken } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
+import { AchievementService } from '../../services/achievement';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 
 // Validate environment on cold start
@@ -17,6 +18,7 @@ validateEnvironment();
 // Initialize services
 const teamService = new TeamService(prisma);
 const activityService = new ActivityService(prisma);
+const achievementService = new AchievementService(prisma);
 
 // Create router
 const router = createRouter();
@@ -92,6 +94,32 @@ router.get('/me/stats', async (event, _context, _params) => {
     return {
       statusCode: 500,
       body: { error: 'Failed to fetch user stats' },
+    };
+  }
+});
+
+// Get user achievements (BE-019)
+router.get('/me/achievements', async (event, _context, _params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const achievements = await achievementService.getUserAchievements(user.sub);
+    
+    return {
+      statusCode: 200,
+      body: achievements,
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
+    console.error('Error fetching user achievements:', error);
+    return {
+      statusCode: 500,
+      body: { error: 'Failed to fetch achievements' },
     };
   }
 });
