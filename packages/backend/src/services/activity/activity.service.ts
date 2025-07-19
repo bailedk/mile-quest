@@ -18,9 +18,11 @@ import { AchievementService } from '../achievement';
 
 export class ActivityService {
   private achievementService: AchievementService;
+  private leaderboardService: LeaderboardService;
 
   constructor(private prisma: PrismaClient) {
     this.achievementService = new AchievementService(prisma);
+    this.leaderboardService = new LeaderboardService(prisma);
   }
 
   async createActivity(
@@ -91,7 +93,8 @@ export class ActivityService {
         },
       });
 
-      // Update user stats
+      // Update user stats with proper streak calculation
+      const newStreaks = await this.calculateUserStreaks(userId, activityDate, tx);
       await tx.userStats.upsert({
         where: { userId },
         create: {
@@ -99,14 +102,16 @@ export class ActivityService {
           totalDistance: input.distance,
           totalActivities: 1,
           totalDuration: input.duration,
-          currentStreak: 1,
-          longestStreak: 1,
+          currentStreak: newStreaks.currentStreak,
+          longestStreak: newStreaks.longestStreak,
           lastActivityAt: activityDate,
         },
         update: {
           totalDistance: { increment: input.distance },
           totalActivities: { increment: 1 },
           totalDuration: { increment: input.duration },
+          currentStreak: newStreaks.currentStreak,
+          longestStreak: newStreaks.longestStreak,
           lastActivityAt: activityDate,
         },
       });
@@ -182,6 +187,8 @@ export class ActivityService {
       cache.delete(cacheKeys.userStats(userId));
       teamUpdates.forEach(update => {
         cache.delete(cacheKeys.teamProgress(update.teamId));
+        // Invalidate leaderboard caches for the team
+        this.leaderboardService.invalidateTeamCaches(update.teamId);
       });
 
       // Detect new achievements after activity creation
@@ -314,6 +321,11 @@ export class ActivityService {
       },
     });
 
+    // If privacy setting changed, invalidate leaderboard caches
+    if (existingActivity.isPrivate !== input.isPrivate) {
+      this.leaderboardService.invalidateTeamCaches(activity.teamId);
+    }
+
     return {
       ...activity,
       teams: [activity.team],
@@ -387,6 +399,8 @@ export class ActivityService {
       cache.delete(cacheKeys.userStats(userId));
       teamUpdates.forEach(update => {
         cache.delete(cacheKeys.teamProgress(update.teamId));
+        // Invalidate leaderboard caches for the team
+        this.leaderboardService.invalidateTeamCaches(update.teamId);
       });
 
       return {
@@ -619,6 +633,8 @@ export class ActivityService {
 
     const percentComplete = (progress.totalDistance / activeGoal.targetDistance) * 100;
 
+    const routeData = activeGoal.routeData as any;
+    
     const result: TeamProgressInfo = {
       team: {
         id: team.id,
@@ -627,11 +643,30 @@ export class ActivityService {
         startDate: activeGoal.startedAt!,
         endDate: endDate,
       },
+      goal: {
+        id: activeGoal.id,
+        name: activeGoal.name,
+        description: activeGoal.description || undefined,
+        startLocation: activeGoal.startLocation as {
+          lat: number;
+          lng: number;
+          address?: string;
+        },
+        endLocation: activeGoal.endLocation as {
+          lat: number;
+          lng: number;
+          address?: string;
+        },
+        waypoints: (activeGoal.waypoints as any[]) || [],
+        routePolyline: activeGoal.routePolyline,
+        routeBounds: routeData?.bounds,
+      },
       progress: {
         totalDistance: progress.totalDistance,
         percentComplete: Math.min(percentComplete, 100),
         currentSegmentIndex: progress.currentSegmentIndex,
         distanceToNextWaypoint: progress.segmentProgress,
+        segmentProgress: progress.segmentProgress,
         averageDailyDistance,
         projectedCompletionDate,
         daysRemaining,
@@ -803,5 +838,88 @@ export class ActivityService {
       end.setHours(23, 59, 59, 999);
       return { start, end };
     }
+  }
+
+  /**
+   * Calculate user streaks based on activity history
+   */
+  private async calculateUserStreaks(
+    userId: string, 
+    newActivityDate: Date, 
+    tx?: any
+  ): Promise<{ currentStreak: number; longestStreak: number }> {
+    const prismaClient = tx || this.prisma;
+    
+    // Get all activities for the user, grouped by date
+    const activities = await prismaClient.activity.findMany({
+      where: { userId },
+      select: { startTime: true },
+      orderBy: { startTime: 'desc' },
+    });
+
+    // Create a set of unique activity dates (YYYY-MM-DD format)
+    const activityDates = new Set<string>();
+    activities.forEach(activity => {
+      const dateStr = activity.startTime.toISOString().split('T')[0];
+      activityDates.add(dateStr);
+    });
+    
+    // Add the new activity date
+    const newDateStr = newActivityDate.toISOString().split('T')[0];
+    activityDates.add(newDateStr);
+    
+    // Convert to sorted array (most recent first)
+    const sortedDates = Array.from(activityDates).sort().reverse();
+    
+    if (sortedDates.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+
+    // Calculate current streak
+    let currentStreak = 0;
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    for (let i = 0; i < sortedDates.length; i++) {
+      const dateStr = sortedDates[i];
+      const date = new Date(dateStr);
+      
+      // Calculate expected date for streak continuation
+      const expectedDate = new Date(today);
+      expectedDate.setDate(today.getDate() - i);
+      const expectedDateStr = expectedDate.toISOString().split('T')[0];
+      
+      if (dateStr === expectedDateStr) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    // Calculate longest streak
+    let longestStreak = 0;
+    let tempStreak = 0;
+    
+    for (let i = 0; i < sortedDates.length; i++) {
+      if (i === 0) {
+        tempStreak = 1;
+        continue;
+      }
+      
+      const currentDate = new Date(sortedDates[i]);
+      const previousDate = new Date(sortedDates[i - 1]);
+      const daysDiff = Math.floor((previousDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 1) {
+        tempStreak++;
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    
+    longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
+    
+    return { currentStreak, longestStreak };
   }
 }

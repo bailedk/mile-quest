@@ -1,21 +1,21 @@
 # Mile Quest Sprint Tracking - Single Source of Truth
 
 **Purpose**: Track actual implementation progress across all sprints and tasks
-**Last Updated**: 2025-01-19 (BE-017 Complete)
+**Last Updated**: 2025-01-19 (INT-006 Complete)
 **Update Frequency**: Daily during active development
 
 ## 🎯 Current Sprint: Sprint 4 - Dashboard Implementation
 
-### Sprint 4 Status: 25% Complete 🚧
+### Sprint 4 Status: 37.5% Complete 🚧
 
 | Task ID | Description | Status | Owner | Notes |
 |---------|-------------|--------|-------|-------|
 | FE-014 | Dashboard UI components | 🚧 In Progress | Frontend Dev | Mobile-first dashboard with mock data |
-| FE-015 | Progress visualization | 🔴 Ready | Frontend Dev | Charts and graphs |
+| FE-015 | Progress visualization | ✅ Complete | Frontend Dev | Charts and graphs implemented |
 | BE-017 | Dashboard API endpoint | ✅ Complete | Backend Dev | Aggregated dashboard data with caching |
 | BE-018 | Leaderboard calculations | 🔴 Ready | Backend Dev | Team member rankings |
 | FE-016 | Real-time updates | 🔴 Ready | Frontend Dev | WebSocket integration |
-| BE-019 | Achievement detection | 🔴 Ready | Backend Dev | Milestone tracking |
+| BE-019 | Achievement detection | ✅ Complete | Backend Dev | Achievement system implemented |
 | DB-008 | Dashboard query optimization | 🔴 Ready | Database Dev | Materialized views |
 | FE-017 | Mobile optimization | 🔴 Ready | Frontend Dev | Touch interactions |
 
@@ -131,7 +131,7 @@
 | Sprint 1 | Authentication | ✅ Complete | 100% |
 | Sprint 2 | Team Management | ✅ Complete | 100% |
 | Sprint 3 | Activity Tracking | ✅ Complete | 100% |
-| Sprint 4 | Dashboard | 🚧 In Progress | 12.5% |
+| Sprint 4 | Dashboard | 🚧 In Progress | 37.5% |
 | Sprint 5 | Real-time | 🔴 Not Started | 0% |
 | Sprint 6 | PWA | 🔴 Not Started | 0% |
 | Sprint 7 | Polish | 🔴 Not Started | 0% |
@@ -177,6 +177,59 @@ When completing work:
 4. Update percentage calculations
 
 ## 📋 Historical Updates
+
+### 2025-01-19 (INT-006 Complete)
+- Completed INT-006: Team goals integration with map service
+  - ✅ Updated Prisma schema to add Goal model with geographic route fields:
+    - Team relation, name, description  
+    - Start/end locations, waypoints as JSON fields
+    - Total distance, deadline, route polyline storage
+  - ✅ Created goal service in packages/backend/src/services/goal/:
+    - GoalService class with map service integration
+    - Complete CRUD operations for team goals
+    - Route calculation using existing map service abstraction
+  - ✅ Implemented goal creation with POST /teams/:id/goals:
+    - Geographic goal creation with route calculation
+    - Map service integration for distance calculation
+    - Waypoint storage and total distance computation
+  - ✅ Implemented progress tracking with GET /goals/:id/progress:
+    - Progress calculation along route segments
+    - Percentage completion based on team's total distance
+    - Real-time progress updates with existing progress service
+  - ✅ Added goal selection during team creation:
+    - Updated CreateTeamInput type to include optional goal
+    - Team creation now supports creating initial goal
+    - Route calculation integrated into team setup workflow
+  - ✅ Updated team progress to include goal information:
+    - Enhanced TeamProgressInfo with goal route data
+    - Added waypoints, polyline, and route bounds to progress API
+    - Integrated geographic progress tracking with existing system
+  - ✅ Added comprehensive test coverage for goal service
+  - ✅ All TypeScript compilation successful with proper type casting for Prisma JSON fields
+
+### 2025-01-19 (BE-019 Complete)
+- Completed BE-019: Achievement detection system for milestone tracking
+  - ✅ Created AchievementService with comprehensive achievement detection:
+    - 7 predefined achievements: First Walk, 10 Mile Club, 100 Mile Hero, 7-Day Streak, 30-Day Streak, Team Player, Early Bird
+    - Achievement criteria system supporting distance, streak, team, time, and count-based achievements
+    - Automatic achievement detection after activity creation
+    - Manual achievement check functionality
+    - Progress calculation for unearned achievements
+  - ✅ Database integration with Achievement and UserAchievement models
+  - ✅ Achievement initialization script to populate predefined achievements
+  - ✅ API endpoints implemented:
+    - GET /users/me/achievements - List user's achievements with progress
+    - POST /users/me/achievements/check - Manual achievement check
+    - POST /achievements/check - Direct achievement check endpoint
+  - ✅ Activity service integration:
+    - Updated createActivity to detect new achievements automatically
+    - Enhanced CreateActivityResult to include newly earned achievements
+    - Improved streak calculation with proper date-based logic
+  - ✅ Comprehensive test suite for achievement detection logic
+  - ✅ Test scripts for achievement initialization and validation
+  - ✅ Achievement system ready for frontend celebration UI
+- Sprint 4 progress increased from 25% to 37.5%
+- Achievement detection working end-to-end with activity creation
 
 ### 2025-01-19 (BE-017 Complete)
 - Completed BE-017: Dashboard API endpoint with aggregated data
@@ -231,8 +284,23 @@ When completing work:
 - Map service ready for integration with Team Goals feature
 - Following external service abstraction pattern for vendor flexibility
 
+### 2025-01-19 (FE-015 Complete)
+- Completed FE-015: Progress visualization charts for dashboard (25% complete)
+  - ✅ Installed recharts library for lightweight chart rendering
+  - ✅ Created three chart components in `packages/frontend/src/components/charts/`:
+    - ProgressLineChart: Shows distance over time with daily/weekly views
+    - GoalProgressChart: Pie chart visualizing progress toward team goal
+    - ActivityBarChart: Daily activity breakdown with summary stats
+  - ✅ Made charts mobile-responsive and touch-friendly
+  - ✅ Integrated design system colors and styling from tailwind.config.ts
+  - ✅ Created comprehensive mock data generators for realistic chart data
+  - ✅ Added to dashboard page with proper layout and loading states
+  - ✅ Included empty states and error handling for charts
+  - ✅ Added interactive features like daily/weekly toggle for progress chart
+- Sprint 4 progress increased from 12.5% to 25%
+
 ### 2025-01-19 (FE-014 Started)
-- Started Sprint 4 - Dashboard Implementation (12.5% complete)
+- Started Sprint 4 - Dashboard Implementation
 - Started FE-014: Dashboard UI components with mock data
   - Updated dashboard page to match MVP wireframes
   - Implemented mobile-first responsive design

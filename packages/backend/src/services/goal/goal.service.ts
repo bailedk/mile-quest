@@ -58,11 +58,11 @@ export class GoalService {
         description: input.description,
         targetDistance: routeResult.totalDistance,
         targetDate: input.targetDate,
-        startLocation: input.startLocation,
-        endLocation: input.endLocation,
-        waypoints: routeResult.waypoints,
+        startLocation: input.startLocation as any,
+        endLocation: input.endLocation as any,
+        waypoints: routeResult.waypoints as any,
         routePolyline: routeResult.encodedPolyline,
-        routeData: routeResult.route,
+        routeData: routeResult.route as any,
         status: GoalStatus.DRAFT,
       },
       include: {
@@ -127,12 +127,12 @@ export class GoalService {
       
       updateData = {
         ...updateData,
-        startLocation: routeInput.startLocation,
-        endLocation: routeInput.endLocation,
-        waypoints: routeResult.waypoints,
+        startLocation: routeInput.startLocation as any,
+        endLocation: routeInput.endLocation as any,
+        waypoints: routeResult.waypoints as any,
         targetDistance: routeResult.totalDistance,
         routePolyline: routeResult.encodedPolyline,
-        routeData: routeResult.route,
+        routeData: routeResult.route as any,
       };
     }
 
@@ -261,9 +261,9 @@ export class GoalService {
       teamId: goal.teamId,
       goalName: goal.name,
       description: goal.description || undefined,
-      startLocation: goal.startLocation as Position & { address?: string },
-      endLocation: goal.endLocation as Position & { address?: string },
-      waypoints: goal.waypoints as Waypoint[],
+      startLocation: goal.startLocation as unknown as Position & { address?: string },
+      endLocation: goal.endLocation as unknown as Position & { address?: string },
+      waypoints: goal.waypoints as unknown as Waypoint[],
       totalDistance: goal.targetDistance,
       targetDate: goal.targetDate || undefined,
       status: goal.status,

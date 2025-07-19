@@ -85,11 +85,48 @@ export interface TeamProgressInfo {
     startDate: Date;
     endDate: Date;
   };
+  goal: {
+    id: string;
+    name: string;
+    description?: string;
+    startLocation: {
+      lat: number;
+      lng: number;
+      address?: string;
+    };
+    endLocation: {
+      lat: number;
+      lng: number;
+      address?: string;
+    };
+    waypoints: Array<{
+      id: string;
+      position: {
+        lat: number;
+        lng: number;
+      };
+      address?: string;
+      order: number;
+      isLocked?: boolean;
+    }>;
+    routePolyline: string;
+    routeBounds?: {
+      southwest: {
+        lat: number;
+        lng: number;
+      };
+      northeast: {
+        lat: number;
+        lng: number;
+      };
+    };
+  };
   progress: {
     totalDistance: number;
     percentComplete: number;
     currentSegmentIndex: number;
     distanceToNextWaypoint: number;
+    segmentProgress: number;
     averageDailyDistance: number;
     projectedCompletionDate: Date | null;
     daysRemaining: number;
