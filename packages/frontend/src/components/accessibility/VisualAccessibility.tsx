@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import { useToastContext } from '@/contexts/ToastContext';
 
 // ============================================================================
 // Visual Accessibility Context
@@ -12,6 +13,7 @@ interface VisualAccessibilityState {
   increasedTextSize: boolean;
   colorBlindFriendly: boolean;
   fontSize: number; // Scale factor: 1 = normal, 1.25 = 125%, etc.
+  showAccessibilityFAB: boolean; // Control FAB visibility
 }
 
 interface VisualAccessibilityContextType extends VisualAccessibilityState {
@@ -21,6 +23,8 @@ interface VisualAccessibilityContextType extends VisualAccessibilityState {
   toggleColorBlindFriendly: () => void;
   setFontSize: (scale: number) => void;
   resetAllSettings: () => void;
+  toggleAccessibilityFAB: () => void;
+  setShowAccessibilityFAB: (show: boolean) => void;
 }
 
 const defaultState: VisualAccessibilityState = {
@@ -28,7 +32,8 @@ const defaultState: VisualAccessibilityState = {
   reducedMotion: false,
   increasedTextSize: false,
   colorBlindFriendly: false,
-  fontSize: 1
+  fontSize: 1,
+  showAccessibilityFAB: true // Default to showing FAB
 };
 
 const VisualAccessibilityContext = createContext<VisualAccessibilityContextType>({
@@ -38,7 +43,9 @@ const VisualAccessibilityContext = createContext<VisualAccessibilityContextType>
   toggleIncreasedTextSize: () => {},
   toggleColorBlindFriendly: () => {},
   setFontSize: () => {},
-  resetAllSettings: () => {}
+  resetAllSettings: () => {},
+  toggleAccessibilityFAB: () => {},
+  setShowAccessibilityFAB: () => {}
 });
 
 // ============================================================================
@@ -140,6 +147,14 @@ export function VisualAccessibilityProvider({ children }: { children: React.Reac
     setState(defaultState);
   }, []);
 
+  const toggleAccessibilityFAB = useCallback(() => {
+    setState(prev => ({ ...prev, showAccessibilityFAB: !prev.showAccessibilityFAB }));
+  }, []);
+
+  const setShowAccessibilityFAB = useCallback((show: boolean) => {
+    setState(prev => ({ ...prev, showAccessibilityFAB: show }));
+  }, []);
+
   return (
     <VisualAccessibilityContext.Provider value={{
       ...state,
@@ -148,7 +163,9 @@ export function VisualAccessibilityProvider({ children }: { children: React.Reac
       toggleIncreasedTextSize,
       toggleColorBlindFriendly,
       setFontSize,
-      resetAllSettings
+      resetAllSettings,
+      toggleAccessibilityFAB,
+      setShowAccessibilityFAB
     }}>
       {children}
     </VisualAccessibilityContext.Provider>
@@ -290,20 +307,80 @@ export function AccessibilityPanel({ isOpen, onClose, className = '' }: Accessib
 
 export function AccessibilityQuickActions() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const { 
     toggleHighContrast, 
     toggleReducedMotion, 
     setFontSize, 
     fontSize,
     highContrastMode,
-    reducedMotion 
+    reducedMotion,
+    showAccessibilityFAB,
+    toggleAccessibilityFAB 
   } = useVisualAccessibility();
+  const { showToast } = useToastContext();
+
+  // Handle keyboard shortcut (Alt+A)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        toggleAccessibilityFAB();
+        
+        // Show toast notification
+        if (showAccessibilityFAB) {
+          showToast('Accessibility controls hidden. Press Alt+A to show again.', 'info');
+        } else {
+          showToast('Accessibility controls shown. Press Alt+A to hide.', 'info');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleAccessibilityFAB, showAccessibilityFAB, showToast]);
+
+  // Show tooltip on hover
+  useEffect(() => {
+    if (showTooltip) {
+      const timer = setTimeout(() => setShowTooltip(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTooltip]);
+
+  if (!showAccessibilityFAB) {
+    return null;
+  }
 
   return (
     <>
       {/* Quick Action Button */}
       <div className="fixed bottom-4 right-4 z-40">
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-2 relative"
+             onMouseEnter={() => setShowTooltip(true)}
+             onMouseLeave={() => setShowTooltip(false)}>
+          
+          {/* Tooltip */}
+          {showTooltip && (
+            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap">
+              Press Alt+A to hide/show
+              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-4 border-transparent border-l-gray-900"></div>
+            </div>
+          )}
+
+          {/* Close button */}
+          <button
+            onClick={() => {
+              toggleAccessibilityFAB();
+              showToast('Accessibility controls hidden. Press Alt+A to show again.', 'info');
+            }}
+            className="absolute -top-2 -right-2 w-6 h-6 bg-gray-700 text-white rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-xs"
+            aria-label="Hide accessibility controls"
+            title="Hide accessibility controls (Alt+A)"
+          >
+            ×
+          </button>
+
           {/* Font size controls */}
           <div className="flex space-x-1">
             <button
