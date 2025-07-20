@@ -237,6 +237,12 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref TeamsFunctionLogGroup
       Events:
+        TeamsRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /teams
+            Method: ANY
         TeamsProxy:
           Type: Api
           Properties:
