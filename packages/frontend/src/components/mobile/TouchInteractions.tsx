@@ -480,9 +480,9 @@ export function TouchButton({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-all duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variantClasses = {
-    primary: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white',
-    secondary: 'bg-gray-200 hover:bg-gray-300 focus:ring-gray-500 text-gray-900',
-    ghost: 'bg-transparent hover:bg-gray-100 focus:ring-gray-500 text-gray-700'
+    primary: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-400 text-white shadow-sm hover:shadow-md',
+    secondary: 'bg-white hover:bg-gray-50 focus:ring-gray-400 text-gray-700 border border-gray-300 hover:border-gray-400',
+    ghost: 'bg-transparent hover:bg-gray-50 focus:ring-gray-400 text-gray-600 hover:text-gray-900'
   };
   
   const sizeClasses = {

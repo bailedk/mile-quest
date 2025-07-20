@@ -42,8 +42,8 @@ export function BottomNavigation({ items, className = '' }: BottomNavigationProp
                 transition-colors duration-200
                 min-h-[44px] touch-manipulation
                 ${isActive 
-                  ? 'text-blue-600' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-blue-500' 
+                  : 'text-gray-500 hover:text-gray-700'
                 }
               `}
             >
@@ -78,7 +78,7 @@ export function BottomNavigation({ items, className = '' }: BottomNavigationProp
               {isActive && (
                 <div className="
                   absolute bottom-0 left-1/2 transform -translate-x-1/2
-                  w-1 h-1 bg-blue-600 rounded-full
+                  w-1 h-1 bg-blue-500 rounded-full
                 " />
               )}
             </Link>

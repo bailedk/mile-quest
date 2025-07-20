@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/patterns/Button';
 import { useAuthStore } from '@/store/auth.store';
 import { useUserTeams } from '@/hooks/useTeams';
+import { MobileLayout } from '@/components/layout/MobileLayout';
+import { TouchCard, TouchButton, PullToRefresh } from '@/components/mobile/TouchInteractions';
 
 export default function TeamsPage() {
   const router = useRouter();
@@ -31,27 +32,28 @@ export default function TeamsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">My Teams</h1>
-        <div className="flex justify-between items-center">
+    <MobileLayout title="My Teams">
+      <PullToRefresh onRefresh={reloadTeams} disabled={isLoading}>
+        <div className="pb-20">
+        <div className="flex justify-between items-center mb-8">
           <p className="text-gray-600">
             {teams.length === 0 
               ? "You're not a member of any teams yet."
               : `You're a member of ${teams.length} team${teams.length === 1 ? '' : 's'}.`
             }
           </p>
-          <Button
+          <TouchButton
             onClick={() => router.push('/teams/new')}
+            variant="primary"
+            size="sm"
             className="flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Create Team
-          </Button>
+          </TouchButton>
         </div>
-      </div>
 
       {isLoading && (
         <div className="flex justify-center py-12">
@@ -60,19 +62,19 @@ export default function TeamsPage() {
       )}
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+        <TouchCard className="mb-6 border-red-200 bg-red-50">
           <div className="flex justify-between items-center">
-            <span>{error.message || 'Failed to load teams'}</span>
-            <Button 
+            <span className="text-red-700">{error.message || 'Failed to load teams'}</span>
+            <TouchButton 
               variant="secondary" 
               size="sm" 
               onClick={() => reloadTeams()}
               className="ml-4"
             >
               Retry
-            </Button>
+            </TouchButton>
           </div>
-        </div>
+        </TouchCard>
       )}
 
       {!isLoading && !error && teams.length > 0 && (
@@ -81,9 +83,9 @@ export default function TeamsPage() {
             <Link
               key={team.id}
               href={`/teams/${team.id}`}
-              className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+              className="block"
             >
-              <div className="p-6">
+              <TouchCard className="h-full hover:shadow-lg transition-shadow duration-200">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
                     {team.avatarUrl ? (
@@ -125,7 +127,7 @@ export default function TeamsPage() {
                   </svg>
                   Joined {new Date(team.joinedAt).toLocaleDateString()}
                 </div>
-              </div>
+              </TouchCard>
             </Link>
           ))}
         </div>
@@ -143,16 +145,17 @@ export default function TeamsPage() {
             Create your first team or join an existing one to start tracking your walking goals together.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button
+            <TouchButton
               onClick={() => router.push('/teams/new')}
+              variant="primary"
               className="inline-flex items-center"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Create Team
-            </Button>
-            <Button
+            </TouchButton>
+            <TouchButton
               variant="secondary"
               onClick={() => router.push('/teams/join')}
               className="inline-flex items-center"
@@ -161,10 +164,12 @@ export default function TeamsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
               Join Team
-            </Button>
+            </TouchButton>
           </div>
         </div>
       )}
-    </div>
+        </div>
+      </PullToRefresh>
+    </MobileLayout>
   );
 }

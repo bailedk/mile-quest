@@ -113,8 +113,8 @@ export function MobileHeader({
             <div className="px-4 py-2 space-y-1">
               {/* User info */}
               <div className="flex items-center space-x-3 py-3 border-b border-gray-100">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-medium text-sm">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-medium text-sm">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export function MobileHeader({
                 href="/dashboard" 
                 className="
                   block px-3 py-3 text-base font-medium 
-                  text-gray-700 hover:bg-gray-50 hover:text-blue-600
+                  text-gray-700 hover:bg-gray-50 hover:text-gray-900
                   rounded-lg transition-colors
                   min-h-[44px] flex items-center
                 "
@@ -145,7 +145,7 @@ export function MobileHeader({
                 href="/teams" 
                 className="
                   block px-3 py-3 text-base font-medium 
-                  text-gray-700 hover:bg-gray-50 hover:text-blue-600
+                  text-gray-700 hover:bg-gray-50 hover:text-gray-900
                   rounded-lg transition-colors
                   min-h-[44px] flex items-center
                 "
@@ -161,7 +161,7 @@ export function MobileHeader({
                 href="/activities" 
                 className="
                   block px-3 py-3 text-base font-medium 
-                  text-gray-700 hover:bg-gray-50 hover:text-blue-600
+                  text-gray-700 hover:bg-gray-50 hover:text-gray-900
                   rounded-lg transition-colors
                   min-h-[44px] flex items-center
                 "
@@ -177,7 +177,7 @@ export function MobileHeader({
                 href="/profile" 
                 className="
                   block px-3 py-3 text-base font-medium 
-                  text-gray-700 hover:bg-gray-50 hover:text-blue-600
+                  text-gray-700 hover:bg-gray-50 hover:text-gray-900
                   rounded-lg transition-colors
                   min-h-[44px] flex items-center
                 "
