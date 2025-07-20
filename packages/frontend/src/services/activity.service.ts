@@ -47,8 +47,8 @@ export const activityService = {
     const queryString = params.toString();
     const url = `/users/me/activities${queryString ? `?${queryString}` : ''}`;
     
-    const response = await apiClient.get<ActivityListItem[]>(url);
-    return response.data;
+    const response = await apiClient.get<{ items: ActivityListItem[]; nextCursor: string | null; hasMore: boolean }>(url);
+    return response.data.items || [];
   },
 
   /**

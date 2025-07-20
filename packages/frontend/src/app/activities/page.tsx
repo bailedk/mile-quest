@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/patterns/Button';
 import { Card } from '@/components/patterns/Card';
-import { PlusIcon, CalendarIcon, ClockIcon, MapPinIcon, UsersIcon, LockIcon } from '@/components/icons';
+import { PlusIcon, CalendarIcon, ClockIcon, MapPinIcon, LockIcon } from '@/components/icons';
 import { useAuthStore } from '@/store/auth.store';
 import { activityService, formatDistance, formatDuration, calculatePace } from '@/services/activity.service';
 import { ActivityListItem, ActivityStats } from '@/types/activity.types';
@@ -30,7 +30,8 @@ export default function ActivitiesPage() {
           activityService.getUserStats(),
         ]);
         
-        setActivities(activitiesData);
+        console.log('Activities data received:', activitiesData);
+        setActivities(Array.isArray(activitiesData) ? activitiesData : []);
         setStats(statsData);
       } catch (error) {
         console.error('Failed to load activities:', error);
@@ -142,7 +143,7 @@ export default function ActivitiesPage() {
       )}
 
       {/* Activities List */}
-      {activities.length === 0 ? (
+      {!activities || activities.length === 0 ? (
         <Card className="text-center">
           <h3 className="text-lg font-semibold mb-2">No Activities Yet</h3>
           <p className="text-gray-600 mb-4">
@@ -154,7 +155,7 @@ export default function ActivitiesPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {activities.map((activity) => (
+          {activities && activities.map((activity) => (
             <Card key={activity.id} hoverable>
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -162,10 +163,6 @@ export default function ActivitiesPage() {
                     <h3 className="font-semibold text-lg">
                       {formatDistance(activity.distance)}
                     </h3>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      <UsersIcon className="h-3 w-3 mr-1" />
-                      {activity.team.name}
-                    </span>
                     {activity.isPrivate && (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         <LockIcon className="h-3 w-3 mr-1" />
@@ -177,12 +174,12 @@ export default function ActivitiesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                     <div className="flex items-center">
                       <CalendarIcon className="h-4 w-4 mr-1" />
-                      {formatDate(activity.startTime)}
+                      {formatDate(activity.timestamp)}
                     </div>
                     
                     <div className="flex items-center">
                       <ClockIcon className="h-4 w-4 mr-1" />
-                      {formatTime(activity.startTime)} - {formatTime(activity.endTime)}
+                      {formatTime(activity.timestamp)}
                       <span className="ml-2">({formatDuration(activity.duration)})</span>
                     </div>
                     
@@ -196,13 +193,6 @@ export default function ActivitiesPage() {
                     <p className="mt-3 text-sm">{activity.notes}</p>
                   )}
 
-                  {activity.teamGoal && (
-                    <div className="mt-3">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Goal: {activity.teamGoal.name}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="text-right text-sm text-gray-600">
