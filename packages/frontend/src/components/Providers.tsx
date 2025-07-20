@@ -7,6 +7,7 @@ import { PWAProvider } from './PWAProvider';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { PerformanceProvider } from '@/components/optimization/PerformanceProvider';
 import { preloadCriticalRoutes } from '@/components/optimization/LazyRoutes';
+import { ToastProvider } from '@/contexts/ToastContext';
 import { 
   VisualAccessibilityProvider,
   KeyboardNavigationProvider,
@@ -57,21 +58,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <PerformanceProvider>
-        <VisualAccessibilityProvider>
-          <KeyboardNavigationProvider>
-            <MobileAccessibilityProvider>
-              <PWAProvider>
-                <WebSocketProvider>
-                  {children}
-                  
-                  {/* Accessibility UI Components */}
-                  <AccessibilityQuickActions />
-                  {process.env.NODE_ENV === 'development' && <AccessibilityDevTools />}
-                </WebSocketProvider>
-              </PWAProvider>
-            </MobileAccessibilityProvider>
-          </KeyboardNavigationProvider>
-        </VisualAccessibilityProvider>
+        <ToastProvider>
+          <VisualAccessibilityProvider>
+            <KeyboardNavigationProvider>
+              <MobileAccessibilityProvider>
+                <PWAProvider>
+                  <WebSocketProvider>
+                    {children}
+                    
+                    {/* Accessibility UI Components */}
+                    <AccessibilityQuickActions />
+                    {process.env.NODE_ENV === 'development' && <AccessibilityDevTools />}
+                  </WebSocketProvider>
+                </PWAProvider>
+              </MobileAccessibilityProvider>
+            </KeyboardNavigationProvider>
+          </VisualAccessibilityProvider>
+        </ToastProvider>
       </PerformanceProvider>
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
