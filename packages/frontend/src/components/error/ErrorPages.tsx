@@ -54,25 +54,9 @@ function ErrorPageLayout({
           </p>
         )}
 
-        {children && (
-          <div className="mb-8">
-            {children}
-          </div>
-        )}
+        {children}
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {showHomeButton && (
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              Go to Dashboard
-            </Link>
-          )}
-          
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
           {showBackButton && (
             <button
               onClick={() => router.back()}
@@ -84,170 +68,66 @@ function ErrorPageLayout({
               Go Back
             </button>
           )}
+          
+          {showHomeButton && (
+            <Link
+              href="/"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m0 0V11a1 1 0 011-1h2a1 1 0 011 1v10m-6 0a1 1 0 001 1h2a1 1 0 001-1m0 0V9a1 1 0 012-2h2a1 1 0 012 2v10.01M9 9a1 1 0 012-2h2a1 1 0 012 2M9 9a1 1 0 012-2h2a1 1 0 012 2m-3 6h3a1 1 0 001-1V9a1 1 0 00-1-1H9a1 1 0 00-1 1v10a1 1 0 001 1z" />
+              </svg>
+              Go Home
+            </Link>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// 404 Not Found Page
-export function NotFoundError() {
+// 404 Not Found
+export function NotFound() {
   return (
     <ErrorPageLayout
       statusCode={404}
       title="Page Not Found"
-      message="The page you're looking for doesn't exist. It might have been moved, deleted, or you entered the wrong URL."
-    >
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <p className="text-blue-800 text-sm">
-          <strong>Looking for something specific?</strong>
-        </p>
-        <ul className="text-blue-700 text-sm mt-2 space-y-1">
-          <li>• Check your team dashboard</li>
-          <li>• Browse your activity history</li>
-          <li>• View team leaderboards</li>
-        </ul>
-      </div>
-    </ErrorPageLayout>
+      message="Sorry, we couldn't find the page you're looking for. It might have been moved or doesn't exist."
+    />
   );
 }
 
-// 403 Forbidden Page
-export function ForbiddenError() {
+// 500 Internal Server Error
+export function InternalServerError() {
+  return (
+    <ErrorPageLayout
+      statusCode={500}
+      title="Something went wrong"
+      message="We're experiencing some technical difficulties. Please try again in a few moments."
+    />
+  );
+}
+
+// 403 Forbidden
+export function Forbidden() {
   return (
     <ErrorPageLayout
       statusCode={403}
       title="Access Denied"
-      message="You don't have permission to access this page. You might need to sign in or contact your team administrator."
-    >
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <span className="text-yellow-600 text-xl" role="img" aria-label="Info">
-              🔒
-            </span>
-          </div>
-          <div className="ml-3 text-left">
-            <p className="text-yellow-800 text-sm font-medium mb-1">
-              Common reasons for this error:
-            </p>
-            <ul className="text-yellow-700 text-sm space-y-1">
-              <li>• You're not signed in to your account</li>
-              <li>• You're not a member of this team</li>
-              <li>• Your session has expired</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </ErrorPageLayout>
+      message="You don't have permission to access this resource. Please contact your administrator if you believe this is an error."
+    />
   );
 }
 
-// 500 Server Error Page
-export function ServerError() {
-  const handleReportIssue = () => {
-    const subject = encodeURIComponent('Server Error Report');
-    const body = encodeURIComponent(
-      `I encountered a server error on Mile Quest.\n\n` +
-      `Page: ${window.location.href}\n` +
-      `Time: ${new Date().toISOString()}\n` +
-      `Please describe what you were trying to do:\n\n`
-    );
-    window.open(`mailto:support@milequest.app?subject=${subject}&body=${body}`);
-  };
-
+// Generic Error Page
+export function GenericError({ 
+  title = "Something went wrong", 
+  message = "An unexpected error occurred. Please try again.",
+  children 
+}: Partial<ErrorPageProps>) {
   return (
-    <ErrorPageLayout
-      statusCode={500}
-      title="Server Error"
-      message="Something went wrong on our end. Our team has been notified and is working to fix the issue."
-    >
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <span className="text-red-600 text-xl" role="img" aria-label="Error">
-              ⚠️
-            </span>
-          </div>
-          <div className="ml-3 text-left">
-            <p className="text-red-800 text-sm font-medium mb-1">
-              What you can try:
-            </p>
-            <ul className="text-red-700 text-sm space-y-1">
-              <li>• Wait a few minutes and try again</li>
-              <li>• Refresh the page</li>
-              <li>• Check if the issue persists</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      
-      <button
-        onClick={handleReportIssue}
-        className="text-sm text-blue-600 hover:text-blue-700 underline mb-4"
-      >
-        Report this issue to support
-      </button>
-    </ErrorPageLayout>
-  );
-}
-
-// Network/Connection Error Page
-export function NetworkError({ onRetry }: { onRetry?: () => void }) {
-  return (
-    <ErrorPageLayout
-      title="Connection Problem"
-      message="We're having trouble connecting to our servers. This could be a temporary network issue."
-      showHomeButton={false}
-      showBackButton={false}
-    >
-      <div className="text-6xl mb-6" role="img" aria-label="Network error">
-        🌐
-      </div>
-      
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <span className="text-blue-600 text-xl" role="img" aria-label="Info">
-              📶
-            </span>
-          </div>
-          <div className="ml-3 text-left">
-            <p className="text-blue-800 text-sm font-medium mb-1">
-              Check your connection:
-            </p>
-            <ul className="text-blue-700 text-sm space-y-1">
-              <li>• Make sure you're connected to the internet</li>
-              <li>• Try refreshing the page</li>
-              <li>• Check if other websites are working</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Try Again
-          </button>
-        )}
-        
-        <button
-          onClick={() => window.location.reload()}
-          className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-all duration-200"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh Page
-        </button>
-      </div>
+    <ErrorPageLayout title={title} message={message}>
+      {children}
     </ErrorPageLayout>
   );
 }
@@ -355,84 +235,20 @@ export function LoadingErrorFallback({
 
 // Offline Error Page
 export function OfflineError() {
-  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
-
-  React.useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  if (isOnline) {
-    window.location.reload();
-    return null;
-  }
-
   return (
-    <ErrorPageLayout
-      title="You're Offline"
-      message="It looks like you're not connected to the internet. Some features may not be available until you reconnect."
-      showHomeButton={false}
-      showBackButton={false}
-    >
-      <div className="text-6xl mb-6" role="img" aria-label="Offline">
-        📡
-      </div>
-      
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <span className="text-orange-600 text-xl" role="img" aria-label="Info">
-              📵
-            </span>
-          </div>
-          <div className="ml-3 text-left">
-            <p className="text-orange-800 text-sm font-medium mb-1">
-              While you're offline, you can still:
-            </p>
-            <ul className="text-orange-700 text-sm space-y-1">
-              <li>• View your cached activity history</li>
-              <li>• Log new activities (they'll sync when you're back online)</li>
-              <li>• Browse your team information</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 mb-4">
-        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        <span>Connection status: Offline</span>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-200 transition-all duration-200"
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-lg w-full text-center">
+        <div className="text-6xl mb-6">📡</div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">You're Offline</h1>
+        <p className="text-lg text-gray-600 mb-8">Please check your internet connection and try again.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4" />
-          </svg>
-          Continue Offline
-        </button>
-        
-        <button
-          onClick={() => window.location.reload()}
-          className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-all duration-200"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Check Connection
+          Retry
         </button>
       </div>
-    </ErrorPageLayout>
+    </div>
   );
 }
 
@@ -448,40 +264,44 @@ export function MaintenanceError() {
         🔧
       </div>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <span className="text-blue-600 text-xl" role="img" aria-label="Info">
-              ℹ️
-            </span>
-          </div>
-          <div className="ml-3 text-left">
-            <p className="text-blue-800 text-sm font-medium mb-1">
-              What's happening:
-            </p>
-            <ul className="text-blue-700 text-sm space-y-1">
-              <li>• System updates and improvements</li>
-              <li>• Database optimization</li>
-              <li>• New feature deployment</li>
-            </ul>
-          </div>
-        </div>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <p className="text-yellow-800 text-sm">
+          <strong>Estimated downtime:</strong> 15-30 minutes
+        </p>
       </div>
+    </ErrorPageLayout>
+  );
+}
 
-      <p className="text-sm text-gray-600 mb-6">
-        Estimated completion: Usually takes less than 30 minutes
-      </p>
-
-      <div className="flex justify-center">
-        <button
-          onClick={() => window.location.reload()}
+// Authentication Required
+export function AuthRequired() {
+  return (
+    <ErrorPageLayout
+      statusCode={401}
+      title="Authentication Required"
+      message="You need to sign in to access this page."
+      showBackButton={false}
+    >
+      <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+        <Link
+          href="/signin"
           className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-200"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
           </svg>
-          Check Again
-        </button>
+          Sign In
+        </Link>
+        
+        <Link
+          href="/signup"
+          className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-all duration-200"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          Create Account
+        </Link>
       </div>
     </ErrorPageLayout>
   );

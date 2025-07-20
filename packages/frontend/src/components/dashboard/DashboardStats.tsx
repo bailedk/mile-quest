@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { formatDistance } from '@/services/activity.service';
 import { useRealtimeActivities } from '@/hooks/useRealtimeActivities';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { AriaSection, AriaStatus } from '@/components/accessibility/AriaComponents';
+import { useScreenReaderAnnouncements } from '@/components/accessibility/MobileAccessibility';
+import { useVisualAccessibility } from '@/components/accessibility/VisualAccessibility';
 
 interface DashboardStatsProps {
   totalDistance: number;
@@ -33,6 +36,10 @@ export function DashboardStats({
     bestDay,
   });
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [previousStats, setPreviousStats] = useState(realtimeStats);
+  
+  const { announce, AnnouncementRegion } = useScreenReaderAnnouncements();
+  const { reducedMotion } = useVisualAccessibility();
 
   // Use realtime activities to update stats
   const { connectionState, isConnected } = useRealtimeActivities(teamId, {
@@ -46,57 +53,131 @@ export function DashboardStats({
 
   // Update realtime stats when props change (from parent component queries)
   useEffect(() => {
-    setRealtimeStats({
+    const newStats = {
       totalDistance,
       weekDistance,
       bestDay,
-    });
-  }, [totalDistance, weekDistance, bestDay]);
+    };
+    
+    // Check for changes and announce them
+    if (previousStats.weekDistance !== weekDistance) {
+      const change = weekDistance - previousStats.weekDistance;
+      if (change > 0) {
+        announce(`Your weekly distance increased by ${formatDistance(change, userPreferredUnits)}`, 'polite');
+      }
+    }
+    
+    if (previousStats.totalDistance !== totalDistance) {
+      const change = totalDistance - previousStats.totalDistance;
+      if (change > 0) {
+        announce(`Your total distance increased by ${formatDistance(change, userPreferredUnits)}`, 'polite');
+      }
+    }
+    
+    setPreviousStats(realtimeStats);
+    setRealtimeStats(newStats);
+  }, [totalDistance, weekDistance, bestDay, previousStats, realtimeStats, userPreferredUnits, announce]);
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Your Week</h3>
+    <>
+      <AnnouncementRegion />
+      <AriaSection 
+        className="bg-white rounded-lg shadow p-6"
+        label="Personal statistics summary"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 
+            className="text-lg font-semibold text-gray-900"
+            id="stats-heading"
+          >
+            Your Week
+          </h3>
+          
+          {enableRealtime && (showConnectionStatus || !isConnected) && (
+            <div className="flex items-center space-x-2">
+              {isConnected && (
+                <AriaStatus className="text-xs text-green-600 flex items-center">
+                  <span 
+                    className={`w-2 h-2 bg-green-500 rounded-full mr-1 ${!reducedMotion ? 'animate-pulse' : ''}`}
+                    aria-hidden="true"
+                  ></span>
+                  <span className="sr-only">Connection status: </span>
+                  Live
+                </AriaStatus>
+              )}
+              <ConnectionStatus 
+                connectionState={connectionState}
+                size="sm"
+                showText={!isConnected}
+              />
+            </div>
+          )}
+        </div>
         
-        {enableRealtime && (showConnectionStatus || !isConnected) && (
-          <div className="flex items-center space-x-2">
-            {isConnected && (
-              <span className="text-xs text-green-600 flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                Live
-              </span>
-            )}
-            <ConnectionStatus 
-              connectionState={connectionState}
-              size="sm"
-              showText={!isConnected}
-            />
+        <div 
+          className="space-y-4"
+          role="list"
+          aria-labelledby="stats-heading"
+        >
+          <div role="listitem">
+            <p 
+              className="text-sm text-gray-600"
+              id="week-distance-label"
+            >
+              This Week
+            </p>
+            <p 
+              className="text-2xl font-bold text-gray-900"
+              aria-labelledby="week-distance-label"
+              aria-live="polite"
+            >
+              {formatDistance(realtimeStats.weekDistance, userPreferredUnits)}
+            </p>
           </div>
-        )}
-      </div>
-      
-      <div className="space-y-4">
-        <div>
-          <p className="text-sm text-gray-600">This Week</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatDistance(realtimeStats.weekDistance, userPreferredUnits)}
-          </p>
-        </div>
 
-        <div className="pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600">Your Best Day</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {realtimeStats.bestDay.date} ({formatDistance(realtimeStats.bestDay.distance, userPreferredUnits)})
-          </p>
-        </div>
+          <div 
+            className="pt-4 border-t border-gray-200"
+            role="listitem"
+          >
+            <p 
+              className="text-sm text-gray-600"
+              id="best-day-label"
+            >
+              Your Best Day
+            </p>
+            <p 
+              className="text-lg font-semibold text-gray-900"
+              aria-labelledby="best-day-label"
+            >
+              <time dateTime={realtimeStats.bestDay.date}>
+                {realtimeStats.bestDay.date}
+              </time>
+              {' '}
+              <span className="sr-only">with distance of </span>
+              ({formatDistance(realtimeStats.bestDay.distance, userPreferredUnits)})
+            </p>
+          </div>
 
-        <div className="pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600">All Time Total</p>
-          <p className="text-lg font-semibold text-gray-900">
-            {formatDistance(realtimeStats.totalDistance, userPreferredUnits)}
-          </p>
+          <div 
+            className="pt-4 border-t border-gray-200"
+            role="listitem"
+          >
+            <p 
+              className="text-sm text-gray-600"
+              id="total-distance-label"
+            >
+              All Time Total
+            </p>
+            <p 
+              className="text-lg font-semibold text-gray-900"
+              aria-labelledby="total-distance-label"
+              aria-live="polite"
+            >
+              {formatDistance(realtimeStats.totalDistance, userPreferredUnits)}
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
+      </AriaSection>
+    </>
   );
 }

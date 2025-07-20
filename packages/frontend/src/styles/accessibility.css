@@ -1,0 +1,528 @@
+/* ============================================================================
+   ACCESSIBILITY STYLES
+   ============================================================================ */
+
+/* Screen Reader Only - Hide visually but keep accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Show when focused - for skip links and hidden interactive elements */
+.sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Focus within - for container elements that should show when any child is focused */
+.focus-within\:not-sr-only:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================================================
+   HIGH CONTRAST MODE
+   ============================================================================ */
+
+.high-contrast {
+  /* Override default colors with high contrast alternatives */
+  --text-primary: #000000;
+  --text-secondary: #2d3748;
+  --background-primary: #ffffff;
+  --background-secondary: #f7fafc;
+  --border-color: #2d3748;
+  --focus-ring: #0066cc;
+  --link-color: #0066cc;
+  --button-primary: #000000;
+  --button-primary-text: #ffffff;
+  --button-secondary: #ffffff;
+  --button-secondary-text: #000000;
+}
+
+.high-contrast * {
+  /* Force high contrast on all elements */
+  border-color: var(--border-color) !important;
+}
+
+.high-contrast button,
+.high-contrast [role="button"] {
+  border: 2px solid var(--border-color) !important;
+  background-color: var(--button-secondary) !important;
+  color: var(--button-secondary-text) !important;
+}
+
+.high-contrast button:hover,
+.high-contrast [role="button"]:hover {
+  background-color: var(--button-primary) !important;
+  color: var(--button-primary-text) !important;
+}
+
+.high-contrast a {
+  color: var(--link-color) !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select {
+  border: 2px solid var(--border-color) !important;
+  background-color: var(--background-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.high-contrast input:focus,
+.high-contrast textarea:focus,
+.high-contrast select:focus,
+.high-contrast button:focus,
+.high-contrast [role="button"]:focus,
+.high-contrast a:focus {
+  outline: 3px solid var(--focus-ring) !important;
+  outline-offset: 2px !important;
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Allow essential animations to continue with reduced motion */
+.reduce-motion .motion-safe\:animate-spin {
+  animation: none;
+}
+
+.reduce-motion .motion-safe\:transition-transform {
+  transition: none;
+}
+
+/* Respect system preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   LARGE TEXT MODE
+   ============================================================================ */
+
+.large-text {
+  font-size: 125% !important;
+  line-height: 1.6 !important;
+}
+
+.large-text h1 { font-size: 2.5rem !important; }
+.large-text h2 { font-size: 2rem !important; }
+.large-text h3 { font-size: 1.75rem !important; }
+.large-text h4 { font-size: 1.5rem !important; }
+.large-text h5 { font-size: 1.25rem !important; }
+.large-text h6 { font-size: 1.125rem !important; }
+
+.large-text button,
+.large-text [role="button"],
+.large-text input,
+.large-text textarea,
+.large-text select {
+  font-size: 1.125rem !important;
+  padding: 0.75rem 1rem !important;
+  min-height: 48px !important;
+}
+
+/* ============================================================================
+   COLOR BLIND FRIENDLY MODE
+   ============================================================================ */
+
+.colorblind-friendly {
+  /* Add patterns and shapes to complement colors */
+}
+
+.colorblind-friendly .pattern-checkmark::before {
+  content: "✓ ";
+  font-weight: bold;
+  margin-right: 0.25rem;
+}
+
+.colorblind-friendly .pattern-triangle::before {
+  content: "⚠ ";
+  font-weight: bold;
+  margin-right: 0.25rem;
+}
+
+.colorblind-friendly .pattern-x::before {
+  content: "✗ ";
+  font-weight: bold;
+  margin-right: 0.25rem;
+}
+
+.colorblind-friendly .pattern-circle::before {
+  content: "● ";
+  font-weight: bold;
+  margin-right: 0.25rem;
+}
+
+/* Success states with patterns */
+.colorblind-friendly .bg-green-50 {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(34, 197, 94, 0.1) 4px,
+    rgba(34, 197, 94, 0.1) 8px
+  );
+}
+
+/* Warning states with patterns */
+.colorblind-friendly .bg-yellow-50,
+.colorblind-friendly .bg-amber-50 {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(245, 158, 11, 0.1) 4px,
+    rgba(245, 158, 11, 0.1) 8px
+  );
+}
+
+/* Error states with patterns */
+.colorblind-friendly .bg-red-50 {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 4px,
+    rgba(239, 68, 68, 0.1) 4px,
+    rgba(239, 68, 68, 0.1) 8px
+  );
+}
+
+/* Info states with patterns */
+.colorblind-friendly .bg-blue-50 {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 4px,
+    rgba(59, 130, 246, 0.1) 4px,
+    rgba(59, 130, 246, 0.1) 8px
+  );
+}
+
+/* ============================================================================
+   FONT SIZE SCALING
+   ============================================================================ */
+
+:root {
+  --font-size-scale: 1;
+}
+
+.font-scale {
+  font-size: calc(1rem * var(--font-size-scale));
+}
+
+.text-xs { font-size: calc(0.75rem * var(--font-size-scale)); }
+.text-sm { font-size: calc(0.875rem * var(--font-size-scale)); }
+.text-base { font-size: calc(1rem * var(--font-size-scale)); }
+.text-lg { font-size: calc(1.125rem * var(--font-size-scale)); }
+.text-xl { font-size: calc(1.25rem * var(--font-size-scale)); }
+.text-2xl { font-size: calc(1.5rem * var(--font-size-scale)); }
+.text-3xl { font-size: calc(1.875rem * var(--font-size-scale)); }
+.text-4xl { font-size: calc(2.25rem * var(--font-size-scale)); }
+.text-5xl { font-size: calc(3rem * var(--font-size-scale)); }
+.text-6xl { font-size: calc(3.75rem * var(--font-size-scale)); }
+
+/* ============================================================================
+   ENHANCED FOCUS STYLES
+   ============================================================================ */
+
+/* Custom focus ring that works in high contrast */
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  transition: box-shadow 0.15s ease-in-out;
+}
+
+.focus-ring:focus {
+  outline: 2px solid #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Focus visible for better keyboard navigation */
+.focus-visible\:focus-ring:focus-visible {
+  outline: 2px solid #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* ============================================================================
+   TOUCH TARGET SIZING
+   ============================================================================ */
+
+/* Ensure minimum 44px touch targets for mobile accessibility */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Button touch targets */
+button,
+[role="button"] {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+/* Link touch targets */
+a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  touch-action: manipulation;
+}
+
+/* Input touch targets */
+input,
+textarea,
+select {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+/* ============================================================================
+   MOBILE ACCESSIBILITY ENHANCEMENTS
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  /* Increase touch targets on mobile */
+  button,
+  [role="button"],
+  a,
+  input,
+  textarea,
+  select {
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+
+  /* Increase font sizes on mobile for better readability */
+  body {
+    font-size: 16px; /* Prevents zoom on iOS */
+    line-height: 1.6;
+  }
+
+  /* Ensure adequate spacing between interactive elements */
+  button + button,
+  [role="button"] + [role="button"],
+  a + a {
+    margin-left: 8px;
+  }
+}
+
+/* ============================================================================
+   PRINT ACCESSIBILITY
+   ============================================================================ */
+
+@media print {
+  /* Ensure good contrast for printing */
+  * {
+    background: white !important;
+    color: black !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Show URLs for links */
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  /* Don't show URLs for fragment links */
+  a[href^="#"]::after {
+    content: "";
+  }
+
+  /* Hide decorative elements */
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ============================================================================
+   DARK MODE ACCESSIBILITY
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f7fafc;
+    --text-secondary: #e2e8f0;
+    --background-primary: #1a202c;
+    --background-secondary: #2d3748;
+    --border-color: #4a5568;
+    --focus-ring: #63b3ed;
+    --link-color: #63b3ed;
+  }
+
+  /* Ensure sufficient contrast in dark mode */
+  .dark-mode-high-contrast {
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Skip links that appear on focus */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+  z-index: 1000;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Accessible hiding/showing */
+.accessible-hide {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.8);
+  transition: all 0.2s ease;
+}
+
+.accessible-show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  transition: all 0.2s ease;
+}
+
+/* Accessible loading states */
+.loading-accessible {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-accessible::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Respect reduced motion for loading animation */
+@media (prefers-reduced-motion: reduce) {
+  .loading-accessible::after {
+    animation: none;
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY ANNOUNCEMENT HELPERS
+   ============================================================================ */
+
+/* Polite announcements for screen readers */
+.sr-announce {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.sr-announce[aria-live="polite"] {
+  /* Content will be announced when convenient */
+}
+
+.sr-announce[aria-live="assertive"] {
+  /* Content will be announced immediately */
+}
+
+/* ============================================================================
+   ENHANCED FORM ACCESSIBILITY
+   ============================================================================ */
+
+/* Required field indicators */
+.required-field::after {
+  content: "*";
+  color: #e53e3e;
+  margin-left: 4px;
+  font-weight: bold;
+}
+
+/* Error states */
+.field-error {
+  border-color: #e53e3e !important;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+}
+
+.field-error:focus {
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.2) !important;
+}
+
+/* Success states */
+.field-success {
+  border-color: #38a169 !important;
+  box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.1) !important;
+}
+
+.field-success:focus {
+  box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.2) !important;
+}

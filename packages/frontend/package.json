@@ -5,13 +5,18 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
+    "build:performance": "npm run build && npm run analyze:bundle",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "analyze:bundle": "npx @next/bundle-analyzer",
+    "lighthouse": "lighthouse http://localhost:3000 --output=json --output=html --output-path=./reports/lighthouse",
+    "perf:test": "npm run build && npm run start & sleep 5 && npm run lighthouse && kill %1"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -36,6 +41,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.30",
     "@tanstack/react-query-devtools": "^5.83.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -51,9 +57,11 @@
     "eslint-config-next": "14.2.30",
     "happy-dom": "^18.0.1",
     "jsdom": "^26.1.0",
+    "lighthouse": "^12.0.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "webpack-bundle-analyzer": "^4.10.1"
   }
 }

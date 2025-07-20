@@ -83,7 +83,8 @@ class PWAService {
    */
   private async registerServiceWorker(): Promise<void> {
     try {
-      this.swRegistration = await navigator.serviceWorker.register('/sw.js');
+      // Use performance-optimized service worker
+      this.swRegistration = await navigator.serviceWorker.register('/sw-performance.js');
       
       console.log('[PWA] Service Worker registered:', this.swRegistration.scope);
       

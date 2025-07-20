@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "../styles/accessibility.css";
 import { Providers } from "@/components/Providers";
 
 const geistSans = localFont({
@@ -63,6 +64,16 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#2563EB" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
         
+        {/* Performance optimizations */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//api.mapbox.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preload" href="/icons/icon.svg" as="image" type="image/svg+xml" />
+        
+        {/* Critical resource hints */}
+        <link rel="modulepreload" href="/_next/static/chunks/main.js" />
+        <link rel="modulepreload" href="/_next/static/chunks/pages/_app.js" />
+        
         {/* Apple touch icons */}
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon.svg" />
         <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
@@ -75,6 +86,25 @@ export default function RootLayout({
         
         {/* Prevent zoom on form inputs */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        
+        {/* Performance monitoring script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Early performance monitoring
+              if ('PerformanceObserver' in window) {
+                const observer = new PerformanceObserver((list) => {
+                  for (const entry of list.getEntries()) {
+                    if (entry.entryType === 'largest-contentful-paint') {
+                      window.__MILE_QUEST_LCP__ = entry.startTime;
+                    }
+                  }
+                });
+                observer.observe({entryTypes: ['largest-contentful-paint']});
+              }
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
