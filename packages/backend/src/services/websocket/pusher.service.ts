@@ -63,7 +63,7 @@ export class PusherWebSocketService extends BaseAWSService implements WebSocketS
     };
     
     this.appId = this.serviceConfig.appId || this.getEnvVar('PUSHER_APP_ID');
-    this.key = this.serviceConfig.key || this.getEnvVar('NEXT_PUBLIC_PUSHER_KEY');
+    this.key = this.serviceConfig.key || this.getEnvVar('PUSHER_KEY');
     this.secret = this.serviceConfig.secret || this.getEnvVar('PUSHER_SECRET');
     
     const cluster = this.serviceConfig.cluster || this.getEnvVar('PUSHER_CLUSTER', 'us2');

@@ -632,8 +632,10 @@ export class ActivityService {
         gte: queryStartDate,
         lte: queryEndDate,
       },
-      ...(teamId && { teamId }),
     };
+    
+    // Note: teamId filtering would need to be done at the team member level
+    // since activities don't belong to teams directly
 
     // Get all activities in the date range
     const activities = await this.prisma.activity.findMany({

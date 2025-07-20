@@ -44,12 +44,31 @@ class DefaultWebSocketServiceFactory implements WebSocketServiceFactory {
     metrics?: ServiceMetrics
   ): WebSocketService {
     const wsProvider = provider || (process.env.WEBSOCKET_PROVIDER as WebSocketProvider) || 'pusher';
+    console.log('WebSocket factory - provider:', wsProvider, 'env:', process.env.WEBSOCKET_PROVIDER);
 
     // Apply default configuration based on environment
     const enhancedConfig = this.applyDefaultConfig(config, wsProvider);
 
     switch (wsProvider) {
       case 'pusher':
+        // When using mock environment variables, provide them as config
+        if (process.env.PUSHER_APP_ID === 'mock-app-id') {
+          const mockConfig = {
+            ...enhancedConfig,
+            appId: 'mock-app-id',
+            key: 'mock-key',
+            secret: 'mock-secret',
+            cluster: 'us2'
+          };
+          return new MockWebSocketService({
+            enableSimulatedLatency: enhancedConfig?.enableSimulatedLatency,
+            enableConnectionSimulation: enhancedConfig?.enableConnectionSimulation,
+            enableRandomFailures: enhancedConfig?.enableRandomFailures,
+            failureRate: enhancedConfig?.failureRate,
+            maxLatency: enhancedConfig?.maxLatency,
+            enableMetrics: enhancedConfig?.enableMetrics,
+          });
+        }
         return new PusherWebSocketService(enhancedConfig, metrics);
       
       case 'mock':

@@ -26,9 +26,24 @@ let logger: ReturnType<typeof createLogger>;
 
 function initializeServices() {
   if (!activityService) {
+    console.log('Activities handler env check:', {
+      WEBSOCKET_PROVIDER: process.env.WEBSOCKET_PROVIDER,
+      PUSHER_APP_ID: process.env.PUSHER_APP_ID,
+      NODE_ENV: process.env.NODE_ENV
+    });
     activityService = new ActivityService(prisma);
     progressService = new ProgressService(prisma);
-    websocketService = createWebSocketService();
+    
+    // Create WebSocket service with fallback to mock for local development
+    try {
+      websocketService = createWebSocketService();
+    } catch (error) {
+      console.error('Failed to create WebSocket service, falling back to mock:', error);
+      // Force mock service creation
+      const { MockWebSocketService } = require('../../services/websocket/mock.service');
+      websocketService = new MockWebSocketService({});
+    }
+    
     progressWebSocket = new ProgressWebSocketIntegration(progressService, websocketService);
     logger = createLogger('ActivitiesHandler');
   }
