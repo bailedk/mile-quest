@@ -316,16 +316,25 @@ async function seed() {
         name: 'Walk from NYC to LA',
         description: 'Virtual walk across America from New York City to Los Angeles',
         targetDistance: 4489000, // ~4,489 km
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Started 30 days ago
+        endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // Ends 60 days from now
         targetDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days from now
         status: GoalStatus.ACTIVE,
         createdById: 'user-1',
-        startedAt: randomDate(30),
-        createdAt: randomDate(31),
+        startLocation: { lat: 40.7128, lng: -74.0060, address: 'New York City, NY' },
+        endLocation: { lat: 34.0522, lng: -118.2437, address: 'Los Angeles, CA' },
+        waypoints: [],
+        routePolyline: 'placeholder_polyline_nyc_to_la',
         routeData: {
           start: { lat: 40.7128, lng: -74.0060, name: 'New York City, NY' },
           end: { lat: 34.0522, lng: -118.2437, name: 'Los Angeles, CA' },
           waypoints: [],
+          bounds: {
+            northeast: { lat: 40.7128, lng: -74.0060 },
+            southwest: { lat: 34.0522, lng: -118.2437 }
+          }
         },
+        createdAt: randomDate(31),
       },
     }),
     
@@ -337,17 +346,26 @@ async function seed() {
         name: 'Boston to Miami Beach Walk',
         description: 'Walking the Eastern Seaboard from Boston to Miami',
         targetDistance: 2572000, // ~2,572 km
+        startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // Started 90 days ago
+        endDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // Ended 5 days ago
         targetDate: randomDate(5),
         status: GoalStatus.COMPLETED,
         createdById: 'user-2',
-        startedAt: randomDate(90),
-        completedAt: randomDate(5),
-        createdAt: randomDate(91),
+        startLocation: { lat: 42.3601, lng: -71.0589, address: 'Boston, MA' },
+        endLocation: { lat: 25.7907, lng: -80.1300, address: 'Miami Beach, FL' },
+        waypoints: [],
+        routePolyline: 'placeholder_polyline_boston_to_miami',
         routeData: {
           start: { lat: 42.3601, lng: -71.0589, name: 'Boston, MA' },
           end: { lat: 25.7907, lng: -80.1300, name: 'Miami Beach, FL' },
           waypoints: [],
+          bounds: {
+            northeast: { lat: 42.3601, lng: -71.0589 },
+            southwest: { lat: 25.7907, lng: -80.1300 }
+          }
         },
+        completedAt: randomDate(5),
+        createdAt: randomDate(91),
       },
     }),
     
@@ -359,16 +377,25 @@ async function seed() {
         name: 'Denver City Circuit',
         description: 'Walk 500km around Denver metro area',
         targetDistance: 500000, // 500 km
+        startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // Started 5 days ago
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Ends 30 days from now
         targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         status: GoalStatus.ACTIVE,
         createdById: 'user-3',
-        startedAt: randomDate(5),
-        createdAt: randomDate(6),
+        startLocation: { lat: 39.7392, lng: -104.9903, address: 'Denver, CO' },
+        endLocation: { lat: 39.7392, lng: -104.9903, address: 'Denver, CO' },
+        waypoints: [],
+        routePolyline: 'placeholder_polyline_denver_circuit',
         routeData: {
           start: { lat: 39.7392, lng: -104.9903, name: 'Denver, CO' },
           end: { lat: 39.7392, lng: -104.9903, name: 'Denver, CO' },
           waypoints: [],
+          bounds: {
+            northeast: { lat: 39.8, lng: -104.8 },
+            southwest: { lat: 39.6, lng: -105.1 }
+          }
         },
+        createdAt: randomDate(6),
       },
     }),
     
@@ -380,16 +407,25 @@ async function seed() {
         name: 'London to Paris Virtual Walk',
         description: 'Walking from London to Paris through the virtual Chunnel!',
         targetDistance: 461000, // ~461 km
+        startDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // Started 20 days ago
+        endDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000), // Ends 40 days from now
         targetDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000), // 40 days from now
         status: GoalStatus.ACTIVE,
         createdById: 'user-4',
-        startedAt: randomDate(20),
-        createdAt: randomDate(21),
+        startLocation: { lat: 51.5074, lng: -0.1278, address: 'London, UK' },
+        endLocation: { lat: 48.8566, lng: 2.3522, address: 'Paris, France' },
+        waypoints: [],
+        routePolyline: 'placeholder_polyline_london_to_paris',
         routeData: {
           start: { lat: 51.5074, lng: -0.1278, name: 'London, UK' },
           end: { lat: 48.8566, lng: 2.3522, name: 'Paris, France' },
           waypoints: [],
+          bounds: {
+            northeast: { lat: 51.5074, lng: 2.3522 },
+            southwest: { lat: 48.8566, lng: -0.1278 }
+          }
         },
+        createdAt: randomDate(21),
       },
     }),
   ]);
@@ -467,12 +503,9 @@ async function seed() {
       
       activities.push({
         userId,
-        teamId: assignment.teamId,
-        teamGoalId: assignment.goalId,
         distance,
         duration,
-        startTime: date,
-        endTime: new Date(date.getTime() + duration * 1000),
+        timestamp: date,
         source: ActivitySource.MANUAL,
         notes: i % 5 === 0 ? `Great ${distance > 5000 ? 'long' : 'morning'} walk!` : null,
         isPrivate: Math.random() > 0.9, // 10% private
@@ -502,12 +535,9 @@ async function seed() {
       
       activities.push({
         userId,
-        teamId: assignment.teamId,
-        teamGoalId: assignment.goalId,
         distance,
         duration,
-        startTime: date,
-        endTime: new Date(date.getTime() + duration * 1000),
+        timestamp: date,
         source: ActivitySource.MANUAL,
         notes: null,
         isPrivate: false,
@@ -535,7 +565,7 @@ async function seed() {
       currentStreak: Math.floor(Math.random() * 10),
       longestStreak: Math.floor(Math.random() * 30),
       lastActivityAt: userActivities.length > 0 
-        ? userActivities.sort((a, b) => b.startTime.getTime() - a.startTime.getTime())[0].startTime
+        ? userActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0].timestamp
         : new Date(),
     });
   }

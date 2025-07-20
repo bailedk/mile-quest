@@ -5,7 +5,7 @@
 import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { getAuthService } from '../../services/auth';
+import { getAuthService, AuthError, AuthErrorCode } from '../../services/auth';
 import { prisma } from '../../lib/database';
 import { generateTokens } from '../../utils/auth/jwt.utils';
 import { 
@@ -158,7 +158,10 @@ router.post('/login', async (event, context, params) => {
       body: response,
     };
   } catch (error) {
-    logger.error('Login failed', { error });
+    logger.error('Login failed', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      errorType: error instanceof AuthError ? error.code : undefined 
+    });
     
     if (error instanceof z.ZodError) {
       return {
@@ -167,11 +170,30 @@ router.post('/login', async (event, context, params) => {
       };
     }
     
-    if (error instanceof Error && error.message.includes('Invalid credentials')) {
-      return {
-        statusCode: 401,
-        body: { error: 'Invalid email or password' },
-      };
+    if (error instanceof AuthError) {
+      switch (error.code) {
+        case AuthErrorCode.USER_NOT_FOUND:
+        case AuthErrorCode.INVALID_CREDENTIALS:
+          return {
+            statusCode: 401,
+            body: { error: 'Invalid email or password' },
+          };
+        case AuthErrorCode.USER_NOT_CONFIRMED:
+          return {
+            statusCode: 403,
+            body: { error: 'Please verify your email before logging in' },
+          };
+        case AuthErrorCode.USER_DISABLED:
+          return {
+            statusCode: 403,
+            body: { error: 'Your account has been disabled' },
+          };
+        default:
+          return {
+            statusCode: 500,
+            body: { error: error.message || 'Login failed' },
+          };
+      }
     }
     
     return {
