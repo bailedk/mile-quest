@@ -98,6 +98,45 @@ router.get('/me/stats', async (event, _context, _params) => {
   }
 });
 
+// Get user activities
+router.get('/me/activities', async (event, _context, _params) => {
+  try {
+    const user = getUserFromEvent(event);
+    
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const limit = queryParams.limit ? parseInt(queryParams.limit) : 20;
+    const cursor = queryParams.cursor;
+    const startDate = queryParams.startDate;
+    const endDate = queryParams.endDate;
+    
+    const activities = await activityService.getActivities(user.sub, {
+      limit,
+      cursor,
+      startDate,
+      endDate,
+    });
+    
+    return {
+      statusCode: 200,
+      body: activities,
+    };
+  } catch (error: any) {
+    if (error.message === 'No token provided') {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
+    console.error('Error fetching user activities:', error);
+    return {
+      statusCode: 500,
+      body: { error: 'Failed to fetch activities' },
+    };
+  }
+});
+
 // Get user achievements (BE-019)
 router.get('/me/achievements', async (event, _context, _params) => {
   try {

@@ -175,27 +175,18 @@ export class ActivityService {
     
     const where: Prisma.ActivityWhereInput = {
       userId,
-      ...(options?.teamId && { teamId: options.teamId }),
       ...(options?.startDate && {
-        startTime: { gte: new Date(options.startDate) },
+        timestamp: { gte: new Date(options.startDate) },
       }),
       ...(options?.endDate && {
-        endTime: { lte: new Date(options.endDate) },
+        timestamp: { lte: new Date(options.endDate) },
       }),
     };
 
     const activities = await this.prisma.activity.findMany({
       where,
-      include: {
-        team: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
       orderBy: {
-        startTime: 'desc',
+        timestamp: 'desc',
       },
       take: limit + 1,
       ...(options?.cursor && {
@@ -214,16 +205,11 @@ export class ActivityService {
       distance: activity.distance,
       duration: activity.duration,
       pace: this.calculatePace(activity.distance, activity.duration),
-      activityDate: activity.startTime,
+      activityDate: activity.timestamp,
       note: activity.notes,
       isPrivate: activity.isPrivate,
       createdAt: activity.createdAt,
-      teams: [
-        {
-          id: activity.team.id,
-          name: activity.team.name,
-        },
-      ],
+      teams: [], // No team relation in schema
     }));
 
     const nextCursor = hasMore ? activities[activities.length - 1].id : null;
