@@ -41,6 +41,35 @@
       "approvedBy": "user",
       "approvalDate": "2025-01-15",
       "completedDate": "2025-01-15"
+    },
+    {
+      "id": "dm-004",
+      "fromAgent": "user-via-claude",
+      "toAgent": "03-data-model",
+      "requestDate": "2025-01-20",
+      "priority": "high",
+      "status": "approved",
+      "request": "Update ERD diagrams and documentation for team-agnostic activities",
+      "reason": "Activities table was made team-agnostic in BE-016 implementation - no longer has direct teamId/teamGoalId references",
+      "value": "Ensures architectural documentation accurately reflects current schema design decisions",
+      "approvedBy": "user",
+      "approvalDate": "2025-01-20",
+      "completedDate": null,
+      "details": {
+        "changes": [
+          "Activity model no longer has teamId or teamGoalId fields",
+          "Activities are linked to teams only through User -> TeamMember -> Team relationship",
+          "New TeamProgress model tracks aggregate progress separately",
+          "Activity timestamp simplified from startTime/endTime to single timestamp field"
+        ],
+        "tasks": [
+          "Update ERD diagram to remove direct Activity-Team relationships",
+          "Update core-entities.md to reflect team-agnostic design",
+          "Document the architectural decision for team-agnostic activities",
+          "Update data-access-patterns.md with new query patterns",
+          "Ensure all diagrams show correct relationship paths"
+        ]
+      }
     }
   ]
 }

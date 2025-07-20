@@ -74,6 +74,37 @@
           ]
         }
       ]
+    },
+    {
+      "id": "db-schema-update-be016",
+      "fromAgent": "user-via-claude",
+      "toAgent": "18-database-developer",
+      "requestDate": "2025-01-20",
+      "priority": "high",
+      "status": "approved",
+      "request": "Document recent schema changes from BE-016 implementation",
+      "reason": "Significant schema changes were made for team progress tracking that need to be documented",
+      "value": "Ensures database documentation reflects current state and helps other agents understand the changes",
+      "approvedBy": "user",
+      "approvalDate": "2025-01-20",
+      "completedDate": null,
+      "details": {
+        "changes": [
+          "New TeamProgress model for real-time tracking",
+          "Activity model simplified with single timestamp field",
+          "Activity model made team-agnostic (no direct team references)",
+          "Extensive performance indexes added across tables",
+          "Privacy-aware query support with isPrivate indexes",
+          "Team goal indexes for date-range and status queries"
+        ],
+        "tasks": [
+          "Create standard documentation structure (current/, working/, versions/)",
+          "Document the TeamProgress model and its purpose",
+          "Update schema documentation to reflect current state",
+          "Document performance optimization strategies",
+          "Create migration guide for the changes"
+        ]
+      }
     }
   ]
 }
