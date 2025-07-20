@@ -123,6 +123,7 @@ dump.rdb
 # Backup files
 *.backup
 *.bak
+backup/
 
 # Temporary files
 tmp/
