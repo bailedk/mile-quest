@@ -50,13 +50,12 @@
 }
 
 /* Dark mode preparation (future enhancement) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0F172A;
-    --foreground: #F9FAFB;
-    --surface: #1E293B;
-    --border: #334155;
-  }
+/* Dark mode variables - activated via .dark class on <html> element */
+.dark {
+  --background: #0F172A;
+  --foreground: #F9FAFB;
+  --surface: #1E293B;
+  --border: #334155;
 }
 
 /* Base Styles */
