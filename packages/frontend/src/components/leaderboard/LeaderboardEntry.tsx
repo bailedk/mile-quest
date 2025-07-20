@@ -106,10 +106,10 @@ export function LeaderboardEntry({
     
     // Generate initials from username
     const initials = member.userName
-      .split(' ')
-      .map(name => name.charAt(0).toUpperCase())
+      ?.split(' ')
+      .map(name => name?.charAt(0)?.toUpperCase() || '?')
       .slice(0, 2)
-      .join('');
+      .join('') || '??';
     
     return (
       <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">

@@ -350,8 +350,8 @@ class PWAService {
     try {
       await this.swRegistration.showNotification(data.title, {
         body: data.body,
-        icon: data.icon || '/icons/icon-192x192.png',
-        badge: data.badge || '/icons/badge-72x72.png',
+        icon: data.icon || '/icons/icon.svg',
+        badge: data.badge || '/icons/icon.svg',
         tag: data.tag,
         data: data.data,
         actions: data.actions,

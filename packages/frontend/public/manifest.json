@@ -14,58 +14,22 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
+      "src": "/icons/icon.svg",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "/icons/icon.svg",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/badge-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "badge"
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -73,70 +37,19 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your team progress and activity dashboard",
-      "url": "/dashboard",
-      "icons": [
-        {
-          "src": "/icons/shortcut-dashboard-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
+      "url": "/dashboard"
     },
     {
       "name": "Log Activity",
-      "short_name": "Log Activity",
+      "short_name": "Log Activity", 
       "description": "Record a new walking activity",
-      "url": "/activities/new",
-      "icons": [
-        {
-          "src": "/icons/shortcut-activity-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
+      "url": "/activities/new"
     },
     {
       "name": "Teams",
       "short_name": "Teams",
       "description": "Manage your teams and view team progress",
-      "url": "/teams",
-      "icons": [
-        {
-          "src": "/icons/shortcut-teams-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/dashboard-mobile.png",
-      "sizes": "375x812",
-      "type": "image/png",
-      "platform": "narrow",
-      "label": "Dashboard view showing team progress and recent activities"
-    },
-    {
-      "src": "/screenshots/activity-mobile.png",
-      "sizes": "375x812",
-      "type": "image/png",
-      "platform": "narrow",
-      "label": "Activity logging form with team selection and validation"
-    },
-    {
-      "src": "/screenshots/teams-mobile.png",
-      "sizes": "375x812",
-      "type": "image/png",
-      "platform": "narrow",
-      "label": "Teams list view with progress indicators"
-    },
-    {
-      "src": "/screenshots/dashboard-desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "Desktop dashboard with detailed team analytics"
+      "url": "/teams"
     }
   ],
   "protocol_handlers": [

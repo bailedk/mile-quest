@@ -147,7 +147,7 @@ export function TeamContributionChart({
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-sm font-medium text-gray-600">
-                      {contributor.name.charAt(0).toUpperCase()}
+                      {contributor.name?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
                 )}

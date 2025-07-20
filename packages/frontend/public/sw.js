@@ -347,8 +347,8 @@ self.addEventListener('push', (event) => {
     
     const options = {
       body: data.body || 'Mile Quest notification',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/badge-72x72.png',
+      icon: '/icons/icon.svg',
+      badge: '/icons/icon.svg',
       tag: data.tag || 'mile-quest-notification',
       data: data.data || {},
       actions: data.actions || [],
@@ -367,8 +367,8 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification('Mile Quest', {
         body: 'You have a new notification',
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
+        icon: '/icons/icon.svg',
+        badge: '/icons/icon.svg',
       })
     );
   }

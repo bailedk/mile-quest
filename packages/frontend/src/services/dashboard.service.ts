@@ -39,14 +39,14 @@ export class DashboardService {
     try {
       const response = await apiClient.get<DashboardResponse>('/dashboard');
       
-      // Parse dates from string format
+      // Parse dates from string format with null checks
       const parsedData: DashboardData = {
-        ...response.data,
-        recentActivities: response.data.recentActivities.map(activity => ({
+        teams: response.data.teams || [],
+        recentActivities: (response.data.recentActivities || []).map(activity => ({
           ...activity,
           activityDate: new Date(activity.activityDate),
         })),
-        personalStats: {
+        personalStats: response.data.personalStats ? {
           ...response.data.personalStats,
           bestDay: {
             ...response.data.personalStats.bestDay,
@@ -54,7 +54,15 @@ export class DashboardService {
               ? new Date(response.data.personalStats.bestDay.date) 
               : null,
           },
+        } : {
+          totalDistance: 0,
+          totalActivities: 0,
+          currentStreak: 0,
+          bestDay: { date: null, distance: 0 },
+          thisWeek: { distance: 0, activities: 0 },
+          thisMonth: { distance: 0, activities: 0 },
         },
+        teamLeaderboards: response.data.teamLeaderboards || [],
         lastUpdated: new Date(),
       };
 

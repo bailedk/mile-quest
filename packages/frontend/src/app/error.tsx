@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
+import { reportError } from '@/components/error';
+import { MobileErrorState } from '@/components/error';
 
 export default function Error({
   error,
@@ -11,40 +12,63 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('Application error:', error);
+    // Report the error with comprehensive context
+    reportError(error, {
+      page: 'app-error-boundary',
+      component: 'NextJS-Error-Page',
+      customData: {
+        digest: error.digest,
+        boundary: 'route-level'
+      }
+    });
   }, [error]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full text-center">
-        <div className="text-6xl mb-4">😕</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Something went wrong!
-        </h2>
-        <p className="text-gray-600 mb-8">
-          We apologize for the inconvenience. An unexpected error has occurred.
-        </p>
-        <div className="space-y-3">
-          <button
-            onClick={() => reset()}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Try again
-          </button>
-          <Link
-            href="/"
-            className="block w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-          >
-            Go back home
-          </Link>
-        </div>
-        {process.env.NODE_ENV === 'development' && error.message && (
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg text-left">
-            <p className="text-sm font-mono text-gray-700">
-              {error.message}
-            </p>
-          </div>
+      <div className="max-w-lg w-full">
+        <MobileErrorState
+          title="Application Error"
+          message="We apologize for the inconvenience. An unexpected error has occurred while loading this page."
+          icon="🚫"
+          action={{
+            label: 'Try Again',
+            onClick: reset,
+            variant: 'primary'
+          }}
+          secondaryAction={{
+            label: 'Go to Dashboard',
+            onClick: () => window.location.href = '/dashboard'
+          }}
+          hapticFeedback={true}
+        />
+        
+        {process.env.NODE_ENV === 'development' && (
+          <details className="mt-6 p-4 bg-gray-100 rounded-lg">
+            <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
+              Developer Information
+            </summary>
+            <div className="text-xs font-mono text-gray-600 space-y-2">
+              <div>
+                <strong>Error:</strong> {error.name}
+              </div>
+              <div>
+                <strong>Message:</strong> {error.message}
+              </div>
+              {error.digest && (
+                <div>
+                  <strong>Digest:</strong> {error.digest}
+                </div>
+              )}
+              {error.stack && (
+                <div>
+                  <strong>Stack:</strong>
+                  <pre className="mt-1 whitespace-pre-wrap break-all max-h-32 overflow-auto bg-white p-2 rounded border">
+                    {error.stack}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </details>
         )}
       </div>
     </div>

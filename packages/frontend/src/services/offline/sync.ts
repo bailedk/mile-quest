@@ -50,9 +50,12 @@ export class OfflineSyncService {
     }
 
     // Register background sync
-    if ('serviceWorker' in navigator && 'sync' in (self as any).registration) {
+    if ('serviceWorker' in navigator) {
       try {
-        await (self as any).registration.sync.register('sync-all-data');
+        const registration = await navigator.serviceWorker.ready;
+        if (registration && 'sync' in registration) {
+          await registration.sync.register('sync-all-data');
+        }
       } catch (error) {
         console.error('[Sync] Failed to register background sync:', error);
       }

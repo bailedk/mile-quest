@@ -255,7 +255,7 @@ export default function OfflineTeamManager({ className = '' }: OfflineTeamManage
                         title={member.name}
                       >
                         <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                          {member.name.charAt(0).toUpperCase()}
+                          {member.name?.charAt(0)?.toUpperCase() || '?'}
                         </span>
                       </div>
                     ))}

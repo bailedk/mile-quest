@@ -64,9 +64,10 @@ export default function RootLayout({
         <meta name="msapplication-config" content="/browserconfig.xml" />
         
         {/* Apple touch icons */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+        <link rel="icon" type="image/svg+xml" sizes="32x32" href="/icons/icon.svg" />
+        <link rel="icon" type="image/svg+xml" sizes="16x16" href="/icons/icon.svg" />
         
         {/* Splash screens for iOS */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
