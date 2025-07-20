@@ -109,7 +109,7 @@ export default function DashboardPage() {
               You need to be signed in to view your dashboard.
             </p>
             <Link
-              href="/auth/login"
+              href="/signin"
               className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Sign In

@@ -44,7 +44,7 @@ export class DashboardService {
         teams: response.data.teams || [],
         recentActivities: (response.data.recentActivities || []).map(activity => ({
           ...activity,
-          activityDate: new Date(activity.activityDate),
+          timestamp: new Date(activity.timestamp),
         })),
         personalStats: response.data.personalStats ? {
           ...response.data.personalStats,

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "../styles/accessibility.css";
@@ -19,14 +19,6 @@ export const metadata: Metadata = {
   title: "Mile Quest - Walk Together, Go Further",
   description: "Track team walking goals and build healthy habits with your colleagues",
   manifest: "/manifest.json",
-  themeColor: "#2563EB",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -46,6 +38,15 @@ export const metadata: Metadata = {
     title: "Mile Quest - Walk Together, Go Further",
     description: "Track team walking goals and build healthy habits with your colleagues",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#2563EB",
 };
 
 export default function RootLayout({
@@ -84,8 +85,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
-        {/* Prevent zoom on form inputs */}
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        {/* Viewport is now handled by the viewport export above */}
         
         {/* Performance monitoring script */}
         <script

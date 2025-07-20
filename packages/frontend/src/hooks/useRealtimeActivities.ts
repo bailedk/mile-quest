@@ -78,8 +78,11 @@ export function useRealtimeActivities(
         
         // Invalidate related queries to refresh aggregated data
         queryClient.invalidateQueries({ queryKey: ['stats', 'team', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['stats', 'user'] });
         queryClient.invalidateQueries({ queryKey: ['goal-progress', teamId] });
         queryClient.invalidateQueries({ queryKey: ['leaderboard', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['activity-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         break;
 
       case 'activity:updated':
@@ -97,8 +100,11 @@ export function useRealtimeActivities(
         
         // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['stats', 'team', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['stats', 'user'] });
         queryClient.invalidateQueries({ queryKey: ['goal-progress', teamId] });
         queryClient.invalidateQueries({ queryKey: ['leaderboard', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['activity-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         break;
 
       case 'activity:deleted':
@@ -114,8 +120,11 @@ export function useRealtimeActivities(
         
         // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['stats', 'team', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['stats', 'user'] });
         queryClient.invalidateQueries({ queryKey: ['goal-progress', teamId] });
         queryClient.invalidateQueries({ queryKey: ['leaderboard', teamId] });
+        queryClient.invalidateQueries({ queryKey: ['activity-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
         break;
 
       default:

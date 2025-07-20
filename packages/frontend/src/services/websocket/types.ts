@@ -18,7 +18,8 @@ export interface WebSocketMessage {
   event: string;
   data: any;
   channel?: string;
-  timestamp?: number;
+  /** ISO 8601 date-time string in UTC when message was sent */
+  timestamp?: string;
 }
 
 export interface WebSocketAuthHeaders {
@@ -118,7 +119,8 @@ export interface TypedWebSocketMessage<TData = any> {
   event: WebSocketEventType;
   data: TData;
   channel?: WebSocketChannelType;
-  timestamp?: number;
+  /** ISO 8601 date-time string in UTC when message was sent */
+  timestamp?: string;
   userId?: string;
   teamId?: string;
 }
@@ -127,14 +129,16 @@ export interface TypedWebSocketMessage<TData = any> {
 export interface PresenceEventData {
   userId: string;
   socketId?: string;
-  timestamp?: number;
+  /** ISO 8601 date-time string in UTC when presence event occurred */
+  timestamp?: string;
 }
 
 export interface PresenceInitialStateData {
   members: Array<{
     userId: string;
     isOnline: boolean;
-    lastSeen: number;
+    /** ISO 8601 date-time string in UTC when user was last seen */
+    lastSeen: string;
     socketId?: string;
   }>;
 }
@@ -149,7 +153,8 @@ export interface ActivityEventData {
   type: string;
   distance: number;
   duration?: number;
-  date: string;
+  /** ISO 8601 date-time string in UTC when activity occurred */
+  timestamp: string;
   isPrivate: boolean;
   [key: string]: any;
 }
@@ -218,7 +223,8 @@ export interface StatsEventData {
 export interface WebSocketConnectionInfo {
   state: WebSocketConnectionState;
   socketId: string | null;
-  connectedAt: number | null;
+  /** ISO 8601 date-time string in UTC when connection was established */
+  connectedAt: string | null;
   reconnectAttempts: number;
   lastError: WebSocketError | null;
   isOnline: boolean;

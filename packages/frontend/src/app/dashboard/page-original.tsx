@@ -196,7 +196,7 @@ export default function DashboardPage() {
               You need to be signed in to view your dashboard.
             </p>
             <Link
-              href="/auth/login"
+              href="/signin"
               className="inline-block px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
             >
               Sign In
@@ -453,7 +453,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {recentActivities.length > 0 ? (
                   recentActivities.slice(0, 3).map((activity) => {
-                    const timeAgo = getRelativeTime(activity.activityDate);
+                    const timeAgo = getRelativeTime(activity.timestamp);
                     
                     return (
                       <div key={activity.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">

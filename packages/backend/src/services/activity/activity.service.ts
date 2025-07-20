@@ -29,72 +29,23 @@ export class ActivityService {
     userId: string,
     input: CreateActivityInput
   ): Promise<CreateActivityResult> {
-    // Validate user is member of all specified teams
-    const memberships = await this.prisma.teamMember.findMany({
-      where: {
-        userId,
-        teamId: { in: input.teamIds },
-        leftAt: null,
-      },
-      include: {
-        team: {
-          include: {
-            goals: {
-              where: {
-                status: 'ACTIVE',
-              },
-              orderBy: {
-                createdAt: 'desc',
-              },
-              take: 1,
-            },
-          },
-        },
-      },
-    });
-
-    if (memberships.length !== input.teamIds.length) {
-      throw new Error('User is not a member of all specified teams');
-    }
-
-    // Parse activity date
-    const activityDate = new Date(input.activityDate);
-    const startTime = activityDate;
-    const endTime = new Date(activityDate.getTime() + input.duration * 1000);
-
-    // Create activity for each team in a transaction
+    // Create activity in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
-      const teamUpdates: TeamProgressUpdate[] = [];
-
-      // For MVP, we'll create one activity and associate it with the first team
-      // In the future, we can extend this to support multiple teams per activity
-      const primaryTeamId = input.teamIds[0];
-      const primaryMembership = memberships.find(m => m.teamId === primaryTeamId);
-      
-      if (!primaryMembership) {
-        throw new Error('Primary team membership not found');
-      }
-
-      const activeGoal = primaryMembership.team.goals[0];
-
       // Create activity
       const activity = await tx.activity.create({
         data: {
           userId,
-          teamId: primaryTeamId,
-          teamGoalId: activeGoal?.id,
           distance: input.distance,
           duration: input.duration,
-          startTime,
-          endTime,
-          notes: input.note,
+          timestamp: input.timestamp,
+          notes: input.notes,
           isPrivate: input.isPrivate ?? false,
           source: input.source ?? ActivitySource.MANUAL,
         },
       });
 
       // Update user stats with proper streak calculation
-      const newStreaks = await this.calculateUserStreaks(userId, activityDate, tx);
+      const newStreaks = await this.calculateUserStreaks(userId, input.timestamp, tx);
       await tx.userStats.upsert({
         where: { userId },
         create: {
@@ -104,7 +55,7 @@ export class ActivityService {
           totalDuration: input.duration,
           currentStreak: newStreaks.currentStreak,
           longestStreak: newStreaks.longestStreak,
-          lastActivityAt: activityDate,
+          lastActivityAt: input.timestamp,
         },
         update: {
           totalDistance: { increment: input.distance },
@@ -112,46 +63,12 @@ export class ActivityService {
           totalDuration: { increment: input.duration },
           currentStreak: newStreaks.currentStreak,
           longestStreak: newStreaks.longestStreak,
-          lastActivityAt: activityDate,
+          lastActivityAt: input.timestamp,
         },
       });
 
-      // Update team progress for all teams
-      for (const membership of memberships) {
-        const team = membership.team;
-        const activeGoal = team.goals[0];
-
-        if (activeGoal) {
-          const progress = await tx.teamProgress.upsert({
-            where: { teamGoalId: activeGoal.id },
-            create: {
-              teamGoalId: activeGoal.id,
-              totalDistance: input.distance,
-              totalActivities: 1,
-              totalDuration: input.duration,
-              lastActivityAt: activityDate,
-            },
-            update: {
-              totalDistance: { increment: input.distance },
-              totalActivities: { increment: 1 },
-              totalDuration: { increment: input.duration },
-              lastActivityAt: activityDate,
-            },
-          });
-
-          const percentComplete = (progress.totalDistance / activeGoal.targetDistance) * 100;
-          
-          teamUpdates.push({
-            teamId: membership.teamId,
-            teamGoalId: activeGoal.id,
-            newTotalDistance: progress.totalDistance,
-            newPercentComplete: Math.min(percentComplete, 100),
-          });
-        }
-      }
-
       // Return the activity with relations
-      const activityWithRelations = await tx.activity.findFirst({
+      const activityWithRelations = await tx.activity.findUnique({
         where: { id: activity.id },
         include: {
           user: {
@@ -161,12 +78,6 @@ export class ActivityService {
               avatarUrl: true,
             },
           },
-          team: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
         },
       });
 
@@ -174,33 +85,76 @@ export class ActivityService {
         throw new Error('Failed to create activity');
       }
 
-      // Add teams array to match API contract
-      const activityWithTeams: ActivityWithRelations = {
-        ...activityWithRelations,
-        teams: memberships.map(m => ({
-          id: m.team.id,
-          name: m.team.name,
-        })),
-      };
-
       // Invalidate relevant caches
       cache.delete(cacheKeys.userStats(userId));
-      teamUpdates.forEach(update => {
-        cache.delete(cacheKeys.teamProgress(update.teamId));
-        // Invalidate leaderboard caches for the team
-        this.leaderboardService.invalidateTeamCaches(update.teamId);
-      });
 
-      // Detect new achievements after activity creation
-      const newAchievements = await this.achievementService.detectNewAchievements(
-        userId, 
-        activity
-      );
+      // Check for achievements
+      const achievements = [];
+      
+      // First activity achievement
+      const userStats = await tx.userStats.findUnique({
+        where: { userId },
+      });
+      
+      if (userStats?.totalActivities === 1) {
+        achievements.push({
+          type: 'FIRST_WALK',
+          userId,
+          activityId: activity.id,
+        });
+      }
+
+      // Distance milestones
+      const distanceMilestones = [
+        { distance: 16093.4, type: '10_MILE_CLUB' },      // 10 miles
+        { distance: 80467, type: '50_MILE_WARRIOR' },     // 50 miles  
+        { distance: 160934, type: 'CENTURY_WALKER' },     // 100 miles
+      ];
+
+      for (const milestone of distanceMilestones) {
+        if (userStats && 
+            userStats.totalDistance >= milestone.distance &&
+            userStats.totalDistance - input.distance < milestone.distance) {
+          achievements.push({
+            type: milestone.type,
+            userId,
+            activityId: activity.id,
+          });
+        }
+      }
+
+      // Create achievement records
+      const newAchievements = [];
+      if (achievements.length > 0) {
+        for (const achievement of achievements) {
+          try {
+            const created = await tx.userAchievement.create({
+              data: {
+                userId: achievement.userId,
+                achievementId: achievement.type,
+                activityId: achievement.activityId,
+              },
+              include: {
+                achievement: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    avatarUrl: true,
+                  },
+                },
+              },
+            });
+            newAchievements.push(created);
+          } catch (e) {
+            // Skip if achievement already exists
+          }
+        }
+      }
 
       return {
-        activity: activityWithTeams,
-        teamUpdates,
-        newAchievements,
+        activity: activityWithRelations,
+        achievements: newAchievements,
       };
     });
 
@@ -312,24 +266,10 @@ export class ActivityService {
             avatarUrl: true,
           },
         },
-        team: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
       },
     });
 
-    // If privacy setting changed, invalidate leaderboard caches
-    if (existingActivity.isPrivate !== input.isPrivate) {
-      this.leaderboardService.invalidateTeamCaches(activity.teamId);
-    }
-
-    return {
-      ...activity,
-      teams: [activity.team],
-    };
+    return activity;
   }
 
   async deleteActivity(
@@ -341,13 +281,6 @@ export class ActivityService {
       where: {
         id: activityId,
         userId,
-      },
-      include: {
-        teamGoal: {
-          include: {
-            team: true,
-          },
-        },
       },
     });
 
@@ -372,40 +305,12 @@ export class ActivityService {
         },
       });
 
-      const teamUpdates: TeamProgressUpdate[] = [];
-
-      // Update team progress if there was an active goal
-      if (activity.teamGoalId) {
-        const progress = await tx.teamProgress.update({
-          where: { teamGoalId: activity.teamGoalId },
-          data: {
-            totalDistance: { decrement: activity.distance },
-            totalActivities: { decrement: 1 },
-            totalDuration: { decrement: activity.duration },
-          },
-        });
-
-        const percentComplete = (progress.totalDistance / activity.teamGoal!.targetDistance) * 100;
-
-        teamUpdates.push({
-          teamId: activity.teamId,
-          teamGoalId: activity.teamGoalId,
-          newTotalDistance: progress.totalDistance,
-          newPercentComplete: Math.min(percentComplete, 100),
-        });
-      }
-
       // Invalidate relevant caches
       cache.delete(cacheKeys.userStats(userId));
-      teamUpdates.forEach(update => {
-        cache.delete(cacheKeys.teamProgress(update.teamId));
-        // Invalidate leaderboard caches for the team
-        this.leaderboardService.invalidateTeamCaches(update.teamId);
-      });
 
       return {
         deleted: true,
-        teamUpdates,
+        teamUpdates: [],
       };
     });
 
@@ -439,7 +344,7 @@ export class ActivityService {
     const weeklyAgg = await this.prisma.activity.aggregate({
       where: {
         userId,
-        startTime: { gte: weekAgo },
+        timestamp: { gte: weekAgo },
       },
       _sum: {
         distance: true,
@@ -455,7 +360,7 @@ export class ActivityService {
     const monthlyAgg = await this.prisma.activity.aggregate({
       where: {
         userId,
-        startTime: { gte: monthAgo },
+        timestamp: { gte: monthAgo },
       },
       _sum: {
         distance: true,
@@ -570,7 +475,7 @@ export class ActivityService {
     const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
     // Calculate average daily distance
-    const daysSinceStart = Math.max(1, Math.ceil((now.getTime() - activeGoal.startedAt!.getTime()) / (1000 * 60 * 60 * 24)));
+    const daysSinceStart = Math.max(1, Math.ceil((now.getTime() - activeGoal.startDate.getTime()) / (1000 * 60 * 60 * 24)));
     const averageDailyDistance = progress.totalDistance / daysSinceStart;
 
     // Calculate projected completion date
@@ -640,7 +545,7 @@ export class ActivityService {
         id: team.id,
         name: team.name,
         goalDistance: activeGoal.targetDistance,
-        startDate: activeGoal.startedAt!,
+        startDate: activeGoal.startDate,
         endDate: endDate,
       },
       goal: {
@@ -723,7 +628,7 @@ export class ActivityService {
     // Build where clause
     const where: Prisma.ActivityWhereInput = {
       userId,
-      startTime: {
+      timestamp: {
         gte: queryStartDate,
         lte: queryEndDate,
       },
@@ -736,10 +641,10 @@ export class ActivityService {
       select: {
         distance: true,
         duration: true,
-        startTime: true,
+        timestamp: true,
       },
       orderBy: {
-        startTime: 'asc',
+        timestamp: 'asc',
       },
     });
 
@@ -747,7 +652,7 @@ export class ActivityService {
     const periodMap = new Map<string, ActivitySummaryPeriod>();
 
     activities.forEach(activity => {
-      const periodKey = this.getPeriodKey(activity.startTime, period);
+      const periodKey = this.getPeriodKey(activity.timestamp, period);
       const existing = periodMap.get(periodKey);
 
       if (existing) {
@@ -755,7 +660,7 @@ export class ActivityService {
         existing.totalDuration += activity.duration;
         existing.totalActivities += 1;
       } else {
-        const { start, end } = this.getPeriodBounds(activity.startTime, period);
+        const { start, end } = this.getPeriodBounds(activity.timestamp, period);
         periodMap.set(periodKey, {
           startDate: start,
           endDate: end,
@@ -782,10 +687,10 @@ export class ActivityService {
       const daysWithActivity = new Set(
         activities
           .filter(a => 
-            a.startTime >= summary.startDate && 
-            a.startTime <= summary.endDate
+            a.timestamp >= summary.startDate && 
+            a.timestamp <= summary.endDate
           )
-          .map(a => a.startTime.toDateString())
+          .map(a => a.timestamp.toDateString())
       );
       summary.activeDays = daysWithActivity.size;
 
@@ -853,14 +758,14 @@ export class ActivityService {
     // Get all activities for the user, grouped by date
     const activities = await prismaClient.activity.findMany({
       where: { userId },
-      select: { startTime: true },
-      orderBy: { startTime: 'desc' },
+      select: { timestamp: true },
+      orderBy: { timestamp: 'desc' },
     });
 
     // Create a set of unique activity dates (YYYY-MM-DD format)
     const activityDates = new Set<string>();
     activities.forEach(activity => {
-      const dateStr = activity.startTime.toISOString().split('T')[0];
+      const dateStr = activity.timestamp.toISOString().split('T')[0];
       activityDates.add(dateStr);
     });
     

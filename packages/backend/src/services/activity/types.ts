@@ -3,16 +3,13 @@ import { AchievementWithUser } from '../achievement/types';
 
 export interface ActivityWithRelations extends Activity {
   user: Pick<User, 'id' | 'name' | 'avatarUrl'>;
-  team: Pick<Team, 'id' | 'name'>;
-  teams?: Pick<Team, 'id' | 'name'>[];
 }
 
 export interface CreateActivityInput {
-  teamIds: string[];
   distance: number; // in meters
   duration: number; // in seconds
-  activityDate: string; // ISO date string
-  note?: string;
+  timestamp: Date; // Activity timestamp
+  notes?: string;
   isPrivate?: boolean;
   source?: ActivitySource;
 }
@@ -27,14 +24,10 @@ export interface ActivityListItem {
   distance: number;
   duration: number;
   pace: number; // min/km or min/mi based on user preference
-  activityDate: Date;
-  note: string | null;
+  timestamp: Date;
+  notes: string | null;
   isPrivate: boolean;
   createdAt: Date;
-  teams: {
-    id: string;
-    name: string;
-  }[];
 }
 
 export interface TeamProgressUpdate {
@@ -46,8 +39,7 @@ export interface TeamProgressUpdate {
 
 export interface CreateActivityResult {
   activity: ActivityWithRelations;
-  teamUpdates: TeamProgressUpdate[];
-  newAchievements: AchievementWithUser[];
+  achievements: AchievementWithUser[];
 }
 
 export interface DeleteActivityResult {

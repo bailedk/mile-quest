@@ -23,14 +23,18 @@ export {
 
 // Error Pages
 export {
-  NotFoundError,
-  ForbiddenError,
-  ServerError,
-  NetworkError as NetworkErrorPage,
+  NotFound as NotFoundError,
+  Forbidden as ForbiddenError,
+  InternalServerError as ServerError,
   LoadingErrorFallback,
   OfflineError,
-  MaintenanceError
+  MaintenanceError,
+  GenericError,
+  AuthRequired
 } from './ErrorPages';
+
+// NetworkError is from ErrorComponents, re-export as NetworkErrorPage
+export { NetworkError as NetworkErrorPage } from './ErrorComponents';
 
 // Error Recovery Components
 export {

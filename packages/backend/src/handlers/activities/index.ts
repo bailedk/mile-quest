@@ -8,7 +8,7 @@ import { validateEnvironment } from '../../config/environment';
 import { verifyToken } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { ActivityService } from '../../services/activity/activity.service';
-import { CreateActivityInput, UpdateActivityInput } from '../../services/activity/types';
+import { UpdateActivityInput } from '../../services/activity/types';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { ProgressService, ProgressWebSocketIntegration } from '../../services/progress';
 import { createWebSocketService } from '../../services/websocket';
@@ -49,24 +49,15 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
   return verifyToken(token);
 };
 
-// Create activity (BE-014)
+// Create activity
 router.post('/', async (event, context, params) => {
   initializeServices();
   
   try {
     const user = getUserFromEvent(event);
-    const input: CreateActivityInput = JSON.parse(event.body || '{}');
+    const input = JSON.parse(event.body || '{}');
 
     // Validate input
-    if (!input.teamIds || input.teamIds.length === 0) {
-      return {
-        statusCode: 400,
-        body: {
-          error: 'At least one teamId is required',
-        },
-      };
-    }
-
     if (typeof input.distance !== 'number' || input.distance <= 0) {
       return {
         statusCode: 400,
@@ -85,58 +76,72 @@ router.post('/', async (event, context, params) => {
       };
     }
 
-    if (!input.activityDate) {
+    if (!input.timestamp) {
       return {
         statusCode: 400,
         body: {
-          error: 'Activity date is required',
+          error: 'Timestamp is required',
         },
       };
     }
 
-    const result = await activityService.createActivity(user.sub, input);
+    const timestamp = new Date(input.timestamp);
+    const now = new Date();
+    
+    if (timestamp > now) {
+      return {
+        statusCode: 400,
+        body: {
+          error: 'Cannot log future activities',
+        },
+      };
+    }
 
-    // Send real-time updates for each team
+    const result = await activityService.createActivity(user.sub, {
+      distance: input.distance,
+      duration: input.duration,
+      timestamp,
+      notes: input.notes,
+      isPrivate: input.isPrivate ?? false,
+      source: input.source ?? 'MANUAL',
+    });
+
+    // Send real-time updates to user's teams if needed
     try {
-      for (const teamUpdate of result.teamUpdates) {
-        // Only process if team has an active goal
-        if (teamUpdate.teamGoalId) {
-          // Get full progress data
+      const userTeams = await prisma.teamMember.findMany({
+        where: {
+          userId: user.sub,
+          leftAt: null,
+        },
+        include: {
+          team: {
+            include: {
+              goals: {
+                where: {
+                  status: 'ACTIVE',
+                  startDate: { lte: timestamp },
+                  endDate: { gte: timestamp },
+                },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      // Update progress for each team with an active goal
+      for (const membership of userTeams) {
+        const activeGoal = membership.team.goals[0];
+        if (activeGoal) {
           const progressData = await progressService.calculateTeamProgress(
-            teamUpdate.teamGoalId,
+            activeGoal.id,
             { includeContributors: true, contributorLimit: 3 }
           );
 
-          // Check for milestones
-          const progressResult = await progressService.updateProgressAndCheckMilestones(
-            teamUpdate.teamGoalId,
-            input.distance,
-            1,
-            input.duration
-          );
-
-          // Broadcast updates
           await progressWebSocket.broadcastProgressUpdate(
-            teamUpdate.teamId,
-            teamUpdate.teamGoalId,
-            progressData,
-            progressResult.milestoneReached
-          );
-
-          // Also broadcast activity added event
-          await progressWebSocket.broadcastActivityAdded(
-            teamUpdate.teamId,
-            {
-              userId: user.sub,
-              userName: result.activity.user.name,
-              distance: input.distance,
-              duration: input.duration,
-            },
-            {
-              newTotalDistance: teamUpdate.newTotalDistance,
-              newPercentComplete: teamUpdate.newPercentComplete,
-              distanceAdded: input.distance,
-            }
+            membership.teamId,
+            activeGoal.id,
+            progressData
           );
         }
       }
@@ -150,18 +155,16 @@ router.post('/', async (event, context, params) => {
       body: {
         success: true,
         data: {
-          activity: {
-            id: result.activity.id,
-            userId: result.activity.userId,
-            distance: result.activity.distance,
-            duration: result.activity.duration,
-            pace: result.activity.distance > 0 ? (result.activity.duration / 60) / (result.activity.distance / 1000) : 0,
-            activityDate: result.activity.startTime.toISOString(),
-            note: result.activity.notes,
-            isPrivate: result.activity.isPrivate,
-            createdAt: result.activity.createdAt.toISOString(),
-          },
-          teamUpdates: result.teamUpdates,
+          id: result.activity.id,
+          userId: result.activity.userId,
+          distance: result.activity.distance,
+          duration: result.activity.duration,
+          timestamp: result.activity.timestamp.toISOString(),
+          notes: result.activity.notes,
+          isPrivate: result.activity.isPrivate,
+          createdAt: result.activity.createdAt.toISOString(),
+          updatedAt: result.activity.updatedAt.toISOString(),
+          achievements: result.achievements,
         },
       },
     };
@@ -174,18 +177,6 @@ router.post('/', async (event, context, params) => {
           error: {
             code: 'UNAUTHORIZED',
             message: 'Authentication required',
-          },
-        },
-      };
-    }
-    if (error.message === 'User is not a member of all specified teams') {
-      return {
-        statusCode: 403,
-        body: {
-          success: false,
-          error: {
-            code: 'FORBIDDEN',
-            message: error.message,
           },
         },
       };
@@ -217,7 +208,6 @@ router.get('/', async (event, context, params) => {
     const options = {
       cursor: queryParams.cursor,
       limit: queryParams.limit ? parseInt(queryParams.limit) : undefined,
-      teamId: queryParams.teamId,
       startDate: queryParams.startDate,
       endDate: queryParams.endDate,
     };
@@ -234,11 +224,10 @@ router.get('/', async (event, context, params) => {
             distance: item.distance,
             duration: item.duration,
             pace: item.pace,
-            activityDate: item.activityDate.toISOString(),
-            note: item.note,
+            timestamp: item.timestamp.toISOString(),
+            notes: item.notes,
             isPrivate: item.isPrivate,
             createdAt: item.createdAt.toISOString(),
-            teams: item.teams,
           })),
           nextCursor: result.nextCursor,
           hasMore: result.hasMore,
@@ -292,17 +281,15 @@ router.patch('/:id', async (event, context, params) => {
       body: {
         success: true,
         data: {
-          activity: {
-            id: activity.id,
-            userId: activity.userId,
-            distance: activity.distance,
-            duration: activity.duration,
-            pace: activity.distance > 0 ? (activity.duration / 60) / (activity.distance / 1000) : 0,
-            activityDate: activity.startTime.toISOString(),
-            note: activity.notes,
-            isPrivate: activity.isPrivate,
-            createdAt: activity.createdAt.toISOString(),
-          },
+          id: activity.id,
+          userId: activity.userId,
+          distance: activity.distance,
+          duration: activity.duration,
+          timestamp: activity.timestamp.toISOString(),
+          notes: activity.notes,
+          isPrivate: activity.isPrivate,
+          createdAt: activity.createdAt.toISOString(),
+          updatedAt: activity.updatedAt.toISOString(),
         },
       },
     };
@@ -360,18 +347,37 @@ router.delete('/:id', async (event, context, params) => {
 
     // Send real-time updates for team progress decrease
     try {
-      for (const teamUpdate of result.teamUpdates) {
-        // Only process if team has an active goal
-        if (teamUpdate.teamGoalId) {
-          // Broadcast the updated progress
+      // Update progress for user's teams if needed
+      const userTeams = await prisma.teamMember.findMany({
+        where: {
+          userId: user.sub,
+          leftAt: null,
+        },
+        include: {
+          team: {
+            include: {
+              goals: {
+                where: {
+                  status: 'ACTIVE',
+                },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      for (const membership of userTeams) {
+        const activeGoal = membership.team.goals[0];
+        if (activeGoal) {
           const progressData = await progressService.calculateTeamProgress(
-            teamUpdate.teamGoalId,
+            activeGoal.id,
             { includeContributors: true, contributorLimit: 3 }
           );
 
           await progressWebSocket.broadcastProgressUpdate(
-            teamUpdate.teamId,
-            teamUpdate.teamGoalId,
+            membership.teamId,
+            activeGoal.id,
             progressData
           );
         }
@@ -385,7 +391,9 @@ router.delete('/:id', async (event, context, params) => {
       statusCode: 200,
       body: {
         success: true,
-        data: result,
+        data: {
+          deleted: result.deleted,
+        },
       },
     };
   } catch (error: any) {

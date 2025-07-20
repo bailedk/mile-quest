@@ -1,41 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { TeamListItem } from '@/types/team.types';
-import { teamService } from '@/services/team.service';
 import { Button } from '@/components/patterns/Button';
 import { useAuthStore } from '@/store/auth.store';
+import { useUserTeams } from '@/hooks/useTeams';
 
 export default function TeamsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [teams, setTeams] = useState<TeamListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  
+  // Use React Query hook for teams data
+  const { 
+    data: teams = [], 
+    isLoading, 
+    error,
+    refetch: reloadTeams 
+  } = useUserTeams();
 
   useEffect(() => {
     if (!user) {
       router.push('/signin');
       return;
     }
-
-    loadTeams();
   }, [user, router]);
-
-  const loadTeams = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const userTeams = await teamService.getUserTeams();
-      setTeams(userTeams);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load teams');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!user) {
     return null;
@@ -72,7 +61,17 @@ export default function TeamsPage() {
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
-          {error}
+          <div className="flex justify-between items-center">
+            <span>{error.message || 'Failed to load teams'}</span>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => reloadTeams()}
+              className="ml-4"
+            >
+              Retry
+            </Button>
+          </div>
         </div>
       )}
 

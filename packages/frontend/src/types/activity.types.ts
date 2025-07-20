@@ -7,49 +7,40 @@ export type ActivitySource = 'MANUAL' | 'STRAVA' | 'APPLE_HEALTH' | 'GOOGLE_FIT'
 export interface Activity {
   id: string;
   userId: string;
-  teamId: string;
-  teamGoalId?: string;
-  distance: number; // in meters
-  duration: number; // in seconds
-  startTime: string; // ISO date string
-  endTime: string; // ISO date string
+  /** Distance in meters */
+  distance: number;
+  /** Duration in seconds */
+  duration: number;
+  /** ISO 8601 date-time string in UTC when the activity occurred */
+  timestamp: string;
   notes?: string;
   source: ActivitySource;
   externalId?: string;
   isPrivate: boolean;
+  /** ISO 8601 date-time string in UTC when the record was created */
   createdAt: string;
+  /** ISO 8601 date-time string in UTC when the record was last updated */
   updatedAt: string;
 }
 
 export interface ActivityCreateInput {
-  teamId: string;
-  teamGoalId?: string;
+  /** Distance in meters */
   distance: number;
+  /** Duration in seconds */
   duration: number;
-  startTime: string;
-  endTime: string;
+  /** ISO 8601 date-time string in UTC when the activity occurred */
+  timestamp: string;
   notes?: string;
   isPrivate?: boolean;
 }
 
 export interface ActivityUpdateInput {
-  distance?: number;
-  duration?: number;
-  startTime?: string;
-  endTime?: string;
   notes?: string;
   isPrivate?: boolean;
 }
 
 export interface ActivityListItem extends Activity {
-  team: {
-    id: string;
-    name: string;
-  };
-  teamGoal?: {
-    id: string;
-    name: string;
-  };
+  // Activities are now team-agnostic
 }
 
 export interface ActivityStats {
@@ -60,12 +51,11 @@ export interface ActivityStats {
   averageDuration: number;
   currentStreak: number;
   longestStreak: number;
+  /** ISO 8601 date-time string in UTC of the last activity, undefined if no activities */
   lastActivityAt?: string;
 }
 
 export interface ActivityFilters {
-  teamId?: string;
-  teamGoalId?: string;
   source?: ActivitySource;
   isPrivate?: boolean;
   startDate?: string;
@@ -76,23 +66,19 @@ export interface ActivityFilters {
 
 // Form validation types
 export interface ActivityFormData {
-  teamId: string;
   distance: string; // Form input is string, converted to number
   duration: string; // Form input is string, converted to number  
   date: string; // YYYY-MM-DD format
-  startTime: string; // HH:MM format
-  endTime: string; // HH:MM format
+  time: string; // HH:MM format
   notes: string;
   isPrivate: boolean;
 }
 
 export interface ActivityFormErrors {
-  teamId?: string;
   distance?: string;
   duration?: string;
   date?: string;
-  startTime?: string;
-  endTime?: string;
+  time?: string;
   notes?: string;
   general?: string;
 }
@@ -105,4 +91,15 @@ export interface TeamGoalProgress {
   averageDailyDistance: number;
   daysRemaining: number;
   onTrack: boolean;
+}
+
+export interface ActivitySummaryItem {
+  startDate: string;
+  endDate: string;
+  totalDistance: number;
+  totalDuration: number;
+  totalActivities: number;
+  averagePace: number;
+  averageDistance: number;
+  activeDays: number;
 }

@@ -92,6 +92,7 @@ export interface AuthUser {
 export interface UserProfile extends AuthUser {
   timezone: string;
   preferredUnits: 'METRIC' | 'IMPERIAL';
+  /** ISO 8601 date-time string in UTC (e.g., "2025-01-20T14:30:00.000Z") */
   createdAt: string;
 }
 
@@ -100,6 +101,7 @@ export interface UserStats {
   totalActivities: number;
   currentStreak: number;
   longestStreak: number;
+  /** ISO 8601 date-time string in UTC of last activity, null if no activities */
   lastActivityDate: string | null;
 }
 
@@ -123,9 +125,12 @@ export interface Team {
   name: string;
   inviteCode: string;
   goalDistance: number;
+  /** ISO 8601 date string (YYYY-MM-DD) for team start date */
   startDate: string;
+  /** ISO 8601 date string (YYYY-MM-DD) for team end date */
   endDate: string;
   description: string | null;
+  /** ISO 8601 date-time string in UTC (e.g., "2025-01-20T14:30:00.000Z") */
   createdAt: string;
 }
 
@@ -135,6 +140,7 @@ export interface TeamProgress {
   currentSegmentIndex: number;
   distanceToNextWaypoint?: number;
   daysRemaining?: number;
+  /** ISO 8601 date-time string in UTC of last team activity, null if no activities */
   lastActivityAt?: string | null;
 }
 
@@ -142,13 +148,16 @@ export interface TeamMember {
   userId: string;
   teamId: string;
   role: 'ADMIN' | 'MEMBER';
+  /** ISO 8601 date-time string in UTC when member joined the team */
   joinedAt: string;
 }
 
 export interface CreateTeamRequest {
   name: string;
   goalDistance: number;
+  /** ISO 8601 date string (YYYY-MM-DD) for team start date */
   startDate: string;
+  /** ISO 8601 date string (YYYY-MM-DD) for team end date */
   endDate: string;
   description?: string;
 }
@@ -176,6 +185,7 @@ export interface TeamDetailsResponse {
   };
   userMember: {
     role: 'ADMIN' | 'MEMBER';
+    /** ISO 8601 date-time string in UTC when user joined the team */
     joinedAt: string;
   };
 }
@@ -197,11 +207,13 @@ export interface TeamMemberWithStats {
   };
   member: {
     role: 'ADMIN' | 'MEMBER';
+    /** ISO 8601 date-time string in UTC when member joined the team */
     joinedAt: string;
   };
   stats: {
     totalDistance: number;
     activityCount: number;
+    /** ISO 8601 date-time string in UTC of member's last activity, null if no activities */
     lastActivityAt: string | null;
   };
 }
@@ -216,9 +228,11 @@ export interface Activity {
   distance: number;
   duration: number;
   pace: number;
-  activityDate: string;
+  /** ISO 8601 date-time string in UTC when the activity occurred */
+  timestamp: string;
   note: string | null;
   isPrivate: boolean;
+  /** ISO 8601 date-time string in UTC when the record was created */
   createdAt: string;
 }
 
@@ -233,7 +247,8 @@ export interface CreateActivityRequest {
   teamIds: string[];
   distance: number;
   duration: number;
-  activityDate: string;
+  /** ISO 8601 date-time string in UTC when the activity occurred */
+  timestamp: string;
   note?: string;
   isPrivate: boolean;
 }
@@ -291,7 +306,8 @@ export interface DashboardData {
   recentActivities: Array<{
     id: string;
     distance: number;
-    activityDate: string;
+    /** ISO 8601 date-time string in UTC when the activity occurred */
+    timestamp: string;
     teams: Array<{
       id: string;
       name: string;
@@ -340,6 +356,7 @@ export interface MemberJoinedEvent {
     id: string;
     name: string;
   };
+  /** ISO 8601 date-time string in UTC when user joined the team */
   joinedAt: string;
   memberCount: number;
 }

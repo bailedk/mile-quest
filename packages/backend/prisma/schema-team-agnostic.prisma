@@ -1,3 +1,7 @@
+// This is the updated schema for team-agnostic activities
+// Activities are now tracked at the user level per day
+// Team distances are calculated based on team goal date ranges
+
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "darwin-arm64"]
@@ -105,6 +109,7 @@ model TeamGoal {
   @@map("team_goals")
 }
 
+// Activities are now team-agnostic and tracked at user level
 model Activity {
   id                 String            @id @default(uuid())
   userId             String
@@ -138,6 +143,11 @@ model Activity {
   @@map("activities")
 }
 
+// View or function to calculate team progress based on member activities
+// This would be implemented as a database view or function that:
+// 1. Gets all team members for a given team
+// 2. Sums their activities within the team goal's date range
+// 3. Excludes members who left before the goal end date
 model TeamProgress {
   id                  String    @id @default(uuid())
   teamGoalId          String    @unique
@@ -186,25 +196,21 @@ model TeamInvite {
   @@index([teamId])
   @@index([email])
   @@index([userId])
-  @@index([status])
   @@index([code])
-  @@index([code, status, expiresAt])
+  @@index([status])
   @@map("team_invites")
 }
 
 model Achievement {
-  id               String              @id @default(uuid())
-  key              String              @unique
-  name             String
-  description      String
-  iconUrl          String
-  category         AchievementCategory
-  criteria         Json
-  points           Int                 @default(10)
-  createdAt        DateTime            @default(now())
+  id             String            @id @default(uuid())
+  type           String            @unique
+  name           String
+  description    String
+  icon           String
+  metadata       Json // Criteria and thresholds
+  createdAt      DateTime          @default(now())
   userAchievements UserAchievement[]
 
-  @@index([category])
   @@map("achievements")
 }
 
@@ -212,17 +218,49 @@ model UserAchievement {
   id            String      @id @default(uuid())
   userId        String
   achievementId String
-  earnedAt      DateTime    @default(now())
-  teamId        String?
   activityId    String?
+  earnedAt      DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id])
   achievement   Achievement @relation(fields: [achievementId], references: [id])
   activity      Activity?   @relation(fields: [activityId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
 
   @@unique([userId, achievementId])
   @@index([userId])
-  @@index([earnedAt])
+  @@index([achievementId])
   @@map("user_achievements")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id                    String   @id @default(uuid())
+  userId                String
+  achievementEarned     Boolean  @default(true)
+  weeklyProgress        Boolean  @default(true)
+  teamInvites           Boolean  @default(true)
+  goalCompleted         Boolean  @default(true)
+  newTeamMember         Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId])
+  @@map("notification_preferences")
 }
 
 enum TeamRole {
@@ -233,6 +271,7 @@ enum TeamRole {
 enum GoalStatus {
   DRAFT
   ACTIVE
+  PAUSED
   COMPLETED
   CANCELLED
 }
@@ -249,173 +288,14 @@ enum InviteStatus {
   ACCEPTED
   DECLINED
   EXPIRED
-}
-
-enum AchievementCategory {
-  DISTANCE
-  STREAK
-  SPEED
-  TEAM
-  SPECIAL
-}
-
-model NotificationTemplate {
-  id           String                 @id @default(uuid())
-  key          String                 @unique
-  name         String
-  description  String?
-  category     NotificationCategory
-  priority     NotificationPriority   @default(MEDIUM)
-  subject      String
-  content      String
-  emailContent String?
-  variables    Json                   @default("[]")
-  isActive     Boolean                @default(true)
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-  notifications Notification[]
-
-  @@index([category])
-  @@index([isActive])
-  @@map("notification_templates")
-}
-
-model Notification {
-  id               String                @id @default(uuid())
-  userId           String
-  templateId       String?
-  type             NotificationType
-  category         NotificationCategory
-  priority         NotificationPriority  @default(MEDIUM)
-  title            String
-  content          String
-  data             Json?
-  channels         NotificationChannel[] @default([REALTIME])
-  status           NotificationStatus    @default(PENDING)
-  scheduledFor     DateTime?
-  sentAt           DateTime?
-  readAt           DateTime?
-  clickedAt        DateTime?
-  expiresAt        DateTime?
-  retryCount       Int                   @default(0)
-  maxRetries       Int                   @default(3)
-  lastError        String?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  user             User                  @relation(fields: [userId], references: [id])
-  template         NotificationTemplate? @relation(fields: [templateId], references: [id])
-
-  @@index([userId])
-  @@index([type])
-  @@index([category])
-  @@index([status])
-  @@index([scheduledFor])
-  @@index([userId, status])
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([status, scheduledFor])
-  @@index([expiresAt])
-  @@map("notifications")
-}
-
-model NotificationPreference {
-  id               String               @id @default(uuid())
-  userId           String
-  category         NotificationCategory
-  channels         NotificationChannel[]
-  isEnabled        Boolean              @default(true)
-  quietHoursStart  String?              // Format: "HH:MM"
-  quietHoursEnd    String?              // Format: "HH:MM"
-  timezone         String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  user             User                 @relation(fields: [userId], references: [id])
-
-  @@unique([userId, category])
-  @@index([userId])
-  @@index([category])
-  @@map("notification_preferences")
-}
-
-model NotificationBatch {
-  id               String                  @id @default(uuid())
-  name             String?
-  description      String?
-  type             NotificationType
-  category         NotificationCategory
-  totalCount       Int                     @default(0)
-  sentCount        Int                     @default(0)
-  failedCount      Int                     @default(0)
-  status           NotificationBatchStatus @default(PENDING)
-  scheduledFor     DateTime?
-  startedAt        DateTime?
-  completedAt      DateTime?
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
-
-  @@index([status])
-  @@index([scheduledFor])
-  @@index([type])
-  @@index([category])
-  @@map("notification_batches")
+  CANCELLED
 }
 
 enum NotificationType {
-  ACTIVITY_CREATED
-  ACTIVITY_MILESTONE
-  TEAM_MEMBER_JOINED
-  TEAM_GOAL_CREATED
-  TEAM_GOAL_COMPLETED
-  TEAM_GOAL_MILESTONE
   ACHIEVEMENT_EARNED
-  ACHIEVEMENT_STREAK
-  SYSTEM_ANNOUNCEMENT
-  SYSTEM_UPDATE
-  SYSTEM_MAINTENANCE
-  REMINDER_ACTIVITY
-  REMINDER_GOAL_DEADLINE
-  INVITE_RECEIVED
-  INVITE_ACCEPTED
-  LEADERBOARD_POSITION
-}
-
-enum NotificationCategory {
-  ACTIVITY
-  TEAM
-  ACHIEVEMENT
-  SYSTEM
-  REMINDER
-  SOCIAL
-}
-
-enum NotificationPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum NotificationChannel {
-  REALTIME
-  EMAIL
-  PUSH
-}
-
-enum NotificationStatus {
-  PENDING
-  SCHEDULED
-  SENT
-  DELIVERED
-  READ
-  CLICKED
-  FAILED
-  EXPIRED
-  CANCELLED
-}
-
-enum NotificationBatchStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
+  TEAM_INVITE
+  GOAL_COMPLETED
+  WEEKLY_SUMMARY
+  NEW_TEAM_MEMBER
+  GOAL_MILESTONE
 }

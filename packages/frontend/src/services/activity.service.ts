@@ -11,13 +11,21 @@ import {
   ActivityStats,
   ActivityFilters,
   TeamGoalProgress,
+  ActivitySummaryItem,
 } from '@/types/activity.types';
+
 
 export const activityService = {
   /**
    * Create a new activity
    */
-  async createActivity(data: ActivityCreateInput): Promise<Activity> {
+  async createActivity(data: {
+    distance: number;
+    duration: number;
+    timestamp: string;
+    notes?: string;
+    isPrivate?: boolean;
+  }): Promise<Activity> {
     const response = await apiClient.post<Activity>('/activities', data);
     return response.data;
   },
@@ -109,6 +117,33 @@ export const activityService = {
   async getTeamGoalProgress(teamId: string, goalId: string): Promise<TeamGoalProgress> {
     const response = await apiClient.get<TeamGoalProgress>(`/teams/${teamId}/goals/${goalId}/progress`);
     return response.data;
+  },
+
+  /**
+   * Get activity summary by period for chart data
+   */
+  async getActivitySummary(options?: {
+    period?: 'daily' | 'weekly' | 'monthly';
+    startDate?: string;
+    endDate?: string;
+    teamId?: string;
+    limit?: number;
+  }): Promise<ActivitySummaryItem[]> {
+    const params = new URLSearchParams();
+    
+    if (options) {
+      Object.entries(options).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+    }
+
+    const queryString = params.toString();
+    const url = `/activities/summary${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiClient.get<{ summaries: ActivitySummaryItem[] }>(url);
+    return response.data.summaries;
   },
 };
 

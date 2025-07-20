@@ -25,7 +25,8 @@ export interface DashboardActivity {
   distance: number;
   duration: number;
   pace: number;
-  activityDate: Date;
+  /** Activity timestamp as Date object */
+  timestamp: Date;
   note: string | null;
   teamName: string;
   userName: string;

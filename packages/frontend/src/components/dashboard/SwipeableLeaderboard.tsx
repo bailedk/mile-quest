@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { useAdvancedSwipeGesture, TouchCard } from '@/components/mobile/TouchInteractions';
 import { formatDistance } from '@/services/activity.service';
 
-interface LeaderboardMember {
+export interface LeaderboardMember {
   userId: string;
   name: string;
   weekDistance: number;

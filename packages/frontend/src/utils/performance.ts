@@ -2,6 +2,8 @@
  * Performance monitoring and optimization utilities
  */
 
+import React from 'react';
+
 // Core Web Vitals tracking
 export interface PerformanceMetrics {
   // Core Web Vitals
