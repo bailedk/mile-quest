@@ -19,7 +19,7 @@ export default function TeamDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<UpdateTeamInput>({});
 
-  const currentUserMember = team?.members.find(m => m.email === user?.email);
+  const currentUserMember = team?.members.find(m => m.user.email === user?.email);
   const isAdmin = currentUserMember?.role === 'ADMIN';
 
   useEffect(() => {
@@ -212,25 +212,25 @@ export default function TeamDetailPage() {
           {team.members.map((member) => (
             <div key={member.id} className="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
               <div className="flex items-center">
-                {member.avatarUrl ? (
+                {member.user.avatarUrl ? (
                   <img
-                    src={member.avatarUrl}
-                    alt={member.name}
+                    src={member.user.avatarUrl}
+                    alt={member.user.name}
                     className="w-10 h-10 rounded-full mr-3"
                   />
                 ) : (
                   <div className="w-10 h-10 bg-gray-200 rounded-full mr-3 flex items-center justify-center">
                     <span className="text-gray-600 font-semibold">
-                      {member.name.charAt(0).toUpperCase()}
+                      {member.user.name?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
                 )}
                 <div>
                   <p className="font-medium text-gray-900">
-                    {member.name}
-                    {member.email === user?.email && <span className="text-gray-500"> (You)</span>}
+                    {member.user.name}
+                    {member.user.email === user?.email && <span className="text-gray-500"> (You)</span>}
                   </p>
-                  <p className="text-sm text-gray-500">{member.email}</p>
+                  <p className="text-sm text-gray-500">{member.user.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function TeamDetailPage() {
                 }`}>
                   {member.role}
                 </span>
-                {isAdmin && member.email !== user?.email && (
+                {isAdmin && member.user.email !== user?.email && (
                   <div className="relative group">
                     <button className="p-1 hover:bg-gray-100 rounded">
                       <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,7 +251,7 @@ export default function TeamDetailPage() {
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
                       {member.role === 'MEMBER' && (
                         <button
-                          onClick={() => handleChangeRole(member.id, 'ADMIN')}
+                          onClick={() => handleChangeRole(member.user.id, 'ADMIN')}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Make Admin
@@ -259,14 +259,14 @@ export default function TeamDetailPage() {
                       )}
                       {member.role === 'ADMIN' && (
                         <button
-                          onClick={() => handleChangeRole(member.id, 'MEMBER')}
+                          onClick={() => handleChangeRole(member.user.id, 'MEMBER')}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Remove Admin
                         </button>
                       )}
                       <button
-                        onClick={() => handleRemoveMember(member.id)}
+                        onClick={() => handleRemoveMember(member.user.id)}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                       >
                         Remove from Team

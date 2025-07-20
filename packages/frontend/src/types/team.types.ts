@@ -2,11 +2,16 @@ import { TeamRole } from '@mile-quest/shared';
 
 export interface TeamMember {
   id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
+  userId: string;
   role: keyof typeof TeamRole;
   joinedAt: string;
+  leftAt?: string | null;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string | null;
+  };
 }
 
 export interface Team {
