@@ -1,10 +1,10 @@
 {
   "agent": "Data Model",
   "agentNumber": 3,
-  "currentVersion": "1.1",
+  "currentVersion": "1.2",
   "status": "complete",
   "startedDate": "2025-01-13",
-  "lastUpdated": "2025-01-15",
+  "lastUpdated": "2025-01-20",
   "lastModifiedBy": "Data Model Agent",
   "description": "Database schema design and data modeling for Mile Quest",
   "activeDocuments": [
@@ -15,18 +15,23 @@
     },
     {
       "name": "prisma-schema.md",
-      "description": "Complete Prisma schema implementation",
-      "version": "1.0"
+      "description": "Complete Prisma schema implementation with notification system",
+      "version": "1.2"
     },
     {
       "name": "data-access-patterns.md",
-      "description": "Query patterns, optimization, and caching strategies",
+      "description": "Query patterns, optimization, caching strategies, and notification queries",
+      "version": "1.2"
+    },
+    {
+      "name": "indexing-strategy.md",
+      "description": "Comprehensive indexing strategy and performance optimization",
       "version": "1.0"
     },
     {
       "name": "entity-relationship-diagram.md",
-      "description": "Visual ERD showing all relationships",
-      "version": "1.0"
+      "description": "Visual ERD showing all relationships including notification system",
+      "version": "1.2"
     },
     {
       "name": "data-model-summary.md",
@@ -63,7 +68,11 @@
     "aggregation": "Separate tables for UserStats and TeamProgress",
     "orm": "Prisma for type safety",
     "timezone": "Store all times in UTC",
-    "auditLog": "Deferred to Phase 2"
+    "auditLog": "Deferred to Phase 2",
+    "distanceUnit": "Changed from miles to meters for consistency",
+    "notificationSystem": "Comprehensive system with templates, preferences, and batch processing",
+    "indexingStrategy": "Extensive compound indexes for common query patterns",
+    "activityModel": "Simplified to user-centric with no direct team association"
   },
   "openQuestions": [],
   "resolvedQuestions": [

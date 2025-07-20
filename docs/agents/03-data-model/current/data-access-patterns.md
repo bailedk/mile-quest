@@ -867,3 +867,378 @@ ORDER BY idx_scan ASC;
 - Need for auto-scaling
 - Require <30s failover time
 - Global application deployment
+
+## Notification System Queries
+
+### 1. User Notification Feed
+**Frequency**: High - checked on every page load and via real-time updates
+
+**Query Pattern**:
+```typescript
+// Get unread notifications with pagination
+const notifications = await prisma.notification.findMany({
+  where: {
+    userId: userId,
+    status: { in: ['PENDING', 'SENT', 'DELIVERED'] },
+    OR: [
+      { expiresAt: null },
+      { expiresAt: { gt: new Date() } }
+    ]
+  },
+  include: {
+    template: {
+      select: { key: true, category: true }
+    }
+  },
+  orderBy: { createdAt: 'desc' },
+  take: 20,
+  cursor: cursor ? { id: cursor } : undefined
+});
+
+// Get unread count
+const unreadCount = await prisma.notification.count({
+  where: {
+    userId: userId,
+    status: { in: ['PENDING', 'SENT', 'DELIVERED'] },
+    readAt: null
+  }
+});
+```
+
+**Optimization**:
+- Compound index on `[userId, status]` for efficient filtering
+- Index on `[userId, createdAt(sort: Desc)]` for timeline queries
+- Separate count query cached for 1 minute
+
+### 2. Notification Preferences
+**Frequency**: Low - loaded once per session, updated rarely
+
+**Query Pattern**:
+```typescript
+// Load all user preferences
+const preferences = await prisma.notificationPreference.findMany({
+  where: { userId: userId }
+});
+
+// Convert to map for easy lookup
+const prefMap = new Map(
+  preferences.map(p => [p.category, p])
+);
+
+// Check if notification should be sent
+function shouldSendNotification(
+  category: NotificationCategory,
+  channel: NotificationChannel,
+  currentTime: Date
+): boolean {
+  const pref = prefMap.get(category);
+  
+  if (!pref || !pref.isEnabled) return false;
+  if (!pref.channels.includes(channel)) return false;
+  
+  // Check quiet hours
+  if (pref.quietHoursStart && pref.quietHoursEnd) {
+    const hour = currentTime.getHours();
+    const start = parseInt(pref.quietHoursStart.split(':')[0]);
+    const end = parseInt(pref.quietHoursEnd.split(':')[0]);
+    
+    if (start < end) {
+      if (hour >= start && hour < end) return false;
+    } else {
+      if (hour >= start || hour < end) return false;
+    }
+  }
+  
+  return true;
+}
+```
+
+**Caching**:
+- Cache preferences for entire session
+- Invalidate on any preference update
+
+### 3. Notification Processing Queue
+**Frequency**: Continuous - background job processing
+
+**Query Pattern**:
+```typescript
+// Get pending notifications for processing
+const pendingNotifications = await prisma.notification.findMany({
+  where: {
+    status: 'PENDING',
+    OR: [
+      { scheduledFor: null },
+      { scheduledFor: { lte: new Date() } }
+    ],
+    retryCount: { lt: prisma.notification.fields.maxRetries }
+  },
+  include: {
+    user: {
+      select: {
+        email: true,
+        name: true,
+        notificationPreferences: true
+      }
+    },
+    template: true
+  },
+  orderBy: [
+    { priority: 'desc' },
+    { createdAt: 'asc' }
+  ],
+  take: 100 // Process in batches
+});
+```
+
+**Optimization**:
+- Compound index on `[status, scheduledFor]` for queue queries
+- Priority ordering ensures urgent notifications sent first
+- Batch processing reduces database round trips
+
+### 4. Create Activity Notification
+**Frequency**: After every activity creation
+
+**Transaction Pattern**:
+```typescript
+async function createActivityNotifications(
+  activity: Activity,
+  teamMembers: string[]
+) {
+  const notifications = await prisma.$transaction(async (tx) => {
+    // Get team member preferences
+    const preferences = await tx.notificationPreference.findMany({
+      where: {
+        userId: { in: teamMembers },
+        category: 'ACTIVITY',
+        isEnabled: true
+      }
+    });
+    
+    const enabledUsers = preferences.map(p => p.userId);
+    
+    // Create notifications for enabled users
+    const notificationData = enabledUsers
+      .filter(userId => userId !== activity.userId) // Don't notify self
+      .map(userId => ({
+        userId,
+        type: 'ACTIVITY_CREATED' as NotificationType,
+        category: 'ACTIVITY' as NotificationCategory,
+        priority: 'MEDIUM' as NotificationPriority,
+        title: 'New Team Activity',
+        content: `${activity.user.name} logged ${activity.distance}m`,
+        channels: ['REALTIME'] as NotificationChannel[],
+        data: {
+          activityId: activity.id,
+          teamId: activity.teamId,
+          userId: activity.userId,
+          distance: activity.distance
+        }
+      }));
+    
+    // Bulk create notifications
+    await tx.notification.createMany({
+      data: notificationData
+    });
+    
+    return notificationData.length;
+  });
+  
+  // Queue real-time delivery
+  await queueRealtimeNotifications(notifications);
+}
+```
+
+### 5. Batch Notification Processing
+**Frequency**: Scheduled jobs for announcements, reminders
+
+**Query Pattern**:
+```typescript
+// Create batch notifications
+async function createBatchNotifications(
+  type: NotificationType,
+  category: NotificationCategory,
+  userIds: string[],
+  content: NotificationContent
+) {
+  return await prisma.$transaction(async (tx) => {
+    // Create batch record
+    const batch = await tx.notificationBatch.create({
+      data: {
+        type,
+        category,
+        totalCount: userIds.length,
+        status: 'PROCESSING'
+      }
+    });
+    
+    // Get user preferences
+    const preferences = await tx.notificationPreference.findMany({
+      where: {
+        userId: { in: userIds },
+        category,
+        isEnabled: true
+      }
+    });
+    
+    const preferenceMap = new Map(
+      preferences.map(p => [p.userId, p])
+    );
+    
+    // Create notifications with preference filtering
+    const notifications = userIds
+      .filter(userId => preferenceMap.has(userId))
+      .map(userId => {
+        const pref = preferenceMap.get(userId);
+        return {
+          userId,
+          type,
+          category,
+          priority: content.priority,
+          title: content.title,
+          content: content.body,
+          channels: pref.channels,
+          data: { batchId: batch.id }
+        };
+      });
+    
+    // Bulk insert
+    await tx.notification.createMany({
+      data: notifications
+    });
+    
+    // Update batch count
+    await tx.notificationBatch.update({
+      where: { id: batch.id },
+      data: {
+        sentCount: notifications.length,
+        status: 'COMPLETED',
+        completedAt: new Date()
+      }
+    });
+    
+    return batch;
+  });
+}
+```
+
+### 6. Mark Notifications as Read
+**Frequency**: Medium - user interaction driven
+
+**Query Pattern**:
+```typescript
+// Mark single notification as read
+async function markAsRead(notificationId: string, userId: string) {
+  return await prisma.notification.update({
+    where: {
+      id: notificationId,
+      userId: userId // Ensure user owns notification
+    },
+    data: {
+      status: 'READ',
+      readAt: new Date()
+    }
+  });
+}
+
+// Mark all as read
+async function markAllAsRead(userId: string) {
+  return await prisma.notification.updateMany({
+    where: {
+      userId: userId,
+      status: { in: ['DELIVERED', 'SENT'] },
+      readAt: null
+    },
+    data: {
+      status: 'READ',
+      readAt: new Date()
+    }
+  });
+}
+```
+
+### 7. Notification Analytics
+**Frequency**: Low - admin dashboards
+
+**Query Pattern**:
+```typescript
+// Notification delivery stats
+const stats = await prisma.notification.groupBy({
+  by: ['type', 'status'],
+  where: {
+    createdAt: {
+      gte: startDate,
+      lte: endDate
+    }
+  },
+  _count: true
+});
+
+// User engagement metrics
+const engagement = await prisma.$queryRaw`
+  SELECT 
+    category,
+    COUNT(*) as total_sent,
+    COUNT(read_at) as total_read,
+    COUNT(clicked_at) as total_clicked,
+    AVG(EXTRACT(EPOCH FROM (read_at - sent_at))) as avg_time_to_read
+  FROM notifications
+  WHERE sent_at >= ${startDate}
+    AND sent_at <= ${endDate}
+  GROUP BY category
+`;
+```
+
+### 8. Cleanup Expired Notifications
+**Frequency**: Daily maintenance job
+
+**Query Pattern**:
+```typescript
+async function cleanupExpiredNotifications() {
+  // Delete expired notifications
+  const deleted = await prisma.notification.deleteMany({
+    where: {
+      OR: [
+        {
+          expiresAt: { lt: new Date() },
+          status: { in: ['EXPIRED', 'CANCELLED'] }
+        },
+        {
+          createdAt: { 
+            lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days
+          },
+          status: 'READ'
+        }
+      ]
+    }
+  });
+  
+  console.log(`Cleaned up ${deleted.count} expired notifications`);
+  
+  // Archive old batch records
+  const archivedBatches = await prisma.notificationBatch.deleteMany({
+    where: {
+      completedAt: {
+        lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // 90 days
+      }
+    }
+  });
+  
+  console.log(`Archived ${archivedBatches.count} old batch records`);
+}
+```
+
+## Notification Performance Considerations
+
+1. **Real-time Delivery**: Use WebSocket connections (Pusher) for instant delivery
+2. **Email Batching**: Group emails to same user within 5-minute window
+3. **Preference Caching**: Cache user preferences in memory for quick access
+4. **Queue Processing**: Use separate workers for different priority levels
+5. **Retry Logic**: Exponential backoff for failed deliveries
+
+## Privacy Considerations for Notifications
+
+1. **Activity Notifications**: Respect `isPrivate` flag - don't include distance/details for private activities
+2. **Team Notifications**: Only send to active team members
+3. **Preference Compliance**: Always check user preferences before sending
+4. **Unsubscribe Links**: Include in all email notifications
+5. **Data Minimization**: Only include necessary data in notification payload

@@ -1,5 +1,38 @@
 # Data Model Agent Changelog
 
+## [1.2.0] - 2025-01-20
+
+### Added
+- Comprehensive notification system with 4 new models
+- 6 new enums for notification types, categories, priorities, channels, and status
+- Enhanced indexing strategy documentation
+- Notification-specific query patterns and performance optimizations
+- Binary targets for cross-platform compatibility
+
+### Changed
+- Updated distance units from miles to meters throughout schema
+- Simplified Activity model (removed direct team/goal associations)
+- Enhanced TeamGoal with startDate, endDate, location fields
+- Added extensive compound indexes for performance
+- Updated data access patterns with notification queries
+
+### Key Models Added
+- NotificationTemplate: Reusable notification templates
+- Notification: Individual notification instances
+- NotificationPreference: User notification settings
+- NotificationBatch: Batch notification processing
+
+### Performance Improvements
+- Added compound indexes for common query patterns
+- Optimized cursor-based pagination indexes
+- Enhanced team member and activity query performance
+- Added notification queue processing indexes
+
+### Notes
+- Schema changes align with BE-016 team progress tracking implementation
+- Notification system supports real-time, email, and push channels
+- Privacy-aware notification design respects activity privacy settings
+
 ## [1.1.0] - 2025-01-15
 
 ### Added
