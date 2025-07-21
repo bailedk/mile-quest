@@ -4,7 +4,7 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { validateMapboxConfiguration, mapboxConfig } from '../../config/mapbox.config';
+import { validateMapboxConfiguration, getMapboxConfig } from '../../config/mapbox.config';
 import { createMapService } from '../../services/map';
 import { logger } from '../../services/logger';
 
@@ -16,6 +16,7 @@ export async function handler(
     const configValid = validateMapboxConfiguration();
     
     // Get current configuration (without exposing token)
+    const mapboxConfig = getMapboxConfig();
     const config = {
       environment: process.env.STAGE || 'dev',
       hasToken: !!mapboxConfig.getAccessToken(),

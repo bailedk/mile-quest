@@ -93,7 +93,7 @@ export class GoalService {
       intermediateWaypoints,
       totalWaypoints,
       targetDate: input.targetDate,
-      description: input.description?.substring(0, 50) + (input.description?.length > 50 ? '...' : ''),
+      description: input.description?.substring(0, 50) + ((input.description?.length || 0) > 50 ? '...' : ''),
       validationChecks: {
         nameValid: !!input.name && input.name.trim().length > 0,
         coordinatesValid: 'to be validated',
@@ -309,13 +309,13 @@ export class GoalService {
       const isDraftGoal = goalStatus === GoalStatus.DRAFT;
       
       // Set appropriate start and end dates based on status
-      let startDate = now;
       let endDate = input.targetDate || defaultEndDate;
       
-      if (isDraftGoal) {
-        // For draft goals, don't set startedAt until they become active
-        startDate = input.targetDate ? new Date(Math.min(now.getTime(), new Date(input.targetDate).getTime() - 24 * 60 * 60 * 1000)) : now;
-      }
+      // For active goals, start date is now
+      // For draft goals, start date can be in the future (when they plan to start)
+      const startDate = goalStatus === GoalStatus.ACTIVE 
+        ? now 
+        : (input.targetDate ? new Date(input.targetDate) : defaultEndDate);
       
       const goal = await this.prisma.teamGoal.create({
         data: {
@@ -325,7 +325,6 @@ export class GoalService {
           description: input.description?.trim(),
           targetDistance: routeResult.totalDistance,
           targetDate: input.targetDate,
-          startDate: startDate,
           endDate: endDate,
           startLocation: input.startLocation as any,
           endLocation: input.endLocation as any,
@@ -333,8 +332,7 @@ export class GoalService {
           routePolyline: routeResult.encodedPolyline,
           routeData: routeResult.route as any,
           status: goalStatus,
-          // Only set startedAt for active goals
-          startedAt: goalStatus === GoalStatus.ACTIVE ? now : null,
+          startDate: startDate,
         },
         include: {
           progress: true,
@@ -539,7 +537,7 @@ export class GoalService {
         // Set timestamps based on status changes
         const now = new Date();
         if (input.status === 'ACTIVE' && existingGoal.status === 'DRAFT') {
-          updateData.startedAt = now;
+          updateData.startDate = now;
           // Also update startDate if it's in the past
           if (existingGoal.startDate < now) {
             updateData.startDate = now;
@@ -892,7 +890,7 @@ export class GoalService {
       status: goal.status,
       createdAt: goal.createdAt,
       updatedAt: goal.updatedAt,
-      startedAt: goal.startedAt,
+      startedAt: goal.startDate,
       completedAt: goal.completedAt,
       progress: goal.progress ? {
         totalDistance: goal.progress.totalDistance,

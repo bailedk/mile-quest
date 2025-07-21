@@ -17,8 +17,8 @@ import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 // Validate environment on cold start
 validateEnvironment();
 
-// Initialize services - temporarily disable TeamService until MapBox config is fixed
-// const teamService = new TeamService(prisma);
+// Initialize services - MapBox config is now working
+const teamService = new TeamService(prisma);
 const activityService = new ActivityService(prisma);
 const progressService = new ProgressService(prisma);
 const materializedViewsService = new MaterializedViewsService(prisma);
@@ -124,9 +124,9 @@ router.get('/', async (event, context, params) => {
     //   };
     // }
 
-    // Get user's teams with progress data - temporarily return empty until TeamService is fixed
-    console.log('Dashboard: Getting user teams (temporarily disabled)');
-    const userTeams = []; // await teamService.getUserTeams(user.sub);
+    // Get user's teams with progress data
+    console.log('Dashboard: Getting user teams');
+    const userTeams = await teamService.getUserTeams(user.sub);
     console.log('Dashboard: Found teams:', userTeams.length);
     
     // Get team progress for each team
@@ -239,9 +239,39 @@ router.get('/', async (event, context, params) => {
 
 // Helper function to get recent activities for dashboard
 async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]): Promise<DashboardActivity[]> {
-  const activities = await prisma.activity.findMany({
+  // Get all team members for the user's teams
+  const teamMembers = await prisma.teamMember.findMany({
     where: {
       teamId: { in: teamIds },
+      leftAt: null,
+    },
+    select: {
+      userId: true,
+      teamId: true,
+      team: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  // Create a map of userId to team names for quick lookup
+  const userTeamMap = new Map<string, { teamId: string; teamName: string }>();
+  teamMembers.forEach((member) => {
+    userTeamMap.set(member.userId, {
+      teamId: member.teamId,
+      teamName: member.team.name,
+    });
+  });
+
+  // Get member IDs
+  const memberIds = teamMembers.map((m) => m.userId);
+
+  // Get recent activities from team members
+  const activities = await prisma.activity.findMany({
+    where: {
+      userId: { in: memberIds },
       // Include both public activities and user's own private activities
       OR: [
         { isPrivate: false },
@@ -255,11 +285,6 @@ async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]
           name: true,
         },
       },
-      team: {
-        select: {
-          name: true,
-        },
-      },
     },
     orderBy: {
       createdAt: 'desc',
@@ -267,17 +292,20 @@ async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]
     take: 10,
   });
 
-  return activities.map((activity) => ({
-    id: activity.id,
-    distance: activity.distance,
-    duration: activity.duration,
-    pace: calculatePace(activity.distance, activity.duration),
-    activityDate: activity.timestamp,
-    note: activity.notes,
-    teamName: activity.team.name,
-    userName: activity.user.name,
-    isOwn: activity.userId === userId,
-  }));
+  return activities.map((activity) => {
+    const teamInfo = userTeamMap.get(activity.userId);
+    return {
+      id: activity.id,
+      distance: activity.distance,
+      duration: activity.duration,
+      pace: calculatePace(activity.distance, activity.duration),
+      activityDate: activity.timestamp,
+      note: activity.notes,
+      teamName: teamInfo?.teamName || 'Unknown Team',
+      userName: activity.user.name,
+      isOwn: activity.userId === userId,
+    };
+  });
 }
 
 // Helper function to get user's personal stats (optimized with materialized views)

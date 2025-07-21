@@ -41,11 +41,11 @@ export enum MapboxTokenScope {
 
 export class MapboxConfiguration {
   private static instance: MapboxConfiguration;
-  private tokenConfig: MapboxTokenConfig;
+  private tokenConfig: MapboxTokenConfig | null = null;
   
   private constructor() {
-    this.tokenConfig = this.loadTokenConfiguration();
-    this.validateConfiguration();
+    // Don't load config on construction - load on first use instead
+    // This prevents errors during Lambda cold start before env vars are loaded
   }
   
   static getInstance(): MapboxConfiguration {
@@ -55,17 +55,43 @@ export class MapboxConfiguration {
     return MapboxConfiguration.instance;
   }
   
+  private validated = false;
+
+  /**
+   * Ensure configuration is loaded
+   */
+  private ensureConfigLoaded(): void {
+    if (!this.tokenConfig) {
+      this.tokenConfig = this.loadTokenConfiguration();
+    }
+  }
+
   /**
    * Get the access token for the current environment
    */
   getAccessToken(): string {
+    this.ensureConfigLoaded();
+    
+    // Lazy validation on first use
+    if (!this.validated) {
+      this.validateConfiguration();
+      this.validated = true;
+    }
+
     const stage = config.STAGE;
     
-    // Use environment-specific token
-    const token = this.tokenConfig[stage];
+    // Map stage to tokenConfig keys
+    const stageMapping: Record<string, keyof MapboxTokenConfig> = {
+      'dev': 'development',
+      'staging': 'staging',
+      'production': 'production'
+    };
     
-    if (!token) {
-      throw new Error(`No Mapbox access token configured for environment: ${stage}`);
+    const tokenKey = stageMapping[stage] || 'development';
+    const token = this.tokenConfig![tokenKey] as string;
+    
+    if (!token || typeof token !== 'string') {
+      throw new Error(`No Mapbox access token configured for environment: ${stage} (mapped to: ${tokenKey})`);
     }
     
     return token;
@@ -75,16 +101,18 @@ export class MapboxConfiguration {
    * Get domain restrictions for the current environment
    */
   getAllowedDomains(): string[] {
-    return this.tokenConfig.allowedDomains || [];
+    this.ensureConfigLoaded();
+    return this.tokenConfig!.allowedDomains || [];
   }
   
   /**
    * Get rate limit configuration
    */
   getRateLimits() {
+    this.ensureConfigLoaded();
     return {
-      perMinute: this.tokenConfig.requestsPerMinute || 600, // Mapbox default
-      perDay: this.tokenConfig.requestsPerDay || 100000, // Mapbox default
+      perMinute: this.tokenConfig!.requestsPerMinute || 600, // Mapbox default
+      perDay: this.tokenConfig!.requestsPerDay || 100000, // Mapbox default
     };
   }
   
@@ -92,6 +120,7 @@ export class MapboxConfiguration {
    * Validate token has required scopes
    */
   hasRequiredScopes(): boolean {
+    this.ensureConfigLoaded();
     const requiredScopes = [
       MapboxTokenScope.GEOCODING,
       MapboxTokenScope.DIRECTIONS,
@@ -99,7 +128,7 @@ export class MapboxConfiguration {
       MapboxTokenScope.TILES_READ,
     ];
     
-    const configuredScopes = this.tokenConfig.scopes || [];
+    const configuredScopes = this.tokenConfig!.scopes || [];
     
     return requiredScopes.every(scope => 
       configuredScopes.includes(scope)
@@ -212,12 +241,12 @@ export class MapboxConfiguration {
   }
 }
 
-// Export singleton instance
-export const mapboxConfig = MapboxConfiguration.getInstance();
+// Export singleton instance getter (lazy initialization)
+export const getMapboxConfig = () => MapboxConfiguration.getInstance();
 
 // Export helper function for easy access
 export function getMapboxToken(): string {
-  return mapboxConfig.getAccessToken();
+  return getMapboxConfig().getAccessToken();
 }
 
 // Export validation function for health checks
