@@ -17,8 +17,8 @@ import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 // Validate environment on cold start
 validateEnvironment();
 
-// Initialize services
-const teamService = new TeamService(prisma);
+// Initialize services - temporarily disable TeamService until MapBox config is fixed
+// const teamService = new TeamService(prisma);
 const activityService = new ActivityService(prisma);
 const progressService = new ProgressService(prisma);
 const materializedViewsService = new MaterializedViewsService(prisma);
@@ -109,20 +109,25 @@ interface DashboardResponse {
 // Get dashboard data (BE-017)
 router.get('/', async (event, context, params) => {
   try {
+    console.log('Dashboard: Starting request');
     const user = getUserFromEvent(event);
+    console.log('Dashboard: User authenticated:', { userId: user.sub, email: user.email });
     
-    // Check cache first
+    // Skip cache for debugging
     const cacheKey = `dashboard:${user.sub}`;
-    const cached = cache.get<DashboardResponse>(cacheKey);
-    if (cached) {
-      return {
-        statusCode: 200,
-        body: cached,
-      };
-    }
+    // const cached = cache.get<DashboardResponse>(cacheKey);
+    // if (cached) {
+    //   console.log('Dashboard: Returning cached data');
+    //   return {
+    //     statusCode: 200,
+    //     body: cached,
+    //   };
+    // }
 
-    // Get user's teams with progress data
-    const userTeams = await teamService.getUserTeams(user.sub);
+    // Get user's teams with progress data - temporarily return empty until TeamService is fixed
+    console.log('Dashboard: Getting user teams (temporarily disabled)');
+    const userTeams = []; // await teamService.getUserTeams(user.sub);
+    console.log('Dashboard: Found teams:', userTeams.length);
     
     // Get team progress for each team
     const teamsWithProgress: DashboardTeam[] = await Promise.all(
@@ -166,6 +171,7 @@ router.get('/', async (event, context, params) => {
             progress,
           };
         } catch (error) {
+          console.error('Error getting team progress:', error);
           // If we can't get progress for a team, return without progress
           return {
             id: team.id,
@@ -181,13 +187,24 @@ router.get('/', async (event, context, params) => {
     );
 
     // Get recent activities across all user's teams (last 10)
-    const recentActivities: DashboardActivity[] = await getRecentActivitiesForDashboard(user.sub, userTeams.map(t => t.id));
+    console.log('Dashboard: Getting recent activities');
+    const teamIds = userTeams.map(t => t.id);
+    const recentActivities: DashboardActivity[] = teamIds.length > 0 
+      ? await getRecentActivitiesForDashboard(user.sub, teamIds)
+      : [];
+    console.log('Dashboard: Found activities:', recentActivities.length);
 
     // Get user's personal stats
+    console.log('Dashboard: Getting personal stats');
     const personalStats = await getUserPersonalStats(user.sub);
+    console.log('Dashboard: Personal stats:', personalStats);
 
     // Get team leaderboards (top 5 members per team)
-    const teamLeaderboards = await getTeamLeaderboards(userTeams.map(t => t.id));
+    console.log('Dashboard: Getting team leaderboards');
+    const teamLeaderboards = teamIds.length > 0 
+      ? await getTeamLeaderboards(teamIds)
+      : [];
+    console.log('Dashboard: Found leaderboards:', teamLeaderboards.length);
 
     const dashboardData: DashboardResponse = {
       teams: teamsWithProgress,
@@ -196,20 +213,25 @@ router.get('/', async (event, context, params) => {
       teamLeaderboards,
     };
 
-    // Cache the result for 5 minutes
-    cache.set(cacheKey, dashboardData, cacheTTL.userStats);
+    console.log('Dashboard: Assembled dashboard data successfully');
+    
+    // Skip caching for debugging
+    // cache.set(cacheKey, dashboardData, cacheTTL.userStats);
 
+    console.log('Dashboard: Returning response');
     return {
       statusCode: 200,
       body: dashboardData,
     };
   } catch (error) {
-    console.error('Dashboard error:', error);
+    console.error('Dashboard error - Full details:', error);
+    console.error('Dashboard error - Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     return {
       statusCode: 500,
       body: {
         error: 'Failed to load dashboard data',
         details: error instanceof Error ? error.message : 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined,
       },
     };
   }
@@ -250,7 +272,7 @@ async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]
     distance: activity.distance,
     duration: activity.duration,
     pace: calculatePace(activity.distance, activity.duration),
-    activityDate: activity.startTime,
+    activityDate: activity.timestamp,
     note: activity.notes,
     teamName: activity.team.name,
     userName: activity.user.name,
@@ -296,25 +318,46 @@ async function getUserPersonalStats(userId: string): Promise<PersonalStats> {
     orderBy: { distance: 'desc' },
     select: {
       distance: true,
-      startTime: true,
+      timestamp: true,
     },
   });
 
+  // Handle case where userStats might be null/undefined
+  if (!userStats) {
+    return {
+      totalDistance: 0,
+      totalActivities: 0,
+      currentStreak: 0,
+      bestDay: {
+        date: bestDayActivity?.timestamp || null,
+        distance: bestDayActivity?.distance || 0,
+      },
+      thisWeek: {
+        distance: 0,
+        activities: 0,
+      },
+      thisMonth: {
+        distance: 0,
+        activities: 0,
+      },
+    };
+  }
+
   return {
-    totalDistance: userStats.totalDistance,
-    totalActivities: userStats.totalActivities,
-    currentStreak: userStats.currentStreak,
+    totalDistance: userStats.totalDistance || 0,
+    totalActivities: userStats.totalActivities || 0,
+    currentStreak: userStats.currentStreak || 0,
     bestDay: {
-      date: bestDayActivity?.startTime || null,
+      date: bestDayActivity?.timestamp || null,
       distance: bestDayActivity?.distance || 0,
     },
     thisWeek: {
-      distance: userStats.weeklyStats.distance,
-      activities: userStats.weeklyStats.activities,
+      distance: userStats.weeklyStats?.distance || 0,
+      activities: userStats.weeklyStats?.activities || 0,
     },
     thisMonth: {
-      distance: userStats.monthlyStats.distance,
-      activities: userStats.monthlyStats.activities,
+      distance: userStats.monthlyStats?.distance || 0,
+      activities: userStats.monthlyStats?.activities || 0,
     },
   };
 }

@@ -37,7 +37,15 @@ export class DashboardService {
     }
 
     try {
+      console.log('Fetching dashboard data...');
       const response = await apiClient.get<DashboardResponse>('/dashboard');
+      console.log('Dashboard API response:', response);
+      
+      // Check if response data exists
+      if (!response || !response.data) {
+        console.error('Invalid dashboard response:', response);
+        throw new Error('No data received from dashboard API');
+      }
       
       // Parse dates from string format with null checks
       const parsedData: DashboardData = {

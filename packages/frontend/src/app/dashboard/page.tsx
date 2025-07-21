@@ -136,7 +136,7 @@ export default function DashboardPage() {
       />
 
       <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
-        <div className="space-y-6 pb-20">
+        <div className="space-y-4 pb-24">
           {/* Error State */}
           {dashboardError && (
             <TouchCard className="border-red-200 bg-red-50">
@@ -221,7 +221,7 @@ export default function DashboardPage() {
                 onClick={() => window.location.href = '/activities/new'}
                 variant="primary"
                 size="lg"
-                className="w-full mb-6"
+                className="w-full"
                 hapticFeedback={true}
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

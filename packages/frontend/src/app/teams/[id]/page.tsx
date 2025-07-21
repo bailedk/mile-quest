@@ -122,6 +122,19 @@ export default function TeamDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Back Button */}
+      <div className="mb-6">
+        <button
+          onClick={() => router.push('/teams')}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Teams
+        </button>
+      </div>
+
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
           {error}
@@ -180,11 +193,11 @@ export default function TeamDetailPage() {
                 {team.description && (
                   <p className="text-gray-600">{team.description}</p>
                 )}
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                  <span>{team.members.length} members</span>
-                  <span>•</span>
+                <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
+                  <span>{team.members.length} {team.members.length === 1 ? 'member' : 'members'}</span>
+                  <span className="px-2">•</span>
                   <span>{team.isPublic ? 'Public' : 'Private'} team</span>
-                  <span>•</span>
+                  <span className="px-2">•</span>
                   <span>Max {team.maxMembers} members</span>
                 </div>
               </div>
@@ -209,28 +222,32 @@ export default function TeamDetailPage() {
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Team Members</h2>
         <div className="space-y-4">
-          {team.members.map((member) => (
+          {team.members.map((member) => {
+            const userName = member.user?.name || member.user?.email || 'Unknown User';
+            const userEmail = member.user?.email || 'No email';
+            const userInitial = userName.charAt(0).toUpperCase() || '?';
+            return (
             <div key={member.id} className="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
               <div className="flex items-center">
-                {member.user.avatarUrl ? (
+                {member.user?.avatarUrl ? (
                   <img
-                    src={member.user.avatarUrl}
-                    alt={member.user.name}
+                    src={member.user?.avatarUrl}
+                    alt={userName}
                     className="w-10 h-10 rounded-full mr-3"
                   />
                 ) : (
                   <div className="w-10 h-10 bg-gray-200 rounded-full mr-3 flex items-center justify-center">
                     <span className="text-gray-600 font-semibold">
-                      {member.user.name?.charAt(0)?.toUpperCase() || '?'}
+                      {userInitial}
                     </span>
                   </div>
                 )}
                 <div>
                   <p className="font-medium text-gray-900">
-                    {member.user.name}
-                    {member.user.email === user?.email && <span className="text-gray-500"> (You)</span>}
+                    {userName}
+                    {userEmail === user?.email && <span className="text-gray-500"> (You)</span>}
                   </p>
-                  <p className="text-sm text-gray-500">{member.user.email}</p>
+                  <p className="text-sm text-gray-500">{userEmail}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -241,7 +258,7 @@ export default function TeamDetailPage() {
                 }`}>
                   {member.role}
                 </span>
-                {isAdmin && member.user.email !== user?.email && (
+                {isAdmin && userEmail !== user?.email && (
                   <div className="relative group">
                     <button className="p-1 hover:bg-gray-100 rounded">
                       <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,7 +268,7 @@ export default function TeamDetailPage() {
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
                       {member.role === 'MEMBER' && (
                         <button
-                          onClick={() => handleChangeRole(member.user.id, 'ADMIN')}
+                          onClick={() => handleChangeRole(member.user?.id || member.userId, 'ADMIN')}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Make Admin
@@ -259,14 +276,14 @@ export default function TeamDetailPage() {
                       )}
                       {member.role === 'ADMIN' && (
                         <button
-                          onClick={() => handleChangeRole(member.user.id, 'MEMBER')}
+                          onClick={() => handleChangeRole(member.user?.id || member.userId, 'MEMBER')}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Remove Admin
                         </button>
                       )}
                       <button
-                        onClick={() => handleRemoveMember(member.user.id)}
+                        onClick={() => handleRemoveMember(member.user?.id || member.userId)}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                       >
                         Remove from Team
@@ -276,7 +293,8 @@ export default function TeamDetailPage() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

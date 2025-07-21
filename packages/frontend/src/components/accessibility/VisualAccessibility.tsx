@@ -355,7 +355,7 @@ export function AccessibilityQuickActions() {
   return (
     <>
       {/* Quick Action Button */}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed bottom-24 right-4 z-40">
         <div className="flex flex-col space-y-2 relative"
              onMouseEnter={() => setShowTooltip(true)}
              onMouseLeave={() => setShowTooltip(false)}>
