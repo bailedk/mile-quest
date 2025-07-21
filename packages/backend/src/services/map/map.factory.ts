@@ -5,6 +5,7 @@
 import { MapService, MapConfig } from './types';
 import { MapboxService } from './mapbox.provider';
 import { MockMapService } from './mock.provider';
+import { getMapboxToken } from '../../config/mapbox.config';
 
 export type MapProvider = 'mapbox' | 'google' | 'mock';
 
@@ -21,8 +22,10 @@ class DefaultMapServiceFactory implements MapServiceFactory {
     config?: MapConfig
   ): MapService {
     const mapProvider = provider || (process.env.MAP_PROVIDER as MapProvider) || 'mock';
+    
+    // Use the new Mapbox configuration for token management
     const mapConfig: MapConfig = {
-      accessToken: process.env.MAPBOX_ACCESS_TOKEN,
+      accessToken: mapProvider === 'mapbox' ? getMapboxToken() : undefined,
       defaultProfile: 'walking',
       language: 'en',
       country: 'US',

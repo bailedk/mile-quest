@@ -484,23 +484,21 @@
 | Frontend (16) | 0 | 23 | 36 |
 | Backend (17) | 0 | 19 | 34 |
 | Database (18) | 0 | 7 | 16 |
-| Integration (19) | 0 | 6 | 16 |
+| Integration (19) | 0 | 7 | 16 |
 | PWA (20) | 0 | 2 | 12 |
 
 ## 🚀 Next Priority Tasks
 
-### Sprint 3 - Activity Tracking (Ready to Start)
+### Upcoming Integration Tasks
 
 | Task ID | Description | Status | Owner | Priority | Dependencies |
 |---------|-------------|--------|-------|----------|--------------|
-| FE-010 | Manual activity entry form | 🔴 Ready | Frontend Dev | High | Sprint 2 complete |
-| FE-011 | Activity list/history page | 🔴 Ready | Frontend Dev | High | FE-010 |
-| BE-014 | Activity CRUD endpoints | 🔴 Ready | Backend Dev | High | Sprint 2 complete |
-| BE-015 | Activity aggregation service | 🔴 Ready | Backend Dev | High | BE-014 |
-| FE-012 | Dashboard activity enhancement | 🔴 Ready | Frontend Dev | Medium | FE-010, BE-014 |
-| BE-016 | Team progress tracking | 🔴 Ready | Backend Dev | Medium | BE-015 |
-| DB-007 | Activity data performance | 🔴 Ready | Database Dev | Low | BE-014 |
-| FE-013 | Activity validation | 🔴 Ready | Frontend Dev | Low | FE-010 |
+| BE-1.1 | Enhance Goal Service for Waypoints | ✅ Complete | Backend Dev | High | Goal service enhancements |
+| INT-1.1 | Configure Mapbox Account and Tokens | ✅ Complete | Integration Dev | High | External service abstraction |
+| INT-1.2 | Implement Goal Creation API with Maps | 🔴 Ready | Integration Dev | High | INT-1.1, BE-020 |
+| INT-1.3 | Add Route Visualization to Frontend | 🔴 Ready | Integration Dev | Medium | INT-1.2 |
+| INT-2.1 | Configure Push Notification Service | 🔴 Ready | Integration Dev | Medium | PWA-501 |
+| INT-2.2 | Implement Achievement Notifications | 🔴 Ready | Integration Dev | Low | INT-2.1, BE-019 |
 
 ## 📝 Task Completion Criteria
 
@@ -519,6 +517,87 @@ When completing work:
 4. Update percentage calculations
 
 ## 📋 Historical Updates
+
+### 2025-01-20 (BE-1.1 Complete - Enhanced Goal Service for Waypoints)
+- Completed BE-1.1: Enhanced Goal Service with comprehensive waypoint validation and error handling
+  - ✅ **Enhanced Waypoint Validation**: Comprehensive validation for minimum/maximum waypoints and coordinates
+    - Minimum waypoint validation: requires at least 2 waypoints (start + end)
+    - Maximum waypoint validation: allows up to 10 waypoints total (including start/end)
+    - Enhanced coordinate validation with detailed range checking (-90 to 90 for latitude, -180 to 180 for longitude)
+    - Duplicate waypoint detection with specific location identification (start, end, or waypoint number)
+    - Coordinate format validation ensuring numeric lat/lng properties
+  - ✅ **Enhanced Draft Goal Support**: Improved handling of draft vs active goals
+    - Draft goals can be created with flexible start dates
+    - Status validation ensures only DRAFT or ACTIVE allowed for new goals
+    - Proper timestamp handling: startedAt only set for active goals
+    - Enhanced date management for draft goal planning
+  - ✅ **Detailed Error Handling**: Comprehensive error messages with actionable feedback
+    - New error codes: TOO_FEW_WAYPOINTS, TOO_MANY_WAYPOINTS, INVALID_STATUS
+    - Enhanced error messages with specific suggestions for resolution
+    - Validation summary included in error context for debugging
+    - MapService error handling with detailed context and recovery suggestions
+    - Distance validation with user-friendly formatting and recommendations
+  - ✅ **Enhanced Distance Validation**: Improved distance checking with detailed feedback
+    - Maximum distance validation (50,000 km) with clear messaging
+    - Distance calculation context including waypoint count and suggestions
+    - Enhanced error details with both metric and formatted values
+  - ✅ **Type System Improvements**: Updated interfaces and validation constants
+    - Enhanced GOAL_VALIDATION constants with intermediate waypoint support
+    - Improved GoalErrorCode enum with specific error types
+    - Better type safety throughout validation pipeline
+  - ✅ **Comprehensive Testing**: Created validation test suite with 12 test scenarios
+    - All validation edge cases covered (too many waypoints, duplicates, invalid coordinates, etc.)
+    - 100% test pass rate confirming all enhancements work correctly
+    - Test script: npm run test:goal-validation
+  - ✅ **Code Quality**: Enhanced validation logic with proper error propagation
+    - Validation summary helper for debugging context
+    - Enhanced coordinate validation with specific range messages
+    - Improved duplicate detection with location-specific messaging
+    - Better error context preservation throughout the service
+- Backend Developer Agent (17) completed comprehensive goal service enhancement
+- Foundation enhanced for advanced goal creation workflows and better user experience
+
+### 2025-01-20 (INT-1.1 Complete - Configure Mapbox Account and Tokens)
+- Completed INT-1.1: Mapbox configuration and token management setup
+  - ✅ Created comprehensive Mapbox configuration module at `/packages/backend/src/config/mapbox.config.ts`:
+    - Environment-specific token management (dev, staging, prod)
+    - Domain restrictions configuration for security
+    - Rate limiting configuration with defaults
+    - Token validation and scope management
+    - Automatic token selection based on environment stage
+  - ✅ Updated environment configuration files:
+    - Created `/packages/backend/.env.example` with complete backend environment variables
+    - Created `/packages/frontend/.env.example` with frontend environment variables
+    - Added Mapbox-specific configuration variables for all environments
+    - Documented token types (public vs secret) and usage patterns
+  - ✅ Created comprehensive setup documentation at `/docs/setup/mapbox-setup.md`:
+    - Step-by-step Mapbox account setup guide
+    - Token creation instructions for dev/staging/production
+    - Security best practices and domain restrictions
+    - Testing procedures and troubleshooting guide
+    - Cost optimization strategies and monitoring
+  - ✅ Enhanced map service factory integration:
+    - Updated factory to use new configuration module
+    - Integrated getMapboxToken() for centralized token management
+    - Maintained backward compatibility with existing services
+  - ✅ Created health check endpoint at `/packages/backend/src/handlers/health/mapbox.ts`:
+    - Validates Mapbox configuration on startup
+    - Tests API connectivity with real geocoding request
+    - Returns health status without exposing sensitive tokens
+    - Provides configuration details for monitoring
+  - ✅ Created comprehensive test script at `/packages/backend/scripts/test-mapbox.ts`:
+    - Configuration validation tests
+    - Geocoding functionality tests
+    - Route calculation and optimization tests
+    - Utility function tests
+    - Added `npm run test:mapbox` script for easy testing
+  - ✅ Security features implemented:
+    - Token type detection (public vs secret)
+    - Domain restrictions for production tokens
+    - Scope validation for required services
+    - Warning system for security misconfigurations
+- Integration Developer completed first Mapbox integration task
+- Foundation ready for goal creation API with maps (INT-1.2)
 
 ### 2025-01-19 (FE-020 Complete - UI Animations & Micro-interactions)
 - Completed FE-020: Comprehensive UI animations and micro-interactions for Sprint 7 Polish

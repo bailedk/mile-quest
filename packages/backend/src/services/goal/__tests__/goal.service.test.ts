@@ -4,7 +4,8 @@
 
 import { GoalService } from '../goal.service';
 import { PrismaClient } from '@prisma/client';
-import { MapService } from '../../map/types';
+import { MapService, MapServiceError, MapErrorCode } from '../../map/types';
+import { GoalServiceError, GoalErrorCode, GOAL_VALIDATION } from '../types';
 
 // Mock Prisma
 const mockPrisma = {
@@ -193,7 +194,293 @@ describe('GoalService', () => {
 
       await expect(
         goalService.createTeamGoal('invalid-team', 'user-1', input)
-      ).rejects.toThrow('Team not found or user is not a member');
+      ).rejects.toThrow(GoalServiceError);
+      
+      try {
+        await goalService.createTeamGoal('invalid-team', 'user-1', input);
+      } catch (error) {
+        expect(error).toBeInstanceOf(GoalServiceError);
+        expect((error as GoalServiceError).code).toBe(GoalErrorCode.USER_NOT_MEMBER);
+      }
+    });
+
+    it('should create goal with waypoints', async () => {
+      (mockPrisma.team.findFirst as jest.Mock).mockResolvedValue({
+        id: 'team-1',
+        name: 'Test Team',
+      });
+
+      const routeWithWaypoints = {
+        id: 'route-1',
+        waypoints: [
+          { id: 'start', position: { lat: 40.7589, lng: -73.9851 }, order: 0, isLocked: true },
+          { id: 'waypoint-1', position: { lat: 40.7484, lng: -73.9857 }, order: 1, isLocked: false },
+          { id: 'waypoint-2', position: { lat: 40.7061, lng: -74.0087 }, order: 2, isLocked: false },
+          { id: 'end', position: { lat: 40.6892, lng: -74.0445 }, order: 3, isLocked: true },
+        ],
+        segments: [],
+        totalDistance: 15000,
+        totalDuration: 10800,
+        bounds: { southwest: { lat: 40.6892, lng: -74.0445 }, northeast: { lat: 40.7589, lng: -73.9851 } },
+        encodedPolyline: 'encoded_route_with_waypoints',
+      };
+
+      (mockMapService.calculateRoute as jest.Mock).mockResolvedValue(routeWithWaypoints);
+      (mockPrisma.teamGoal.create as jest.Mock).mockResolvedValue({
+        id: 'goal-1',
+        teamId: 'team-1',
+        name: 'Multi-stop NYC Tour',
+        waypoints: routeWithWaypoints.waypoints,
+        targetDistance: 15000,
+        status: 'DRAFT',
+        team: { name: 'Test Team' },
+      });
+
+      const input = {
+        name: 'Multi-stop NYC Tour',
+        startLocation: { lat: 40.7589, lng: -73.9851, address: 'Times Square' },
+        endLocation: { lat: 40.6892, lng: -74.0445, address: 'Statue of Liberty' },
+        waypoints: [
+          { id: 'waypoint-1', position: { lat: 40.7484, lng: -73.9857 }, address: 'Empire State Building', order: 1 },
+          { id: 'waypoint-2', position: { lat: 40.7061, lng: -74.0087 }, address: 'Brooklyn Bridge', order: 2 },
+        ],
+      };
+
+      const result = await goalService.createTeamGoal('team-1', 'user-1', input);
+
+      expect(result).toBeDefined();
+      expect(mockMapService.calculateRoute).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'start' }),
+          expect.objectContaining({ id: 'waypoint-1' }),
+          expect.objectContaining({ id: 'waypoint-2' }),
+          expect.objectContaining({ id: 'end' }),
+        ]),
+        { profile: 'walking', steps: true }
+      );
+    });
+
+    it('should create goal as draft by default', async () => {
+      (mockPrisma.team.findFirst as jest.Mock).mockResolvedValue({ id: 'team-1' });
+      (mockMapService.calculateRoute as jest.Mock).mockResolvedValue({
+        totalDistance: 10000,
+        encodedPolyline: 'encoded',
+        waypoints: [],
+        route: {},
+      });
+      (mockPrisma.teamGoal.create as jest.Mock).mockResolvedValue({
+        id: 'goal-1',
+        status: 'DRAFT',
+        team: { name: 'Test Team' },
+      });
+
+      const input = {
+        name: 'Test Goal',
+        startLocation: { lat: 0, lng: 0 },
+        endLocation: { lat: 1, lng: 1 },
+      };
+
+      await goalService.createTeamGoal('team-1', 'user-1', input);
+
+      expect(mockPrisma.teamGoal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'DRAFT',
+          }),
+        })
+      );
+    });
+
+    it('should create goal as active when specified', async () => {
+      (mockPrisma.team.findFirst as jest.Mock).mockResolvedValue({ id: 'team-1' });
+      (mockMapService.calculateRoute as jest.Mock).mockResolvedValue({
+        totalDistance: 10000,
+        encodedPolyline: 'encoded',
+        waypoints: [],
+        route: {},
+      });
+      (mockPrisma.teamGoal.create as jest.Mock).mockResolvedValue({
+        id: 'goal-1',
+        status: 'ACTIVE',
+        team: { name: 'Test Team' },
+      });
+
+      const input = {
+        name: 'Test Goal',
+        startLocation: { lat: 0, lng: 0 },
+        endLocation: { lat: 1, lng: 1 },
+        status: 'ACTIVE' as const,
+      };
+
+      await goalService.createTeamGoal('team-1', 'user-1', input);
+
+      expect(mockPrisma.teamGoal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'ACTIVE',
+            startedAt: expect.any(Date),
+          }),
+        })
+      );
+    });
+
+    describe('validation', () => {
+      beforeEach(() => {
+        (mockPrisma.team.findFirst as jest.Mock).mockResolvedValue({ id: 'team-1' });
+      });
+
+      it('should reject empty goal name', async () => {
+        const input = {
+          name: '',
+          startLocation: { lat: 0, lng: 0 },
+          endLocation: { lat: 1, lng: 1 },
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.INVALID_NAME);
+        }
+      });
+
+      it('should reject invalid coordinates', async () => {
+        const input = {
+          name: 'Test Goal',
+          startLocation: { lat: 91, lng: 0 }, // Invalid latitude
+          endLocation: { lat: 0, lng: 0 },
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.INVALID_COORDINATES);
+        }
+      });
+
+      it('should reject too many waypoints', async () => {
+        const waypoints = Array.from({ length: GOAL_VALIDATION.MAX_WAYPOINTS }, (_, i) => ({
+          id: `wp-${i}`,
+          position: { lat: i * 0.1, lng: i * 0.1 },
+          order: i + 1,
+        }));
+
+        const input = {
+          name: 'Test Goal',
+          startLocation: { lat: 0, lng: 0 },
+          endLocation: { lat: 10, lng: 10 },
+          waypoints, // This will exceed max when including start/end
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.INVALID_WAYPOINT_COUNT);
+        }
+      });
+
+      it('should reject duplicate waypoints', async () => {
+        const input = {
+          name: 'Test Goal',
+          startLocation: { lat: 0, lng: 0 },
+          endLocation: { lat: 1, lng: 1 },
+          waypoints: [
+            { id: 'wp1', position: { lat: 0.5, lng: 0.5 }, order: 1 },
+            { id: 'wp2', position: { lat: 0.5, lng: 0.5 }, order: 2 }, // Duplicate
+          ],
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.DUPLICATE_WAYPOINT);
+        }
+      });
+
+      it('should reject routes exceeding maximum distance', async () => {
+        (mockMapService.calculateRoute as jest.Mock).mockResolvedValue({
+          totalDistance: (GOAL_VALIDATION.MAX_DISTANCE_KM + 1) * 1000, // Over limit in meters
+          encodedPolyline: 'encoded',
+          waypoints: [],
+          route: {},
+        });
+
+        const input = {
+          name: 'Ultra Long Route',
+          startLocation: { lat: 0, lng: 0 },
+          endLocation: { lat: 89, lng: 179 },
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.DISTANCE_TOO_LONG);
+        }
+      });
+
+      it('should reject past target dates', async () => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const input = {
+          name: 'Test Goal',
+          startLocation: { lat: 0, lng: 0 },
+          endLocation: { lat: 1, lng: 1 },
+          targetDate: yesterday,
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.INVALID_TARGET_DATE);
+        }
+      });
+
+      it('should handle map service errors gracefully', async () => {
+        (mockMapService.calculateRoute as jest.Mock).mockRejectedValue(
+          new MapServiceError('No route found', MapErrorCode.NO_ROUTE_FOUND)
+        );
+
+        const input = {
+          name: 'Test Goal',
+          startLocation: { lat: 0, lng: 0 },
+          endLocation: { lat: 1, lng: 1 },
+        };
+
+        await expect(
+          goalService.createTeamGoal('team-1', 'user-1', input)
+        ).rejects.toThrow(GoalServiceError);
+
+        try {
+          await goalService.createTeamGoal('team-1', 'user-1', input);
+        } catch (error) {
+          expect((error as GoalServiceError).code).toBe(GoalErrorCode.NO_ROUTE_FOUND);
+          expect(error.message).toContain('No walking route found');
+        }
+      });
     });
   });
 

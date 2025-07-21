@@ -205,11 +205,10 @@ export class ActivityService {
       distance: activity.distance,
       duration: activity.duration,
       pace: this.calculatePace(activity.distance, activity.duration),
-      activityDate: activity.timestamp,
-      note: activity.notes,
+      timestamp: activity.timestamp,
+      notes: activity.notes,
       isPrivate: activity.isPrivate,
       createdAt: activity.createdAt,
-      teams: [], // No team relation in schema
     }));
 
     const nextCursor = hasMore ? activities[activities.length - 1].id : null;

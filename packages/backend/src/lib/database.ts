@@ -9,7 +9,9 @@ declare global {
 }
 
 // For Lambda environments, use connection pooling for better performance
-if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+// But skip for SAM local development
+const isLocalDev = process.env.NODE_ENV === 'development' || process.env.AWS_SAM_LOCAL === 'true';
+if (process.env.AWS_LAMBDA_FUNCTION_NAME && !isLocalDev) {
   // Lambda environment - use connection pool
   const pool = getConnectionPool();
   

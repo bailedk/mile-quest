@@ -189,44 +189,27 @@ npm run test --workspace=packages/backend
 
 ## 🚀 Deployment
 
-### AWS Infrastructure Setup
+For **complete step-by-step deployment instructions**, see: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 
-For complete deployment instructions, see: `docs/agents/11-devops/current/cdk-deployment-guide.md`
+The deployment guide covers:
+- ✅ Prerequisites and AWS account setup
+- ✅ Infrastructure deployment with AWS CDK
+- ✅ Backend API deployment with AWS SAM  
+- ✅ Frontend hosting with AWS Amplify
+- ✅ Database setup and migrations
+- ✅ Cost estimates and optimization
+- ✅ Monitoring and troubleshooting
 
-#### Quick Start
+### Quick Start (Summary)
 
-1. **Configure AWS CLI:**
-   ```bash
-   aws configure
-   ```
+1. **Prerequisites:** AWS CLI, SAM CLI, Node.js 20+
+2. **Infrastructure:** `cd infrastructure && npm run deploy:all` (~30 min)
+3. **Backend APIs:** `cd packages/backend && sam deploy --guided` (~10 min)
+4. **Database:** `npm run db:push && npm run db:seed` (~5 min)
+5. **Frontend:** Set up AWS Amplify via console (~15 min)
 
-2. **Bootstrap CDK (one-time setup):**
-   ```bash
-   cd infrastructure
-   npx cdk bootstrap aws://YOUR-ACCOUNT-ID/us-east-1
-   ```
-
-3. **Deploy infrastructure:**
-   ```bash
-   npm install
-   npm run deploy:all
-   ```
-
-4. **Configure environment variables:**
-   ```bash
-   ./scripts/setup-environment.sh setup staging
-   ```
-
-5. **Deploy application code:**
-   ```bash
-   # Backend (Lambda functions)
-   cd packages/backend
-   sam build && sam deploy --guided
-
-   # Frontend (AWS Amplify)
-   cd packages/frontend
-   # Follow Amplify deployment guide
-   ```
+**Total deployment time:** 45-60 minutes (first time)
+**Estimated cost:** $50-80/month (staging), $150-250/month (production)
 
 ### Infrastructure Components
 

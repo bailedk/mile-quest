@@ -5,6 +5,8 @@ import { CognitoStack } from '../lib/cognito-stack';
 import { DatabaseStack } from '../lib/database-stack';
 import { ApiStack } from '../lib/api-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
+import { ExternalServicesStack } from '../lib/external-services-stack';
+import { CloudFrontStack } from '../lib/cloudfront-stack';
 
 const app = new cdk.App();
 
@@ -28,11 +30,23 @@ const databaseStack = new DatabaseStack(app, `${stackPrefix}-Database`, {
   stage,
 });
 
+// External services configuration (Mapbox, Pusher, SES)
+const externalServicesStack = new ExternalServicesStack(app, `${stackPrefix}-ExternalServices`, {
+  env,
+  stage,
+});
+
 const apiStack = new ApiStack(app, `${stackPrefix}-Api`, {
   env,
   stage,
   userPool: cognitoStack.userPool,
   database: databaseStack.database,
+});
+
+// CloudFront for map assets and CDN
+const cloudFrontStack = new CloudFrontStack(app, `${stackPrefix}-CloudFront`, {
+  env,
+  stage,
 });
 
 const monitoringStack = new MonitoringStack(app, `${stackPrefix}-Monitoring`, {
@@ -45,8 +59,10 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-Monitoring`, {
 // Add dependencies
 apiStack.addDependency(cognitoStack);
 apiStack.addDependency(databaseStack);
+cloudFrontStack.addDependency(externalServicesStack);
 monitoringStack.addDependency(apiStack);
 monitoringStack.addDependency(databaseStack);
+monitoringStack.addDependency(cloudFrontStack);
 
 // Tags
 cdk.Tags.of(app).add('Project', 'MileQuest');

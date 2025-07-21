@@ -69,8 +69,11 @@ router.post('/', async (event, context, params) => {
   initializeServices();
   
   try {
+    console.log('POST /activities - Request received');
     const user = getUserFromEvent(event);
+    console.log('User authenticated:', user);
     const input = JSON.parse(event.body || '{}');
+    console.log('Request body:', input);
 
     // Validate input
     if (typeof input.distance !== 'number' || input.distance <= 0) {
@@ -112,6 +115,16 @@ router.post('/', async (event, context, params) => {
       };
     }
 
+    console.log('Creating activity with:', {
+      userId: user.sub,
+      distance: input.distance,
+      duration: input.duration,
+      timestamp,
+      notes: input.notes,
+      isPrivate: input.isPrivate ?? false,
+      source: input.source ?? 'MANUAL',
+    });
+
     const result = await activityService.createActivity(user.sub, {
       distance: input.distance,
       duration: input.duration,
@@ -120,6 +133,8 @@ router.post('/', async (event, context, params) => {
       isPrivate: input.isPrivate ?? false,
       source: input.source ?? 'MANUAL',
     });
+    
+    console.log('Activity created successfully:', result);
 
     // Send real-time updates to user's teams if needed
     try {
@@ -184,6 +199,9 @@ router.post('/', async (event, context, params) => {
       },
     };
   } catch (error: any) {
+    console.error('Error creating activity:', error);
+    console.error('Error stack:', error.stack);
+    
     if (error.message === 'No token provided') {
       return {
         statusCode: 401,
@@ -197,7 +215,6 @@ router.post('/', async (event, context, params) => {
       };
     }
     
-    console.error('Error creating activity:', error);
     return {
       statusCode: 500,
       body: {
@@ -205,6 +222,7 @@ router.post('/', async (event, context, params) => {
         error: {
           code: 'INTERNAL_ERROR',
           message: 'Failed to create activity',
+          details: process.env.NODE_ENV === 'dev' ? error.message : undefined,
         },
       },
     };

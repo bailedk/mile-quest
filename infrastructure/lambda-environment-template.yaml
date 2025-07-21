@@ -1,0 +1,154 @@
+# Lambda Environment Variables Template for SAM
+# This template provides the environment variable configuration for Lambda functions
+# that need access to Mapbox and other external services
+
+# To use this in your SAM template, reference these parameter store values:
+
+# Environment Variables for Lambda Functions
+Environment:
+  Variables:
+    # Stage and basic configuration
+    STAGE: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:STAGE}}'
+    NODE_ENV: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:NODE_ENV}}'
+    AWS_REGION: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:AWS_REGION}}'
+    
+    # Mapbox Configuration
+    MAPBOX_SECRETS_ARN: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:MAPBOX_SECRETS_ARN}}'
+    MAPBOX_CONFIG_PARAM: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:MAPBOX_CONFIG_PARAM}}'
+    MAPBOX_ENV_PARAM: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:MAPBOX_ENV_PARAM}}'
+    
+    # Pusher WebSocket Configuration
+    PUSHER_SECRETS_ARN: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:PUSHER_SECRETS_ARN}}'
+    PUSHER_CONFIG_PARAM: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:PUSHER_CONFIG_PARAM}}'
+    
+    # SES Email Configuration
+    SES_CONFIG_PARAM: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:SES_CONFIG_PARAM}}'
+    
+    # Analytics Configuration
+    ANALYTICS_CONFIG_PARAM: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ANALYTICS_CONFIG_PARAM}}'
+    
+    # Performance and Caching
+    ENABLE_CACHING: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_CACHING}}'
+    CACHE_TTL: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:CACHE_TTL}}'
+    ENABLE_COMPRESSION: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_COMPRESSION}}'
+    
+    # Rate Limiting
+    ENABLE_RATE_LIMITING: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_RATE_LIMITING}}'
+    RATE_LIMIT_WINDOW: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:RATE_LIMIT_WINDOW}}'
+    RATE_LIMIT_MAX_REQUESTS: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:RATE_LIMIT_MAX_REQUESTS}}'
+    
+    # Error Handling
+    ENABLE_ERROR_REPORTING: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_ERROR_REPORTING}}'
+    ERROR_SAMPLE_RATE: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ERROR_SAMPLE_RATE}}'
+    
+    # Feature Flags
+    ENABLE_MAP_FEATURES: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_MAP_FEATURES}}'
+    ENABLE_REALTIME_FEATURES: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_REALTIME_FEATURES}}'
+    ENABLE_NOTIFICATIONS: '{{resolve:ssm:/mile-quest/${STAGE}/lambda/environment:ENABLE_NOTIFICATIONS}}'
+    
+    # CloudFront Configuration
+    CLOUDFRONT_DOMAIN: '{{resolve:ssm:/mile-quest/${STAGE}/cloudfront/domain-name}}'
+    CLOUDFRONT_DISTRIBUTION_ID: '{{resolve:ssm:/mile-quest/${STAGE}/cloudfront/distribution-id}}'
+
+# IAM Permissions needed for Lambda functions
+Policies:
+  - Version: "2012-10-17"
+    Statement:
+      # Allow Lambda to read Secrets Manager secrets
+      - Effect: Allow
+        Action:
+          - secretsmanager:GetSecretValue
+          - secretsmanager:DescribeSecret
+        Resource:
+          - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/mile-quest/${STAGE}/mapbox/tokens*"
+          - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/mile-quest/${STAGE}/pusher/credentials*"
+      
+      # Allow Lambda to read Parameter Store values
+      - Effect: Allow
+        Action:
+          - ssm:GetParameter
+          - ssm:GetParameters
+          - ssm:GetParametersByPath
+        Resource:
+          - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mile-quest/${STAGE}/*"
+      
+      # Allow Lambda to invalidate CloudFront cache
+      - Effect: Allow
+        Action:
+          - cloudfront:CreateInvalidation
+        Resource:
+          - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/*"
+      
+      # Allow Lambda to publish CloudWatch metrics
+      - Effect: Allow
+        Action:
+          - cloudwatch:PutMetricData
+        Resource: "*"
+        Condition:
+          StringEquals:
+            "cloudwatch:namespace": 
+              - "Mile-Quest/Maps"
+              - "Mile-Quest/External-Services"
+
+# Example Lambda function configuration for map services
+MapServiceFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    Runtime: nodejs20.x
+    Handler: map.handler
+    CodeUri: src/handlers/map/
+    Description: !Sub "${STAGE} - Map service handler for Mapbox integration"
+    Environment:
+      Variables:
+        # Include all environment variables from template above
+        STAGE: !Sub "${STAGE}"
+        # ... (reference the template above)
+    
+    # IAM permissions
+    Policies:
+      - Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/mile-quest/${STAGE}/mapbox/tokens*"
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource: 
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mile-quest/${STAGE}/mapbox/*"
+    
+    # Event sources
+    Events:
+      MapboxProxy:
+        Type: Api
+        Properties:
+          Path: /v1/map/{proxy+}
+          Method: ANY
+          RestApiId: !Ref Api
+      MapboxHealth:
+        Type: Api
+        Properties:
+          Path: /health/mapbox
+          Method: GET
+          RestApiId: !Ref Api
+
+# CloudFormation outputs for reference
+Outputs:
+  MapboxConfigParam:
+    Description: "Mapbox configuration parameter name"
+    Value: !Sub "/mile-quest/${STAGE}/mapbox/config"
+    Export:
+      Name: !Sub "${STAGE}-MapboxConfigParam"
+      
+  MapboxSecretsArn:
+    Description: "Mapbox secrets ARN"
+    Value: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/mile-quest/${STAGE}/mapbox/tokens"
+    Export:
+      Name: !Sub "${STAGE}-MapboxSecretsArn"
+      
+  CloudFrontDomain:
+    Description: "CloudFront domain for map assets"
+    Value: '{{resolve:ssm:/mile-quest/${STAGE}/cloudfront/domain-name}}'
+    Export:
+      Name: !Sub "${STAGE}-CloudFrontDomain"

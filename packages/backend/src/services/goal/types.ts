@@ -4,6 +4,18 @@
 
 import { Position, Route, Waypoint } from '../map/types';
 
+// Validation constants
+export const GOAL_VALIDATION = {
+  MIN_WAYPOINTS: 2, // Start + End minimum (always required)
+  MIN_INTERMEDIATE_WAYPOINTS: 0, // Minimum intermediate waypoints (between start/end)
+  MAX_WAYPOINTS: 10, // Maximum allowed waypoints (including start/end)
+  MAX_DISTANCE_KM: 50000, // Maximum reasonable distance in kilometers
+  MIN_COORDINATE: -180,
+  MAX_COORDINATE: 180,
+  MIN_LATITUDE: -90,
+  MAX_LATITUDE: 90,
+} as const;
+
 export interface CreateGoalInput {
   name: string;
   description?: string;
@@ -11,6 +23,7 @@ export interface CreateGoalInput {
   endLocation: Position & { address?: string };
   waypoints?: Waypoint[];
   targetDate?: Date;
+  status?: 'DRAFT' | 'ACTIVE'; // Allow creating goals as draft or active
 }
 
 export interface UpdateGoalInput {
@@ -88,4 +101,46 @@ export interface RouteCalculationResult {
   totalDistance: number;
   encodedPolyline: string;
   waypoints: Waypoint[];
+}
+
+// Goal service specific errors
+export class GoalServiceError extends Error {
+  constructor(
+    message: string,
+    public code: GoalErrorCode,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'GoalServiceError';
+  }
+}
+
+export enum GoalErrorCode {
+  // Validation errors
+  INVALID_NAME = 'INVALID_NAME',
+  INVALID_COORDINATES = 'INVALID_COORDINATES',
+  INVALID_WAYPOINT_COUNT = 'INVALID_WAYPOINT_COUNT',
+  TOO_FEW_WAYPOINTS = 'TOO_FEW_WAYPOINTS',
+  TOO_MANY_WAYPOINTS = 'TOO_MANY_WAYPOINTS',
+  DISTANCE_TOO_LONG = 'DISTANCE_TOO_LONG',
+  INVALID_TARGET_DATE = 'INVALID_TARGET_DATE',
+  INVALID_STATUS = 'INVALID_STATUS',
+  DUPLICATE_WAYPOINT = 'DUPLICATE_WAYPOINT',
+  
+  // Permission errors
+  TEAM_NOT_FOUND = 'TEAM_NOT_FOUND',
+  USER_NOT_MEMBER = 'USER_NOT_MEMBER',
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  
+  // Goal state errors
+  GOAL_NOT_FOUND = 'GOAL_NOT_FOUND',
+  GOAL_ALREADY_ACTIVE = 'GOAL_ALREADY_ACTIVE',
+  GOAL_COMPLETED = 'GOAL_COMPLETED',
+  
+  // Route calculation errors
+  ROUTE_CALCULATION_FAILED = 'ROUTE_CALCULATION_FAILED',
+  NO_ROUTE_FOUND = 'NO_ROUTE_FOUND',
+  
+  // Other errors
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }

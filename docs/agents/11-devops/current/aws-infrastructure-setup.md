@@ -20,8 +20,10 @@ This guide provides step-by-step instructions for setting up the AWS infrastruct
 3. **AWS Lambda** - Serverless compute functions
 4. **API Gateway** - REST API endpoints
 5. **AWS Amplify** - Frontend hosting and CI/CD
-6. **CloudFront** - CDN for static assets
+6. **CloudFront** - CDN for static assets and map tiles
 7. **Route 53** - DNS management
+8. **Systems Manager** - Parameter store for configuration
+9. **Secrets Manager** - Secure storage for API tokens
 
 ### Supporting Services
 
@@ -54,7 +56,9 @@ npm run deploy:all
 # Or deploy individually
 npm run deploy:cognito
 npm run deploy:database
+npm run deploy:external-services
 npm run deploy:api
+npm run deploy:cloudfront
 npm run deploy:monitoring
 ```
 
@@ -91,8 +95,10 @@ CORS_ORIGIN="http://localhost:3000"
 NEXT_PUBLIC_PUSHER_APP_KEY="app-key-dev"
 NEXT_PUBLIC_PUSHER_CLUSTER="us2"
 
-# External Services
-MAPBOX_ACCESS_TOKEN="pk.dev-token"
+# External Services (loaded from Parameter Store in Lambda)
+NEXT_PUBLIC_MAPBOX_TOKEN="pk.dev-token"
+NEXT_PUBLIC_MAP_PROVIDER="mapbox"
+NEXT_PUBLIC_CLOUDFRONT_DOMAIN="d1234567890.cloudfront.net"
 ```
 
 #### Staging (.env.staging)
@@ -113,8 +119,10 @@ CORS_ORIGIN="https://staging.mile-quest.com"
 NEXT_PUBLIC_PUSHER_APP_KEY="${PUSHER_APP_KEY_STAGING}"
 NEXT_PUBLIC_PUSHER_CLUSTER="us2"
 
-# External Services
-MAPBOX_ACCESS_TOKEN="${MAPBOX_TOKEN_STAGING}"
+# External Services (loaded from Parameter Store in Lambda)
+NEXT_PUBLIC_MAPBOX_TOKEN="${MAPBOX_TOKEN_STAGING}"
+NEXT_PUBLIC_MAP_PROVIDER="mapbox"
+NEXT_PUBLIC_CLOUDFRONT_DOMAIN="${CLOUDFRONT_DOMAIN_STAGING}"
 ```
 
 #### Production (.env.production)
@@ -135,8 +143,10 @@ CORS_ORIGIN="https://mile-quest.com"
 NEXT_PUBLIC_PUSHER_APP_KEY="${PUSHER_APP_KEY_PRODUCTION}"
 NEXT_PUBLIC_PUSHER_CLUSTER="us2"
 
-# External Services
-MAPBOX_ACCESS_TOKEN="${MAPBOX_TOKEN_PRODUCTION}"
+# External Services (loaded from Parameter Store in Lambda)
+NEXT_PUBLIC_MAPBOX_TOKEN="${MAPBOX_TOKEN_PRODUCTION}"
+NEXT_PUBLIC_MAP_PROVIDER="mapbox"
+NEXT_PUBLIC_CLOUDFRONT_DOMAIN="${CLOUDFRONT_DOMAIN_PRODUCTION}"
 ```
 
 ## Security Configuration
@@ -236,6 +246,46 @@ curl -X GET https://api.mile-quest.com/health
 aws cognito-idp list-users --user-pool-id us-east-1_xxxxxxxxx
 ```
 
+## Mapbox Integration Testing
+
+### Validate Configuration
+
+After deploying the Mapbox infrastructure, validate the setup:
+
+```bash
+# Run validation script
+cd infrastructure
+npm run validate:mapbox:staging
+
+# For detailed output
+npm run validate:mapbox:verbose
+```
+
+### Manual Testing
+
+1. **Parameter Store**: Verify parameters exist
+```bash
+aws ssm get-parameter --name /mile-quest/staging/mapbox/config
+aws ssm get-parameter --name /mile-quest/staging/cloudfront/domain-name
+```
+
+2. **Secrets Manager**: Check tokens are configured
+```bash
+aws secretsmanager describe-secret --secret-id /mile-quest/staging/mapbox/tokens
+```
+
+3. **CloudFront**: Test distribution
+```bash
+curl -I https://d1234567890.cloudfront.net/styles/v1/mapbox/outdoors-v12
+```
+
+### Health Check Endpoints
+
+The infrastructure includes health check endpoints for monitoring:
+- `/health/mapbox` - Mapbox API connectivity
+- `/health/cloudfront` - CDN status
+- `/health/external-services` - All external service status
+
 ## Next Steps
 
 1. Set up monitoring dashboards
@@ -243,6 +293,8 @@ aws cognito-idp list-users --user-pool-id us-east-1_xxxxxxxxx
 3. Test disaster recovery procedures
 4. Implement security scanning
 5. Set up performance testing
+6. Configure Mapbox tokens in Secrets Manager
+7. Test map functionality in applications
 
 ---
 

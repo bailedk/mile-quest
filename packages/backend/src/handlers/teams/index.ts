@@ -11,7 +11,7 @@ import { TeamService } from '../../services/team/team.service';
 import { CreateTeamInput, UpdateTeamInput, JoinTeamInput } from '../../services/team/types';
 import { ActivityService } from '../../services/activity/activity.service';
 import { GoalService } from '../../services/goal/goal.service';
-import { CreateGoalInput, UpdateGoalInput } from '../../services/goal/types';
+import { CreateGoalInput, UpdateGoalInput, GoalServiceError, GoalErrorCode } from '../../services/goal/types';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
 // Validate environment on cold start
@@ -311,33 +311,7 @@ router.post('/:id/goals', async (event, context, params) => {
     const user = getUserFromEvent(event);
     const input: CreateGoalInput = JSON.parse(event.body || '{}');
 
-    // Validate input
-    if (!input.name || input.name.trim().length < 3) {
-      return {
-        statusCode: 400,
-        body: {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Goal name must be at least 3 characters long',
-          },
-        },
-      };
-    }
-
-    if (!input.startLocation || !input.endLocation) {
-      return {
-        statusCode: 400,
-        body: {
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Start and end locations are required',
-          },
-        },
-      };
-    }
-
+    // All validation is now handled in the service layer with detailed error messages
     const goal = await goalService.createTeamGoal(params.id, user.sub, input);
 
     return {
@@ -360,6 +334,52 @@ router.post('/:id/goals', async (event, context, params) => {
         },
       };
     }
+    
+    // Handle GoalServiceError with specific error codes
+    if (error instanceof GoalServiceError) {
+      let statusCode = 400; // Default to bad request
+      let errorCode = error.code;
+      
+      switch (error.code) {
+        case GoalErrorCode.TEAM_NOT_FOUND:
+        case GoalErrorCode.GOAL_NOT_FOUND:
+          statusCode = 404;
+          break;
+        case GoalErrorCode.USER_NOT_MEMBER:
+        case GoalErrorCode.INSUFFICIENT_PERMISSIONS:
+          statusCode = 403;
+          break;
+        case GoalErrorCode.INVALID_NAME:
+        case GoalErrorCode.INVALID_COORDINATES:
+        case GoalErrorCode.INVALID_WAYPOINT_COUNT:
+        case GoalErrorCode.INVALID_TARGET_DATE:
+        case GoalErrorCode.DUPLICATE_WAYPOINT:
+        case GoalErrorCode.DISTANCE_TOO_LONG:
+          statusCode = 400;
+          break;
+        case GoalErrorCode.ROUTE_CALCULATION_FAILED:
+        case GoalErrorCode.NO_ROUTE_FOUND:
+          statusCode = 422;
+          errorCode = 'ROUTE_ERROR';
+          break;
+        default:
+          statusCode = 500;
+      }
+      
+      return {
+        statusCode,
+        body: {
+          success: false,
+          error: {
+            code: errorCode,
+            message: error.message,
+            details: error.details,
+          },
+        },
+      };
+    }
+    
+    // Legacy error handling for backward compatibility
     if (error.message === 'Team not found or user is not a member') {
       return {
         statusCode: 403,
@@ -520,6 +540,24 @@ router.get('/goals/:goalId/progress', async (event, context, params) => {
         },
       };
     }
+    
+    // Handle GoalServiceError
+    if (error instanceof GoalServiceError) {
+      const statusCode = error.code === GoalErrorCode.GOAL_NOT_FOUND ? 404 : 403;
+      return {
+        statusCode,
+        body: {
+          success: false,
+          error: {
+            code: error.code === GoalErrorCode.GOAL_NOT_FOUND ? 'NOT_FOUND' : 'FORBIDDEN',
+            message: error.message,
+            details: error.details,
+          },
+        },
+      };
+    }
+    
+    // Legacy error handling
     if (error.message === 'Goal not found or user does not have access') {
       return {
         statusCode: 404,
@@ -575,6 +613,56 @@ router.patch('/goals/:goalId', async (event, context, params) => {
         },
       };
     }
+    
+    // Handle GoalServiceError with specific error codes
+    if (error instanceof GoalServiceError) {
+      let statusCode = 400; // Default to bad request
+      let errorCode = error.code;
+      
+      switch (error.code) {
+        case GoalErrorCode.TEAM_NOT_FOUND:
+        case GoalErrorCode.GOAL_NOT_FOUND:
+          statusCode = 404;
+          break;
+        case GoalErrorCode.USER_NOT_MEMBER:
+        case GoalErrorCode.INSUFFICIENT_PERMISSIONS:
+          statusCode = 403;
+          break;
+        case GoalErrorCode.GOAL_COMPLETED:
+          statusCode = 409;
+          errorCode = 'CONFLICT';
+          break;
+        case GoalErrorCode.INVALID_NAME:
+        case GoalErrorCode.INVALID_COORDINATES:
+        case GoalErrorCode.INVALID_WAYPOINT_COUNT:
+        case GoalErrorCode.INVALID_TARGET_DATE:
+        case GoalErrorCode.DUPLICATE_WAYPOINT:
+        case GoalErrorCode.DISTANCE_TOO_LONG:
+          statusCode = 400;
+          break;
+        case GoalErrorCode.ROUTE_CALCULATION_FAILED:
+        case GoalErrorCode.NO_ROUTE_FOUND:
+          statusCode = 422;
+          errorCode = 'ROUTE_ERROR';
+          break;
+        default:
+          statusCode = 500;
+      }
+      
+      return {
+        statusCode,
+        body: {
+          success: false,
+          error: {
+            code: errorCode,
+            message: error.message,
+            details: error.details,
+          },
+        },
+      };
+    }
+    
+    // Legacy error handling
     if (error.message === 'Goal not found or user does not have permission') {
       return {
         statusCode: 403,

@@ -15,10 +15,23 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 // Validate environment on cold start
 validateEnvironment();
 
-// Initialize services
-const teamService = new TeamService(prisma);
-const activityService = new ActivityService(prisma);
-const achievementService = new AchievementService(prisma);
+// Initialize services lazily to avoid cold start issues
+let teamService: TeamService;
+let activityService: ActivityService;
+let achievementService: AchievementService;
+
+function initializeServices() {
+  if (!teamService) {
+    console.log('Users handler env check:', {
+      DATABASE_URL: process.env.DATABASE_URL,
+      JWT_SECRET: process.env.JWT_SECRET,
+      NODE_ENV: process.env.NODE_ENV
+    });
+    teamService = new TeamService(prisma);
+    activityService = new ActivityService(prisma);
+    achievementService = new AchievementService(prisma);
+  }
+}
 
 // Create router
 const router = createRouter();
@@ -35,6 +48,14 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
   return verifyToken(token);
 };
 
+// Test endpoint
+router.get('/test', async (_event, _context, _params) => {
+  return {
+    statusCode: 200,
+    body: { message: 'Users handler working' },
+  };
+});
+
 // Get current user (to be implemented in Sprint 1)
 router.get('/me', async (_event, _context, _params) => {
   return {
@@ -48,6 +69,8 @@ router.get('/me', async (_event, _context, _params) => {
 
 // Get user teams (BE-010)
 router.get('/me/teams', async (event, _context, _params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     const teams = await teamService.getUserTeams(user.sub);
@@ -74,6 +97,8 @@ router.get('/me/teams', async (event, _context, _params) => {
 
 // Get user activity stats
 router.get('/me/stats', async (event, _context, _params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     const stats = await activityService.getUserStats(user.sub);
@@ -90,7 +115,6 @@ router.get('/me/stats', async (event, _context, _params) => {
       };
     }
     
-    console.error('Error fetching user stats:', error);
     return {
       statusCode: 500,
       body: { error: 'Failed to fetch user stats' },
@@ -100,6 +124,8 @@ router.get('/me/stats', async (event, _context, _params) => {
 
 // Get user activities
 router.get('/me/activities', async (event, _context, _params) => {
+  initializeServices();
+  
   try {
     const user = getUserFromEvent(event);
     
@@ -116,7 +142,6 @@ router.get('/me/activities', async (event, _context, _params) => {
       startDate,
       endDate,
     });
-    
     return {
       statusCode: 200,
       body: activities,
@@ -129,7 +154,6 @@ router.get('/me/activities', async (event, _context, _params) => {
       };
     }
     
-    console.error('Error fetching user activities:', error);
     return {
       statusCode: 500,
       body: { error: 'Failed to fetch activities' },
@@ -214,7 +238,4 @@ router.get('/:id', async (_event, _context, params) => {
 });
 
 // Export handler
-export const handler = createHandler(router.handle.bind(router), {
-  functionName: 'UsersHandler',
-  enableCors: true,
-});
+export const handler = createHandler(router.handle.bind(router));

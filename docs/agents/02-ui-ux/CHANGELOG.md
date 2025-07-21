@@ -2,6 +2,36 @@
 
 All notable changes to the UI/UX Design documentation will be documented in this file.
 
+## [2.4] - 2025-01-20
+
+### Added
+- `goal-creation-page.md` - Team goal creation and editing interface design
+  - Interactive map with waypoint selection
+  - Search-based and click-based waypoint addition
+  - Multi-city route builder with automatic distance calculation
+  - Mobile-optimized layout with gesture support
+  - Comprehensive error states and validations
+  - Accessibility considerations for non-visual users
+  
+- `goal-creation-interaction-flow.md` - Detailed interaction flows for goal creation
+  - User journey maps from multiple entry points
+  - Step-by-step interaction specifications
+  - Gesture controls and mobile optimizations
+  - State management and data persistence
+  - Animation and transition specifications
+  - Success metrics for tracking
+
+### Changed
+- Updated STATE.json to version 2.4
+- Added goal creation to week 2 of feature rollout
+- Updated dependencies to include map service integration
+
+### Notes
+- Designed in response to user request for admin goal creation feature
+- Integrates with Map Integration Agent's Mapbox implementation guide
+- Follows established design system and mobile-first principles
+- Ready for implementation by Frontend Developer Agent
+
 ## [2.3] - 2025-01-19
 
 ### Added

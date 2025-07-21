@@ -1,10 +1,10 @@
 {
   "agent": "UI/UX Design",
   "agentNumber": 2,
-  "currentVersion": "2.3",
-  "previousVersion": "2.2",
+  "currentVersion": "2.4",
+  "previousVersion": "2.3",
   "status": "active",
-  "lastUpdated": "2025-01-19",
+  "lastUpdated": "2025-01-20",
   "lastModifiedBy": "UI/UX Design Agent",
   "description": "User interface design, user experience flows, and design system",
   "activeDocuments": [
@@ -62,6 +62,16 @@
       "name": "css-scss-best-practices.md",
       "description": "CSS/SCSS architecture patterns and best practices for Next.js React applications",
       "version": "1.0"
+    },
+    {
+      "name": "goal-creation-page.md",
+      "description": "Team goal creation and editing interface with interactive map",
+      "version": "1.0"
+    },
+    {
+      "name": "goal-creation-interaction-flow.md",
+      "description": "Detailed interaction flows and state management for goal creation",
+      "version": "1.0"
     }
   ],
   "supersededDocuments": [
@@ -90,15 +100,16 @@
     "offline": "Activity logging only (not full offline)",
     "performance": "Optimistic UI updates everywhere",
     "dataViz": "Simple progress bars (no complex charts)",
-    "maps": "Deferred to post-MVP"
+    "maps": "Interactive map for goal creation with waypoint selection",
+    "goalCreation": "Multi-city route builder with automatic distance calculation"
   },
   "dependencies": {
-    "provides": ["Screen designs", "User flows", "Design system", "Accessibility requirements"],
-    "requires": ["Architecture constraints", "API capabilities", "Performance budgets"]
+    "provides": ["Screen designs", "User flows", "Design system", "Accessibility requirements", "Goal creation UI specs"],
+    "requires": ["Architecture constraints", "API capabilities", "Performance budgets", "Map service integration"]
   },
   "weeklyRollout": {
     "week1": ["Team creation", "Activity logging", "Basic progress"],
-    "week2": ["Simple achievements", "Photo upload", "Basic stats"],
+    "week2": ["Simple achievements", "Photo upload", "Basic stats", "Goal creation"],
     "week3": ["Leaderboards", "Push notifications"],
     "week4": ["Advanced analytics", "Full achievements"]
   },
@@ -106,12 +117,14 @@
     "onboarding": "<2 minutes",
     "activityLogging": "<15 seconds",
     "pageLoad": "<4 seconds (realistic)",
-    "apiResponseFeel": "<500ms with optimistic UI"
+    "apiResponseFeel": "<500ms with optimistic UI",
+    "goalCreation": "<3 minutes to create multi-city goal"
   },
-  "nextReview": "When implementation begins",
+  "nextReview": "When goal creation implementation begins",
   "openQuestions": [
     "Should we add haptic feedback for mobile web?",
     "When to introduce dark mode?",
-    "How to handle team size limits in UI?"
+    "How to handle team size limits in UI?",
+    "Should goal creation support custom routes beyond city-to-city?"
   ]
 }
