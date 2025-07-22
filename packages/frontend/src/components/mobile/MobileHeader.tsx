@@ -25,9 +25,14 @@ export function MobileHeader({
   const { isAuthenticated, user, signOut } = useAuthStore();
   
   const handleSignOut = async () => {
-    await signOut();
-    setIsMenuOpen(false);
-    router.push('/');
+    try {
+      await signOut();
+      setIsMenuOpen(false);
+      // Use replace instead of push to prevent back navigation
+      router.replace('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleBack = () => {

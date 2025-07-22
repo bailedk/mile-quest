@@ -42,7 +42,7 @@ export function MobileLayout({
       
       {/* Main Content */}
       <main className={`
-        flex-1 overflow-auto momentum-scroll
+        flex-1 overflow-auto momentum-scroll px-4
         ${showBottomNavigation ? 'pb-16' : ''}
         ${showHeader ? '' : 'pt-safe'}
       `}>

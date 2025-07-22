@@ -6,10 +6,19 @@ import { Button } from '@/components/patterns/Button';
 import { Card } from '@/components/patterns/Card';
 import { PlusIcon, CalendarIcon, ClockIcon, MapPinIcon, LockIcon } from '@/components/icons';
 import { useAuthStore } from '@/store/auth.store';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 import { activityService, formatDistance, formatDuration, calculatePace } from '@/services/activity.service';
 import { ActivityListItem, ActivityStats } from '@/types/activity.types';
 
 export default function ActivitiesPage() {
+  return (
+    <AuthGuard redirectTo="/signin">
+      <ActivitiesContent />
+    </AuthGuard>
+  );
+}
+
+function ActivitiesContent() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [activities, setActivities] = useState<ActivityListItem[]>([]);
@@ -19,11 +28,6 @@ export default function ActivitiesPage() {
 
   useEffect(() => {
     async function loadActivities() {
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
       try {
         const [activitiesData, statsData] = await Promise.all([
           activityService.getUserActivities(),
@@ -42,7 +46,7 @@ export default function ActivitiesPage() {
     }
 
     loadActivities();
-  }, [user, router]);
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

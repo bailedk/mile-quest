@@ -7,7 +7,7 @@ import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
 import { getAuthService, AuthError, AuthErrorCode } from '../../services/auth';
 import { prisma } from '../../lib/database';
-import { generateTokens } from '../../utils/auth/jwt.utils';
+import { generateTokens, verifyToken } from '../../utils/auth/jwt.utils';
 import { 
   RegisterSchema, 
   LoginSchema, 
@@ -209,12 +209,12 @@ router.post('/refresh', async (event, context, params) => {
     // Validate request body
     const body = RefreshTokenSchema.parse(JSON.parse(event.body || '{}'));
     
-    // Refresh session with Cognito
-    const newSession = await authService.refreshSession();
+    // Verify the refresh token
+    const payload = verifyToken(body.refreshToken);
     
-    // Get user from database
+    // Get user from database using the sub (user id) from the token
     const dbUser = await prisma.user.findUnique({
-      where: { cognitoId: newSession.user.id },
+      where: { id: payload.sub },
     });
     
     if (!dbUser) {
@@ -226,7 +226,7 @@ router.post('/refresh', async (event, context, params) => {
       id: dbUser.id,
       email: dbUser.email,
       name: dbUser.name,
-      emailVerified: newSession.user.emailVerified,
+      emailVerified: dbUser.emailVerified ?? false,
       preferredUnits: dbUser.preferredUnits as 'miles' | 'kilometers',
       timezone: dbUser.timezone,
       createdAt: dbUser.createdAt.toISOString(),

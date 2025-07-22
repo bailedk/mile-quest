@@ -24,8 +24,13 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     if (confirm('Are you sure you want to sign out?')) {
-      await signOut();
-      router.push('/');
+      try {
+        await signOut();
+        // Use replace instead of push to prevent back navigation
+        router.replace('/');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
     }
   };
 

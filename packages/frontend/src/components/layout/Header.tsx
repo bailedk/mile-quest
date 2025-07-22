@@ -21,8 +21,13 @@ export function Header() {
   const showAuthenticatedNav = hydrated && isAuthenticated;
   
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
+    try {
+      await signOut();
+      // Use replace instead of push to prevent back navigation
+      router.replace('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleMobileMenuToggle = () => {
