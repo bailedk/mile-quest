@@ -63,22 +63,37 @@ export const CreateActivitySchema = z.object({
 });
 
 export const CreateTeamGoalSchema = z.object({
-  teamId: z.string().uuid(),
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
-  targetDistance: z.number().positive(),
   targetDate: z.string().datetime().optional(),
-  routeData: z.object({
-    waypoints: z.array(z.object({
+  waypoints: z.array(z.object({
+    name: z.string(),
+    address: z.string(),
+    coordinates: z.object({
       lat: z.number(),
       lng: z.number(),
+    }),
+    order: z.number(),
+  })),
+  routeData: z.object({
+    waypoints: z.array(z.object({
+      name: z.string(),
       address: z.string(),
+      coordinates: z.object({
+        lat: z.number(),
+        lng: z.number(),
+      }),
+      order: z.number(),
     })),
     segments: z.array(z.object({
       from: z.number(),
       to: z.number(),
       distance: z.number(),
+      duration: z.number().optional(),
     })),
+    geometry: z.any().optional(),
+    totalDistance: z.number().optional(),
+    totalDuration: z.number().optional(),
   }),
 });
 
@@ -100,20 +115,44 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 
 // Route data types
 export interface Waypoint {
-  lat: number;
-  lng: number;
+  name: string;
   address: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  order: number;
 }
 
 export interface RouteSegment {
   from: number; // waypoint index
   to: number;   // waypoint index
   distance: number; // miles
+  duration?: number; // seconds
 }
 
 export interface RouteData {
   waypoints: Waypoint[];
   segments: RouteSegment[];
+  geometry?: any; // GeoJSON LineString
+  totalDistance?: number;
+  totalDuration?: number;
+}
+
+// TeamGoal type
+export interface TeamGoal {
+  id: string;
+  teamId: string;
+  name: string;
+  description?: string;
+  targetDate?: string;
+  status: typeof GoalStatus[keyof typeof GoalStatus];
+  waypoints: Waypoint[];
+  routeData: RouteData;
+  totalDistance: number;
+  currentDistance: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Statistics types

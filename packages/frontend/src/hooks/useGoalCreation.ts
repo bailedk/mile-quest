@@ -10,33 +10,13 @@ import {
 import { goalValidation } from '@/utils/goalValidation';
 import { localStorageUtils } from '@/utils/localStorage';
 import { useToast } from '@/hooks/useToast';
+import { mapService } from '@/services/map';
 
 interface UseGoalCreationOptions {
   teamId?: string;
   onSuccess?: (goalId: string) => void;
 }
 
-// Mock route calculation service - replace with actual map service
-const calculateRoute = async (waypoints: Waypoint[]): Promise<RouteData> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Create segments between consecutive waypoints
-  const segments: RouteSegment[] = [];
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    segments.push({
-      from: i,
-      to: i + 1,
-      // Mock distance calculation (replace with actual map service)
-      distance: Math.random() * 50 + 10, // 10-60 miles per segment
-    });
-  }
-  
-  return {
-    waypoints,
-    segments,
-  };
-};
 
 // Simple ID generator for draft IDs
 const generateId = () => `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -192,7 +172,7 @@ export function useGoalCreation(options: UseGoalCreationOptions = {}) {
     // Debounce the calculation
     routeCalculationTimeout.current = setTimeout(async () => {
       try {
-        const routeData = await calculateRoute(state.formData.waypoints);
+        const routeData = await mapService.calculateRoute(state.formData.waypoints);
         const totalDistance = routeData.segments.reduce((sum, seg) => sum + seg.distance, 0);
         
         setState(prev => ({
@@ -251,11 +231,11 @@ export function useGoalCreation(options: UseGoalCreationOptions = {}) {
     draftId.current = generateId();
   }, [defaultTeamId]);
 
-  // Create goal mutation (placeholder - implement actual API call)
+  // Create goal mutation
   const createGoalMutation = useMutation({
     mutationFn: async (data: GoalFormData) => {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // The goalService.createGoal is called in the component
+      // This mutation is just for tracking state
       return { id: generateId().replace('draft-', 'goal-') };
     },
     onSuccess: (result) => {

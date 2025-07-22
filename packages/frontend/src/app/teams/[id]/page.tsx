@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Team, TeamMember, UpdateTeamInput } from '@/types/team.types';
+import { Team, UpdateTeamInput } from '@/types/team.types';
 import { teamService } from '@/services/team.service';
 import { Button } from '@/components/patterns/Button';
 import { useAuthStore } from '@/store/auth.store';
@@ -96,6 +96,21 @@ export default function TeamDetailPage() {
     }
   };
 
+  const handleDeleteTeam = async () => {
+    if (!team) return;
+    
+    const confirmMessage = `Are you sure you want to delete "${team.name}"? This action cannot be undone.`;
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      setError(null);
+      await teamService.deleteTeam(team.id);
+      router.push('/teams');
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete team');
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -122,14 +137,22 @@ export default function TeamDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Back Button */}
+      {/* Back Navigation - Following UI/UX Design System */}
       <div className="mb-6">
         <button
           onClick={() => router.push('/teams')}
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="inline-flex items-center h-10 px-4 text-base font-medium text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+          aria-label="Back to teams list"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg 
+            className="w-6 h-6 mr-2" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m0 0l7-7m-7 7l7 7" />
           </svg>
           Back to Teams
         </button>
@@ -203,9 +226,21 @@ export default function TeamDetailPage() {
               </div>
               <div className="flex gap-2">
                 {isAdmin && (
-                  <Button variant="secondary" onClick={() => setIsEditing(true)}>
-                    Edit Team
-                  </Button>
+                  <>
+                    <Button onClick={() => router.push(`/teams/${team.id}/goals/new`)}>
+                      Create Goal
+                    </Button>
+                    <Button variant="secondary" onClick={() => setIsEditing(true)}>
+                      Edit Team
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      onClick={handleDeleteTeam}
+                      className="!text-red-600 hover:!bg-red-50 hover:!border-red-300"
+                    >
+                      Delete Team
+                    </Button>
+                  </>
                 )}
                 {currentUserMember && (
                   <Button variant="secondary" onClick={handleLeaveTeam}>
@@ -216,6 +251,21 @@ export default function TeamDetailPage() {
             </div>
           </>
         )}
+      </div>
+
+      {/* Team Goals */}
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Team Goals</h2>
+          {isAdmin && (
+            <Button size="sm" onClick={() => router.push(`/teams/${team.id}/goals/new`)}>
+              Add Goal
+            </Button>
+          )}
+        </div>
+        <div className="text-gray-600 text-center py-8">
+          <p>No goals yet. Create your first team goal to start your journey!</p>
+        </div>
       </div>
 
       {/* Team Members */}
