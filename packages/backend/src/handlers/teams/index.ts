@@ -230,15 +230,58 @@ router.patch('/:id', async (event, context, params) => {
   }
 });
 
+// Delete team (BE-204)
 router.delete('/:id', async (event, context, params) => {
-  return {
-    statusCode: 501,
-    body: {
-      message: 'Delete team endpoint - to be implemented in Sprint 2',
-      task: 'BE-204',
-      teamId: params.id,
-    },
-  };
+  try {
+    const user = getUserFromEvent(event);
+    
+    await teamService.deleteTeam(params.id, user.sub);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        message: 'Team deleted successfully',
+      },
+    };
+  } catch (error: any) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { 
+          success: false,
+          error: error.message || 'Authentication required' 
+        },
+      };
+    }
+    if (error.message === 'Team not found or user is not a member') {
+      return {
+        statusCode: 404,
+        body: { 
+          success: false,
+          error: error.message 
+        },
+      };
+    }
+    if (error.message === 'Only team admins can delete teams') {
+      return {
+        statusCode: 403,
+        body: { 
+          success: false,
+          error: error.message 
+        },
+      };
+    }
+    
+    console.error('Error deleting team:', error);
+    return {
+      statusCode: 500,
+      body: { 
+        success: false,
+        error: 'Failed to delete team' 
+      },
+    };
+  }
 });
 
 router.post('/:id/members', async (event, context, params) => {

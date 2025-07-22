@@ -15,6 +15,44 @@ export class TeamService {
     this.goalService = new GoalService(prisma);
   }
 
+  /**
+   * Soft delete a team (admin only)
+   * BE-204: Delete team endpoint implementation
+   */
+  async deleteTeam(teamId: string, userId: string): Promise<void> {
+    // Check if team exists and user is an admin
+    const teamMember = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId,
+        leftAt: null,
+        team: {
+          deletedAt: null,
+        },
+      },
+      include: {
+        team: true,
+      },
+    });
+
+    if (!teamMember) {
+      throw new Error('Team not found or user is not a member');
+    }
+
+    if (teamMember.role !== TeamRole.ADMIN) {
+      throw new Error('Only team admins can delete teams');
+    }
+
+    // Soft delete the team
+    await this.prisma.team.update({
+      where: { id: teamId },
+      data: { deletedAt: new Date() },
+    });
+
+    // Note: We don't update member records as they retain historical data
+    // The deletedAt check in queries will exclude this team from results
+  }
+
   async getUserTeams(userId: string): Promise<TeamListItem[]> {
     const memberships = await this.prisma.teamMember.findMany({
       where: {

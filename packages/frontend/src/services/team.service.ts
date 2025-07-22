@@ -52,4 +52,9 @@ export const teamService = {
   async updateMemberRole(teamId: string, userId: string, role: 'ADMIN' | 'MEMBER'): Promise<void> {
     await apiClient.patch(`/teams/${teamId}/members/${userId}`, { role });
   },
+
+  // Delete a team (admin only)
+  async deleteTeam(teamId: string): Promise<void> {
+    await apiClient.delete(`/teams/${teamId}`);
+  },
 };

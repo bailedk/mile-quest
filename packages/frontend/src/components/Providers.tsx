@@ -15,6 +15,7 @@ import {
   AccessibilityQuickActions,
   AccessibilityDevTools
 } from '@/components/accessibility';
+import { DevOnlyWrapper } from '@/components/DevOnlyWrapper';
 
 // Dynamically import ReactQueryDevtools with no SSR to prevent hydration mismatch
 const ReactQueryDevtools = dynamic(
@@ -68,7 +69,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     
                     {/* Accessibility UI Components */}
                     <AccessibilityQuickActions />
-                    {process.env.NODE_ENV === 'development' && <AccessibilityDevTools />}
+                    <DevOnlyWrapper>
+                      <AccessibilityDevTools />
+                    </DevOnlyWrapper>
                   </WebSocketProvider>
                 </PWAProvider>
               </MobileAccessibilityProvider>
@@ -76,7 +79,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </VisualAccessibilityProvider>
         </ToastProvider>
       </PerformanceProvider>
-      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

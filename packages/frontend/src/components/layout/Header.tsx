@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { AriaBanner, AriaNavigation, SkipLinks } from '@/components/accessibility/AriaComponents';
 import { FocusTrap, useKeyboardNavigation } from '@/components/accessibility/KeyboardNavigation';
 import { AccessibleTouchTarget } from '@/components/accessibility/MobileAccessibility';
+import { useHydrated } from '@/hooks/useHydrated';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,6 +15,10 @@ export function Header() {
   const { isAuthenticated, user, signOut } = useAuthStore();
   const { isKeyboardUser } = useKeyboardNavigation();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const hydrated = useHydrated();
+  
+  // Use non-authenticated state during SSR and initial hydration to prevent mismatch
+  const showAuthenticatedNav = hydrated && isAuthenticated;
   
   const handleSignOut = async () => {
     await signOut();
@@ -63,7 +68,7 @@ export function Header() {
           
             {/* Desktop Navigation */}
             <div className="hidden sm:flex sm:items-center sm:space-x-8" role="list">
-              {isAuthenticated ? (
+              {showAuthenticatedNav ? (
                 <>
                   <Link 
                     href="/dashboard" 
@@ -171,7 +176,7 @@ export function Header() {
               aria-label="Mobile navigation menu"
               aria-expanded={isMobileMenuOpen}
             >
-              {isAuthenticated ? (
+              {showAuthenticatedNav ? (
                 <>
                   <Link 
                     href="/dashboard" 

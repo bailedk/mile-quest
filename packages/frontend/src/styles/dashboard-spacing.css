@@ -1,0 +1,38 @@
+/**
+ * Dashboard Spacing Utilities
+ * Ensures consistent spacing throughout the dashboard
+ */
+
+/* Ensure consistent spacing between all dashboard sections */
+.dashboard-container > * + * {
+  margin-top: 1.5rem; /* 24px - matches space-y-6 */
+}
+
+/* Ensure charts have proper internal spacing */
+.chart-container {
+  padding: 1rem;
+}
+
+/* Stats cards should have consistent padding */
+.stat-card {
+  padding: 1rem;
+  min-height: 80px;
+}
+
+/* Ensure proper spacing for nested card content */
+.card-content > * + * {
+  margin-top: 1rem;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Slightly reduce spacing on mobile for better use of space */
+  .dashboard-container > * + * {
+    margin-top: 1.25rem; /* 20px */
+  }
+}
