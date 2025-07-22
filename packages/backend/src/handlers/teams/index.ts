@@ -2,10 +2,10 @@
  * Teams Lambda handler with routing
  */
 
-import { createHandler } from '../../utils/lambda-handler';
+import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken } from '../../utils/auth/jwt.utils';
+import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { CreateTeamInput, UpdateTeamInput, JoinTeamInput } from '../../services/team/types';
@@ -31,7 +31,7 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
   const token = authHeader?.split(' ')[1];
   
   if (!token) {
-    throw new Error('No token provided');
+    throw new UnauthorizedError('No token provided');
   }
   
   return verifyToken(token);
@@ -60,10 +60,10 @@ router.post('/', async (event, context, params) => {
       body: team,
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
-        body: { error: 'Authentication required' },
+        body: { error: error.message || 'Authentication required' },
       };
     }
     if (error.message === 'Team name already exists') {
@@ -127,14 +127,14 @@ router.get('/:id/progress', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -203,10 +203,10 @@ router.patch('/:id', async (event, context, params) => {
       body: team,
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
-        body: { error: 'Authentication required' },
+        body: { error: error.message || 'Authentication required' },
       };
     }
     if (error.message === 'Unauthorized: Only team admins can update team details') {
@@ -284,10 +284,10 @@ router.post('/join', async (event, context, params) => {
       'Team has reached maximum member limit',
     ];
 
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
-        body: { error: 'Authentication required' },
+        body: { error: error.message || 'Authentication required' },
       };
     }
     if (errorMessages.includes(error.message)) {
@@ -322,14 +322,14 @@ router.post('/:id/goals', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -433,14 +433,14 @@ router.get('/:id/goals', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -487,14 +487,14 @@ router.get('/:id/goals/active', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -528,14 +528,14 @@ router.get('/goals/:goalId/progress', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -601,14 +601,14 @@ router.patch('/goals/:goalId', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };

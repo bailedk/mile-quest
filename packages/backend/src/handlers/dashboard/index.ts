@@ -2,10 +2,10 @@
  * Dashboard Lambda handler - BE-017
  */
 
-import { createHandler } from '../../utils/lambda-handler';
+import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken } from '../../utils/auth/jwt.utils';
+import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
@@ -32,7 +32,7 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
   const token = authHeader?.split(' ')[1];
   
   if (!token) {
-    throw new Error('No token provided');
+    throw new UnauthorizedError('No token provided');
   }
   
   return verifyToken(token);
@@ -224,6 +224,16 @@ router.get('/', async (event, context, params) => {
       body: dashboardData,
     };
   } catch (error) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: {
+          error: 'Authentication required',
+          details: 'Please provide a valid authentication token',
+        },
+      };
+    }
+    
     console.error('Dashboard error - Full details:', error);
     console.error('Dashboard error - Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     return {

@@ -30,7 +30,7 @@ export function ChartsSection({
   chartData,
 }: ChartsSectionProps) {
   return (
-    <>
+    <div className="space-y-6">
       {/* Goal Progress Chart */}
       {selectedTeam?.progress && (
         <MobileCard>
@@ -102,6 +102,6 @@ export function ChartsSection({
           />
         )}
       </MobileCard>
-    </>
+    </div>
   );
 }

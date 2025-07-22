@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { createRouter } from '../../utils/router';
-import { verifyToken } from '../../utils/auth/jwt.utils';
+import { UnauthorizedError } from '../../utils/lambda-handler';
+import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { ProgressService } from '../../services/progress';
 import { createLogger } from '../../services/logger';
@@ -42,7 +43,7 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
   const token = authHeader?.split(' ')[1];
   
   if (!token) {
-    throw new Error('No token provided');
+    throw new UnauthorizedError('No token provided');
   }
   
   return verifyToken(token);
@@ -95,6 +96,13 @@ router.get('/team/:teamId', async (event, context, params) => {
       body: { progress },
     };
   } catch (error) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
     logger.error('Failed to get team progress', { error });
     return {
       statusCode: 500,
@@ -155,6 +163,13 @@ router.get('/goal/:goalId', async (event, context, params) => {
       body: { progress },
     };
   } catch (error) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
     logger.error('Failed to get goal progress', { error });
     return {
       statusCode: 500,
@@ -215,6 +230,13 @@ router.get('/goal/:goalId/daily', async (event, context, params) => {
       body: { summary },
     };
   } catch (error) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
     logger.error('Failed to get daily summary', { error });
     return {
       statusCode: 500,
@@ -275,6 +297,13 @@ router.get('/goal/:goalId/trend', async (event, context, params) => {
       body: { trend },
     };
   } catch (error) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { error: 'Authentication required' },
+      };
+    }
+    
     logger.error('Failed to get progress trend', { error });
     return {
       statusCode: 500,

@@ -31,7 +31,7 @@ export function PersonalStatsCard({ personalStats, userPreferredUnits }: Persona
   }
 
   return (
-    <>
+    <div className="space-y-6">
       {/* Personal Stats Cards Grid */}
       <div className="grid grid-cols-2 gap-4">
         {/* Total Distance */}
@@ -48,7 +48,7 @@ export function PersonalStatsCard({ personalStats, userPreferredUnits }: Persona
       </div>
 
       {/* Additional Stats */}
-      <MobileCard className="mt-4">
+      <MobileCard>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
@@ -65,6 +65,6 @@ export function PersonalStatsCard({ personalStats, userPreferredUnits }: Persona
           </div>
         </div>
       </MobileCard>
-    </>
+    </div>
   );
 }

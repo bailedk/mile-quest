@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { AuthUser } from '@mile-quest/shared';
+import { UnauthorizedError } from '../lambda-handler';
 
 interface TokenPayload {
   sub: string;
@@ -41,7 +42,7 @@ export function verifyToken(token: string): TokenPayload {
   try {
     return jwt.verify(token, JWT_SECRET) as TokenPayload;
   } catch (error) {
-    throw new Error('Invalid or expired token');
+    throw new UnauthorizedError('Invalid or expired token');
   }
 }
 
@@ -64,4 +65,12 @@ export function generateTokens(user: AuthUser) {
     expiresIn: 3600, // 1 hour in seconds
     tokenType: 'Bearer',
   };
+}
+
+export function isAuthError(error: any): boolean {
+  return (
+    error instanceof UnauthorizedError ||
+    error.message === 'No token provided' ||
+    error.message === 'Invalid or expired token'
+  );
 }

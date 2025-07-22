@@ -2,10 +2,10 @@
  * Activities Lambda handler with routing
  */
 
-import { createHandler } from '../../utils/lambda-handler';
+import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken } from '../../utils/auth/jwt.utils';
+import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
 import { prisma } from '../../lib/database';
 import { ActivityService } from '../../services/activity/activity.service';
 import { UpdateActivityInput } from '../../services/activity/types';
@@ -58,7 +58,7 @@ const getUserFromEvent = (event: APIGatewayProxyEvent) => {
   const token = authHeader?.split(' ')[1];
   
   if (!token) {
-    throw new Error('No token provided');
+    throw new UnauthorizedError('No token provided');
   }
   
   return verifyToken(token);
@@ -202,14 +202,14 @@ router.post('/', async (event, context, params) => {
     console.error('Error creating activity:', error);
     console.error('Error stack:', error.stack);
     
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: { 
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -268,14 +268,14 @@ router.get('/', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -327,14 +327,14 @@ router.patch('/:id', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -430,14 +430,14 @@ router.delete('/:id', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -498,14 +498,14 @@ router.get('/stats', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
@@ -579,14 +579,14 @@ router.get('/summary', async (event, context, params) => {
       },
     };
   } catch (error: any) {
-    if (error.message === 'No token provided') {
+    if (isAuthError(error)) {
       return {
         statusCode: 401,
         body: {
           success: false,
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Authentication required',
+            message: error.message || 'Authentication required',
           },
         },
       };
