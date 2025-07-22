@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { useAdvancedSwipeGesture, TouchCard } from '@/components/mobile/TouchInteractions';
+import { useAdvancedSwipeGesture } from '@/components/mobile/TouchInteractions';
+import { MobileCard } from '@/components/mobile/MobileCard';
 import { formatDistance } from '@/services/activity.service';
 
 export interface LeaderboardMember {
@@ -113,7 +114,7 @@ export function SwipeableLeaderboard({
   };
 
   return (
-    <TouchCard className={`bg-white rounded-lg shadow-sm ${className}`}>
+    <MobileCard className={className} padding="none">
       <div className="p-6">
         {/* Header with swipe indicators */}
         <div className="flex items-center justify-between mb-4">
@@ -161,11 +162,10 @@ export function SwipeableLeaderboard({
           >
             <div className="space-y-3">
               {sortedMembers.map((member, index) => (
-                <TouchCard
+                <div
                   key={`${member.userId}-${currentView}`}
                   onClick={() => onMemberSelect?.(member)}
-                  className="flex items-center justify-between py-3 px-2 hover:bg-gray-50 rounded-lg transition-colors"
-                  hapticFeedback="light"
+                  className="flex items-center justify-between py-3 px-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                 >
                   <div className="flex items-center space-x-3">
                     {/* Rank badge */}
@@ -211,7 +211,7 @@ export function SwipeableLeaderboard({
                       </div>
                     )}
                   </div>
-                </TouchCard>
+                </div>
               ))}
             </div>
           </div>
@@ -224,7 +224,7 @@ export function SwipeableLeaderboard({
           </p>
         </div>
       </div>
-    </TouchCard>
+    </MobileCard>
   );
 }
 
@@ -241,10 +241,9 @@ export function LeaderboardItem({
   onClick?: () => void;
 }) {
   return (
-    <TouchCard
+    <div
       onClick={onClick}
-      className="flex items-center justify-between py-2 hover:bg-gray-50 rounded-lg transition-colors"
-      hapticFeedback="light"
+      className="flex items-center justify-between py-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
     >
       <div className="flex items-center space-x-3">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -261,6 +260,6 @@ export function LeaderboardItem({
       <span className="text-gray-600 text-sm">
         {formatDistance(showTotal ? member.totalDistance : member.weekDistance, userPreferredUnits)}
       </span>
-    </TouchCard>
+    </div>
   );
 }

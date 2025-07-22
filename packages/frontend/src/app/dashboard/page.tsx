@@ -14,7 +14,8 @@ import { TeamSelector } from '@/components/dashboard/TeamSelector';
 import { EnhancedRecentActivities } from '@/components/dashboard/EnhancedRecentActivities';
 import { formatDistance } from '@/services/activity.service';
 import { MobileLayout } from '@/components/layout/MobileLayout';
-import { PullToRefresh, TouchCard, TouchButton } from '@/components/mobile/TouchInteractions';
+import { PullToRefresh, TouchButton } from '@/components/mobile/TouchInteractions';
+import { MobileCard } from '@/components/mobile/MobileCard';
 import { ConnectionStatus, ConnectionStatusBanner } from '@/components/ConnectionStatus';
 import { AchievementNotificationManager } from '@/components/AchievementNotification';
 import { useWebSocketContext, useWebSocketStatus } from '@/contexts/WebSocketContext';
@@ -136,27 +137,27 @@ export default function DashboardPage() {
       />
 
       <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
-        <div className="space-y-4 pb-24">
+        <div className="space-y-6 px-4 pb-24">
           {/* Error State */}
           {dashboardError && (
-            <TouchCard className="border-red-200 bg-red-50">
+            <MobileCard variant="flat" className="border-red-200 bg-red-50">
               <div className="text-center">
                 <p className="text-red-800 mb-4">Failed to load dashboard data</p>
                 <TouchButton onClick={handleRefresh} variant="primary" size="sm">
                   Retry
                 </TouchButton>
               </div>
-            </TouchCard>
+            </MobileCard>
           )}
 
           {/* Loading State */}
           {isLoading && (
-            <TouchCard>
+            <MobileCard>
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading your dashboard...</p>
               </div>
-            </TouchCard>
+            </MobileCard>
           )}
 
           {/* Main Content */}
@@ -171,7 +172,7 @@ export default function DashboardPage() {
 
               {/* Selected Team Progress */}
               {selectedTeam && (
-                <TouchCard className="mb-6">
+                <MobileCard>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">{selectedTeam.name}</h2>
                     <div className="flex items-center space-x-2">
@@ -213,7 +214,7 @@ export default function DashboardPage() {
                       Your role: {selectedTeam.role.toLowerCase()}
                     </p>
                   </div>
-                </TouchCard>
+                </MobileCard>
               )}
 
               {/* Log Activity Button */}

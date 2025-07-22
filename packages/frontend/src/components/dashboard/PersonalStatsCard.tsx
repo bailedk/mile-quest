@@ -4,7 +4,7 @@
 
 'use client';
 
-import { TouchCard } from '@/components/mobile/TouchInteractions';
+import { MobileCard, MobileStatCard } from '@/components/mobile/MobileCard';
 import { formatDistance } from '@/services/activity.service';
 import { formatBestDayDate } from '@/utils/dateFormatting';
 
@@ -22,50 +22,49 @@ interface PersonalStatsCardProps {
 export function PersonalStatsCard({ personalStats, userPreferredUnits }: PersonalStatsCardProps) {
   if (!personalStats) {
     return (
-      <TouchCard className="mb-6">
-        <div className="text-center py-8">
+      <MobileCard>
+        <div className="text-center py-4">
           <p className="text-gray-500">No personal statistics available</p>
         </div>
-      </TouchCard>
+      </MobileCard>
     );
   }
 
   return (
     <>
       {/* Personal Stats Cards Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4">
         {/* Total Distance */}
-        <TouchCard className="text-center">
-          <p className="text-sm text-gray-600">Total Distance</p>
-          <p className="text-xl font-semibold text-gray-900">
-            {personalStats ? formatDistance(personalStats.totalDistance, userPreferredUnits) : '0 km'}
-          </p>
-        </TouchCard>
+        <MobileStatCard
+          label="Total Distance"
+          value={personalStats ? formatDistance(personalStats.totalDistance, userPreferredUnits) : '0 km'}
+        />
 
         {/* This Month */}
-        <TouchCard className="text-center">
-          <p className="text-sm text-gray-600">This Month</p>
-          <p className="text-xl font-semibold text-gray-900">
-            {formatDistance(personalStats.thisMonth.distance, userPreferredUnits)}
-          </p>
-        </TouchCard>
+        <MobileStatCard
+          label="This Month"
+          value={formatDistance(personalStats.thisMonth.distance, userPreferredUnits)}
+        />
       </div>
 
       {/* Additional Stats */}
-      <TouchCard className="mb-6">
+      <MobileCard className="mt-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h3>
-        <div className="space-y-2 text-gray-700">
-          <p className="text-sm">
-            <span className="font-medium">This Week:</span> {formatDistance(personalStats.thisWeek.distance, userPreferredUnits)}
-          </p>
-          <p className="text-sm">
-            <span className="font-medium">Your Best:</span> {formatBestDayDate(personalStats.bestDay.date)} ({formatDistance(personalStats.bestDay.distance, userPreferredUnits)})
-          </p>
-          <p className="text-sm">
-            <span className="font-medium">Current Streak:</span> {personalStats.currentStreak} days
-          </p>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-600">This Week</span>
+            <span className="text-sm font-semibold text-gray-900">{formatDistance(personalStats.thisWeek.distance, userPreferredUnits)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-600">Your Best</span>
+            <span className="text-sm font-semibold text-gray-900">{formatBestDayDate(personalStats.bestDay.date)} ({formatDistance(personalStats.bestDay.distance, userPreferredUnits)})</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-600">Current Streak</span>
+            <span className="text-sm font-semibold text-gray-900">{personalStats.currentStreak} days</span>
+          </div>
         </div>
-      </TouchCard>
+      </MobileCard>
     </>
   );
 }

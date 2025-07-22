@@ -4,7 +4,7 @@
 
 'use client';
 
-import { TouchCard } from '@/components/mobile/TouchInteractions';
+import { MobileCard } from '@/components/mobile/MobileCard';
 
 interface TeamSelectorProps {
   teams: Array<{
@@ -30,7 +30,7 @@ export function TeamSelector({ teams, selectedTeamId, setSelectedTeamId }: TeamS
   }
 
   return (
-    <TouchCard className="mb-6">
+    <MobileCard>
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Team</h3>
       <div className="grid gap-2">
         {teams.map((team) => (
@@ -64,6 +64,6 @@ export function TeamSelector({ teams, selectedTeamId, setSelectedTeamId }: TeamS
           </button>
         ))}
       </div>
-    </TouchCard>
+    </MobileCard>
   );
 }

@@ -4,7 +4,8 @@
 
 'use client';
 
-import { TouchCard, TouchButton } from '@/components/mobile/TouchInteractions';
+import { TouchButton } from '@/components/mobile/TouchInteractions';
+import { MobileCard } from '@/components/mobile/MobileCard';
 import { GoalProgressChart, ActivityBarChart, ProgressLineChart } from '@/components/charts';
 
 interface ChartsSectionProps {
@@ -32,7 +33,7 @@ export function ChartsSection({
     <>
       {/* Goal Progress Chart */}
       {selectedTeam?.progress && (
-        <TouchCard>
+        <MobileCard>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Goal Progress</h3>
           <GoalProgressChart
             currentDistance={selectedTeam.progress.currentDistance}
@@ -41,11 +42,11 @@ export function ChartsSection({
             height={viewport.isMobile ? 180 : 200} 
             className="w-full"
           />
-        </TouchCard>
+        </MobileCard>
       )}
 
       {/* Activity Breakdown Chart */}
-      <TouchCard>
+      <MobileCard>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Breakdown</h3>
         <ActivityBarChart
           data={chartData.activityBreakdown}
@@ -53,10 +54,10 @@ export function ChartsSection({
           height={viewport.isMobile ? 200 : 220}
           className="w-full"
         />
-      </TouchCard>
+      </MobileCard>
 
       {/* Progress Charts with Toggle */}
-      <TouchCard>
+      <MobileCard>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Progress Over Time</h3>
           
@@ -100,7 +101,7 @@ export function ChartsSection({
             className="w-full"
           />
         )}
-      </TouchCard>
+      </MobileCard>
     </>
   );
 }

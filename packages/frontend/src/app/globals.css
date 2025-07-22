@@ -276,6 +276,29 @@ body {
   }
 }
 
+/* Dashboard Layout Utilities */
+@layer utilities {
+  /* Consistent section spacing */
+  .dashboard-section {
+    @apply mb-6;
+  }
+  
+  /* Card shadow and border consistency */
+  .card-base {
+    @apply bg-white rounded-lg border border-gray-200 shadow-sm;
+  }
+  
+  /* Touch-friendly minimum sizes */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Dashboard container padding */
+  .dashboard-container {
+    @apply px-4 pb-24 space-y-6;
+  }
+}
+
 /* Print Styles */
 @media print {
   body {

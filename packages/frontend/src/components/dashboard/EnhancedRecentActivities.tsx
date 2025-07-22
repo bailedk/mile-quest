@@ -5,7 +5,7 @@
 'use client';
 
 import Link from 'next/link';
-import { TouchCard } from '@/components/mobile/TouchInteractions';
+import { MobileCard } from '@/components/mobile/MobileCard';
 import { formatDistance } from '@/services/activity.service';
 import { getRelativeTime } from '@/utils/dateFormatting';
 
@@ -32,9 +32,9 @@ export function EnhancedRecentActivities({
 }: EnhancedRecentActivitiesProps) {
   if (activities.length === 0) {
     return (
-      <TouchCard className="mb-6">
+      <MobileCard>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h3>
-        <div className="text-center py-8">
+        <div className="text-center py-4">
           <p className="text-gray-500 mb-4">No recent activities</p>
           <Link
             href="/activities/new"
@@ -43,12 +43,12 @@ export function EnhancedRecentActivities({
             Log Your First Activity
           </Link>
         </div>
-      </TouchCard>
+      </MobileCard>
     );
   }
 
   return (
-    <TouchCard className="mb-6">
+    <MobileCard>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
         <Link
@@ -110,6 +110,6 @@ export function EnhancedRecentActivities({
           </div>
         ))}
       </div>
-    </TouchCard>
+    </MobileCard>
   );
 }
