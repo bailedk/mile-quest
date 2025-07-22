@@ -54,6 +54,11 @@ Parameters:
     Description: Pusher application secret for WebSocket authentication
     NoEcho: true
     Default: "mock-pusher-secret"
+  MapboxAccessToken:
+    Type: String
+    Description: Mapbox access token for map services
+    NoEcho: true
+    Default: "mock-mapbox-token"
 
 Conditions:
   IsProduction: !Equals [!Ref Stage, "prod"]
@@ -177,6 +182,12 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-WebSocketFunction'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  GoalsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-${Stage}-GoalsFunction'
       RetentionInDays: !If [IsProduction, 30, 7]
 
   # Lambda Functions
@@ -358,6 +369,55 @@ Resources:
             Path: /websocket/token
             Method: GET
 
+  GoalsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/lambda/goals/
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref GoalsFunctionLogGroup
+      Environment:
+        Variables:
+          MAPBOX_ACCESS_TOKEN: !Ref MapboxAccessToken
+      Events:
+        CreateGoal:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /goals
+            Method: POST
+        ValidateRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /goals/validate-route
+            Method: POST
+        SearchLocation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /goals/search-location
+            Method: GET
+        OptimizeWaypoints:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /goals/optimize-waypoints
+            Method: POST
+        GetGoal:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /goals/{goalId}
+            Method: GET
+        GetElevation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /goals/{goalId}/elevation
+            Method: GET
+
   ScheduledFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -451,6 +511,8 @@ Outputs:
       Activities: /aws/lambda/${AWS::StackName}-${Stage}-ActivitiesFunction
       Dashboard: /aws/lambda/${AWS::StackName}-${Stage}-DashboardFunction
       Progress: /aws/lambda/${AWS::StackName}-${Stage}-ProgressFunction
+      Leaderboards: /aws/lambda/${AWS::StackName}-${Stage}-LeaderboardsFunction
       WebSocket: /aws/lambda/${AWS::StackName}-${Stage}-WebSocketFunction
+      Goals: /aws/lambda/${AWS::StackName}-${Stage}-GoalsFunction
       Scheduled: /aws/lambda/${AWS::StackName}-${Stage}-ScheduledFunction
       API Gateway: /aws/apigateway/${AWS::StackName}-${Stage}

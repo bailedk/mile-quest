@@ -495,7 +495,7 @@
 |---------|-------------|--------|-------|----------|--------------|
 | BE-1.1 | Enhance Goal Service for Waypoints | ✅ Complete | Backend Dev | High | Goal service enhancements |
 | INT-1.1 | Configure Mapbox Account and Tokens | ✅ Complete | Integration Dev | High | External service abstraction |
-| INT-1.2 | Implement Goal Creation API with Maps | 🔴 Ready | Integration Dev | High | INT-1.1, BE-020 |
+| INT-1.2 | Implement Goal Creation API with Maps | ✅ Complete | Integration Dev | High | INT-1.1, BE-1.1 |
 | INT-1.3 | Add Route Visualization to Frontend | 🔴 Ready | Integration Dev | Medium | INT-1.2 |
 | INT-2.1 | Configure Push Notification Service | 🔴 Ready | Integration Dev | Medium | PWA-501 |
 | INT-2.2 | Implement Achievement Notifications | 🔴 Ready | Integration Dev | Low | INT-2.1, BE-019 |
@@ -517,6 +517,49 @@ When completing work:
 4. Update percentage calculations
 
 ## 📋 Historical Updates
+
+### 2025-01-21 (INT-1.2 Complete - Goal Creation API with Maps)
+- Completed INT-1.2: Enhanced goal creation API with advanced map integration features
+  - ✅ **Enhanced Goals Lambda Handler**: Created new Goals function with 6 map-integrated endpoints
+    - POST /goals - Create goal with team ID in body (more flexible than nested route)
+    - POST /goals/validate-route - Validate route without creating goal
+    - GET /goals/search-location - Search for addresses with proximity support
+    - POST /goals/optimize-waypoints - Optimize waypoint order for shortest path
+    - GET /goals/{goalId} - Get goal with visualization data and optional progress
+    - GET /goals/{goalId}/elevation - Get elevation profile (mock data for now)
+  - ✅ **Map Service Integration**: Full integration with existing map service abstraction
+    - Route calculation with walking profile and step-by-step directions
+    - Address search with proximity-based results
+    - Waypoint optimization preserving locked start/end points
+    - Polyline encoding for efficient route visualization
+    - Bounds calculation for map viewport fitting
+  - ✅ **Enhanced Error Handling**: Comprehensive error responses with specific codes
+    - Detailed validation errors with suggestions for resolution
+    - Map service error translation to user-friendly messages
+    - Proper HTTP status codes for different error scenarios
+  - ✅ **SAM Template Updates**: Added GoalsFunction to infrastructure
+    - New Lambda function configuration with Mapbox token
+    - API Gateway routes for all 6 endpoints
+    - CloudWatch log group for monitoring
+    - Updated build script to include goals handler
+  - ✅ **Testing Infrastructure**: Created comprehensive test script
+    - Test location search with proximity
+    - Route validation with waypoints
+    - Waypoint optimization
+    - Goal creation with maps
+    - Enhanced goal retrieval with visualization
+    - Elevation profile retrieval
+    - Error handling validation
+  - ✅ **Documentation**: Complete API and integration documentation
+    - Detailed API documentation with all endpoints
+    - Request/response examples
+    - Error code reference
+    - Frontend integration guide with React/TypeScript examples
+    - Map visualization best practices
+    - Mobile considerations
+    - Testing strategies
+- Integration Developer Agent (19) completed advanced map integration
+- Foundation ready for frontend route visualization (INT-1.3)
 
 ### 2025-01-20 (BE-1.1 Complete - Enhanced Goal Service for Waypoints)
 - Completed BE-1.1: Enhanced Goal Service with comprehensive waypoint validation and error handling

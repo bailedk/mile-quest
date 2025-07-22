@@ -20,6 +20,7 @@ const functions = [
   'leaderboards',
   'websocket',
   'scheduled',
+  'goals',
 ];
 
 // Ensure dist directories exist

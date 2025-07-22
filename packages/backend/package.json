@@ -26,6 +26,7 @@
     "test:teamgoal": "tsx scripts/test-teamgoal-schema.ts",
     "test:goal-enhancements": "tsx scripts/test-goal-enhancements.ts",
     "test:goal-validation": "tsx scripts/test-goal-validation.ts",
+    "test:goals-api": "tsx scripts/test-goals-api.ts",
     "perf:test": "tsx src/scripts/performance-testing.ts",
     "perf:dashboard": "tsx src/scripts/performance-dashboard.ts",
     "perf:test:smoke": "tsx src/scripts/performance-testing.ts smokeTest",
