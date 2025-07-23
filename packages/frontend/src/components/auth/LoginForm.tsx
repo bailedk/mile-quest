@@ -7,7 +7,11 @@ import { Button } from '@/components/patterns/Button';
 import { useFormValidation, ValidatedInput, validationRules } from '@/components/forms/FormValidation';
 import { ErrorMessage } from '@/components/error';
 
-export function LoginForm() {
+interface LoginFormProps {
+  redirectTo?: string;
+}
+
+export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
   const router = useRouter();
   const { signIn, isLoading, error, clearError } = useAuthStore();
   
@@ -34,7 +38,7 @@ export function LoginForm() {
 
     try {
       await signIn(values.email, values.password);
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (err) {
       // Error is handled by the store
     }

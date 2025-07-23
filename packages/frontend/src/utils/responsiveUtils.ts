@@ -72,6 +72,8 @@ export function useResponsive() {
 }
 
 // Device and capability detection
+// WARNING: This function can cause hydration mismatches if called during SSR
+// Use the useDeviceCapabilities hook instead for React components
 export function getDeviceCapabilities() {
   if (typeof window === 'undefined') {
     return {
@@ -100,9 +102,25 @@ export function getDeviceCapabilities() {
   };
 }
 
-// React hook for device capabilities
+// React hook for device capabilities with proper hydration handling
 export function useDeviceCapabilities() {
-  const [capabilities] = React.useState(getDeviceCapabilities);
+  const [capabilities, setCapabilities] = React.useState({
+    hasTouch: false,
+    hasHover: false,
+    hasPointerFine: false,
+    hasVibration: false,
+    hasDeviceMotion: false,
+    hasDeviceOrientation: false,
+    hasNotifications: false,
+    hasServiceWorker: false,
+    hasWebShare: false,
+  });
+
+  React.useEffect(() => {
+    // Only check capabilities after hydration
+    setCapabilities(getDeviceCapabilities());
+  }, []);
+
   return capabilities;
 }
 

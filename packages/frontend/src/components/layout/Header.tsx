@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { AriaBanner, AriaNavigation, SkipLinks } from '@/components/accessibility/AriaComponents';
 import { FocusTrap, useKeyboardNavigation } from '@/components/accessibility/KeyboardNavigation';
 import { AccessibleTouchTarget } from '@/components/accessibility/MobileAccessibility';
-import { useHydrated } from '@/hooks/useHydrated';
+import { useHydration } from '@/contexts/HydrationContext';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -15,10 +15,10 @@ export function Header() {
   const { isAuthenticated, user, signOut } = useAuthStore();
   const { isKeyboardUser } = useKeyboardNavigation();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const hydrated = useHydrated();
+  const { isHydrated, isAuthInitialized } = useHydration();
   
   // Use non-authenticated state during SSR and initial hydration to prevent mismatch
-  const showAuthenticatedNav = hydrated && isAuthenticated;
+  const showAuthenticatedNav = isHydrated && isAuthInitialized && isAuthenticated;
   
   const handleSignOut = async () => {
     try {

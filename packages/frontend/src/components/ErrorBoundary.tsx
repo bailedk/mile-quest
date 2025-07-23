@@ -2,6 +2,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { logError, getErrorMessage } from '@/utils/error-handling';
+import { reloadPage } from '@/utils/ssr-safe';
 
 interface Props {
   children: ReactNode;
@@ -140,7 +141,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
                 {!canRetry && retryCount >= this.maxRetries && (
                   <button
-                    onClick={() => window.location.reload()}
+                    onClick={() => reloadPage()}
                     className="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

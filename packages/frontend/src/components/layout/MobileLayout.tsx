@@ -4,6 +4,8 @@ import React from 'react';
 import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { BottomNavigation, defaultNavItems, useBottomNavigation } from '@/components/mobile/BottomNavigation';
 import { useAuthStore } from '@/store/auth.store';
+import { useHydrated } from '@/hooks/useHydrated';
+import { useMediaQuery } from '@/utils/hydration';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -24,10 +26,12 @@ export function MobileLayout({
   headerActions,
   className = ''
 }: MobileLayoutProps) {
+  const hydrated = useHydrated();
   const { isAuthenticated } = useAuthStore();
   const { shouldShow: shouldShowBottomNav } = useBottomNavigation();
   
-  const showBottomNavigation = showBottomNav && shouldShowBottomNav && isAuthenticated;
+  // Only show bottom navigation after hydration to avoid mismatch
+  const showBottomNavigation = hydrated && showBottomNav && shouldShowBottomNav && isAuthenticated;
 
   return (
     <div className={`mobile-viewport flex flex-col ${className}`}>
@@ -59,18 +63,7 @@ export function MobileLayout({
 
 // Hook to determine if we should use mobile layout
 export function useMobileLayout() {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
+  // Use hydration-safe media query hook
+  const isMobile = useMediaQuery('(max-width: 767px)');
   return { isMobile };
 }

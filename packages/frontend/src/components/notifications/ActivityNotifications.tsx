@@ -48,8 +48,24 @@ export function ActivityNotifications({
   const [history, setHistory] = useState<ActivityNotification[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(enableSound);
+  const [stylesInjected, setStylesInjected] = useState(false);
   
   const { activityFeed, feedNewCount, isConnected } = useWebSocketContext();
+
+  // Inject styles only on client side
+  useEffect(() => {
+    if (!stylesInjected && typeof document !== 'undefined') {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = styles;
+      document.head.appendChild(styleElement);
+      setStylesInjected(true);
+      
+      // Cleanup on unmount
+      return () => {
+        document.head.removeChild(styleElement);
+      };
+    }
+  }, [stylesInjected]);
 
   // Subscribe to activity feed updates
   useEffect(() => {
@@ -592,12 +608,5 @@ const styles = `
     overflow: hidden;
   }
 `;
-
-// Inject styles
-if (typeof document !== 'undefined') {
-  const styleElement = document.createElement('style');
-  styleElement.textContent = styles;
-  document.head.appendChild(styleElement);
-}
 
 export default ActivityNotifications;

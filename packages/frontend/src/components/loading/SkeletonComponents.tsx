@@ -44,7 +44,7 @@ export function Skeleton({
         <motion.div
           className={baseClasses}
           style={{ 
-            width: width || (variant === 'text' ? `${Math.random() * 40 + 60}%` : '100%'), 
+            width: width || (variant === 'text' ? '85%' : '100%'), 
             height: height || (variant === 'text' ? '1rem' : '3rem')
           }}
           animate={{
@@ -65,7 +65,7 @@ export function Skeleton({
         <motion.div
           className={baseClasses}
           style={{ 
-            width: width || (variant === 'text' ? `${Math.random() * 40 + 60}%` : '100%'), 
+            width: width || (variant === 'text' ? '85%' : '100%'), 
             height: height || (variant === 'text' ? '1rem' : '3rem')
           }}
           animate={{
@@ -86,7 +86,7 @@ export function Skeleton({
         <div
           className={`${baseClasses} relative overflow-hidden`}
           style={{ 
-            width: width || (variant === 'text' ? `${Math.random() * 40 + 60}%` : '100%'), 
+            width: width || (variant === 'text' ? '85%' : '100%'), 
             height: height || (variant === 'text' ? '1rem' : '3rem')
           }}
         >
@@ -111,7 +111,7 @@ export function Skeleton({
       <div
         className={`${baseClasses} relative overflow-hidden`}
         style={{ 
-          width: width || (variant === 'text' ? `${Math.random() * 40 + 60}%` : '100%'), 
+          width: width || (variant === 'text' ? '85%' : '100%'), 
           height: height || (variant === 'text' ? '1rem' : '3rem')
         }}
       >

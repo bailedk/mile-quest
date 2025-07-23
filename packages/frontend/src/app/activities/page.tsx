@@ -9,6 +9,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { activityService, formatDistance, formatDuration, calculatePace } from '@/services/activity.service';
 import { ActivityListItem, ActivityStats } from '@/types/activity.types';
+import { useHydration } from '@/contexts/HydrationContext';
+import { formatDateSafe, dateFormats } from '@/utils/date-formatting';
 
 export default function ActivitiesPage() {
   return (
@@ -20,6 +22,7 @@ export default function ActivitiesPage() {
 
 function ActivitiesContent() {
   const router = useRouter();
+  const { isHydrated } = useHydration();
   const { user } = useAuthStore();
   const [activities, setActivities] = useState<ActivityListItem[]>([]);
   const [stats, setStats] = useState<ActivityStats | null>(null);
@@ -48,23 +51,13 @@ function ActivitiesContent() {
     loadActivities();
   }, []);
 
+  // Use hydration-safe date formatting
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateSafe(dateString, dateFormats.dateWithDay, isHydrated);
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    return formatDateSafe(dateString, dateFormats.time12, isHydrated);
   };
 
   if (isLoading) {

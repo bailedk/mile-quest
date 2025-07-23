@@ -131,13 +131,16 @@ export function LoadingSkeleton({
   }
 
   // Text variant (default)
+  // Use deterministic widths based on line index to avoid hydration mismatch
+  const widths = [85, 100, 70, 90, 65];
+  
   return (
     <div className={`${animationClass} ${className}`}>
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
           className={`h-4 bg-gray-200 rounded ${i < lines - 1 ? 'mb-2' : ''}`}
-          style={{ width: `${Math.random() * 40 + 60}%` }}
+          style={{ width: `${widths[i % widths.length]}%` }}
         />
       ))}
     </div>

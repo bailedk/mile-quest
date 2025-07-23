@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
+import { usePrefersReducedMotion } from '@/utils/hydration';
 
 interface PageTransitionsProps {
   children: ReactNode;
@@ -69,9 +70,8 @@ export function PageTransitions({
     }
   }, [pathname, preserveScroll, scrollPositions]);
 
-  // Check for reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' && 
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Check for reduced motion preference using hydration-safe hook
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   if (prefersReducedMotion) {
     return <>{children}</>;

@@ -1,4 +1,5 @@
 import { GoalDraft } from '@/types/goal.types';
+import { safeLocalStorage } from './ssr-safe';
 
 const GOAL_DRAFT_KEY = 'mile-quest-goal-draft';
 const DRAFT_EXPIRY_HOURS = 24;
@@ -9,7 +10,7 @@ export const localStorageUtils = {
    */
   saveGoalDraft: (draft: GoalDraft): void => {
     try {
-      localStorage.setItem(GOAL_DRAFT_KEY, JSON.stringify(draft));
+      safeLocalStorage.setItem(GOAL_DRAFT_KEY, JSON.stringify(draft));
     } catch (error) {
       console.error('Failed to save goal draft to localStorage:', error);
     }
@@ -20,7 +21,7 @@ export const localStorageUtils = {
    */
   getGoalDraft: (): GoalDraft | null => {
     try {
-      const stored = localStorage.getItem(GOAL_DRAFT_KEY);
+      const stored = safeLocalStorage.getItem(GOAL_DRAFT_KEY);
       if (!stored) return null;
 
       const draft = JSON.parse(stored) as GoalDraft;
@@ -47,7 +48,7 @@ export const localStorageUtils = {
    */
   clearGoalDraft: (): void => {
     try {
-      localStorage.removeItem(GOAL_DRAFT_KEY);
+      safeLocalStorage.removeItem(GOAL_DRAFT_KEY);
     } catch (error) {
       console.error('Failed to clear goal draft from localStorage:', error);
     }
@@ -57,13 +58,6 @@ export const localStorageUtils = {
    * Check if localStorage is available
    */
   isAvailable: (): boolean => {
-    try {
-      const testKey = '__localStorage_test__';
-      localStorage.setItem(testKey, 'test');
-      localStorage.removeItem(testKey);
-      return true;
-    } catch {
-      return false;
-    }
+    return safeLocalStorage.isAvailable();
   },
 };

@@ -169,6 +169,7 @@ export const useAuthStore = create<AuthStore>()(
         tokens: state.tokens,
         isAuthenticated: state.isAuthenticated,
       }),
+      skipHydration: true, // Prevents hydration mismatch
     }
   )
 );

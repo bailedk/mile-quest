@@ -31,7 +31,7 @@ export function RealtimeLeaderboard({
 }: RealtimeLeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
   const [updatedEntries, setUpdatedEntries] = useState<Set<string>>(new Set());
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
   const [isRetrying, setIsRetrying] = useState(false);
 
   const errorHandler = useErrorHandler({
@@ -76,6 +76,11 @@ export function RealtimeLeaderboard({
   useEffect(() => {
     setEntries(initialEntries.slice(0, maxEntries));
   }, [initialEntries, maxEntries]);
+
+  // Initialize time after hydration
+  useEffect(() => {
+    setLastUpdateTime(Date.now());
+  }, []);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {

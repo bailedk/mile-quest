@@ -27,10 +27,15 @@ export function TeamProgressOverview({
   showConnectionStatus = false
 }: TeamProgressOverviewProps) {
   const [realtimeUpdates, setRealtimeUpdates] = useState<Map<string, TeamProgress>>(new Map());
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
 
   // Get the primary team for real-time updates (first team or active team)
   const primaryTeamId = teams.length > 0 ? teams[0].teamId : null;
+
+  // Initialize time after hydration
+  useEffect(() => {
+    setLastUpdateTime(Date.now());
+  }, []);
 
   const { connectionState, isConnected } = useRealtimeTeamProgress(primaryTeamId, {
     onProgressUpdate: (data) => {

@@ -35,11 +35,16 @@ export function DashboardStats({
     weekDistance,
     bestDay,
   });
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
   const [previousStats, setPreviousStats] = useState(realtimeStats);
   
   const { announce, AnnouncementRegion } = useScreenReaderAnnouncements();
   const { reducedMotion } = useVisualAccessibility();
+
+  // Initialize time after hydration
+  useEffect(() => {
+    setLastUpdateTime(Date.now());
+  }, []);
 
   // Use realtime activities to update stats
   const { connectionState, isConnected } = useRealtimeActivities(teamId, {

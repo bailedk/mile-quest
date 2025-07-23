@@ -1,59 +1,48 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 
 export interface OnlineStatusHook {
   isOnline: boolean;
   wasOffline: boolean;
 }
 
+// Subscribe function for online/offline events
+function subscribe(callback: () => void) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
+
+// Get current online status
+function getSnapshot() {
+  if (typeof navigator !== 'undefined') {
+    return navigator.onLine;
+  }
+  return true; // Default to online on server
+}
+
+// Server snapshot always returns true
+function getServerSnapshot() {
+  return true;
+}
+
 export function useOnlineStatus(): OnlineStatusHook {
-  const [isOnline, setIsOnline] = useState(true);
+  // Use useSyncExternalStore for proper hydration
+  const isOnline = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+  
   const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
-    // Set initial state
-    setIsOnline(navigator.onLine);
-
-    const handleOnline = () => {
-      console.log('App came online');
-      setIsOnline(true);
-      // Mark that we were offline if we were actually offline
-      if (!navigator.onLine) {
-        setWasOffline(true);
-      }
-    };
-
-    const handleOffline = () => {
-      console.log('App went offline');
-      setIsOnline(false);
+    // Track when we go offline
+    if (!isOnline) {
       setWasOffline(true);
-    };
-
-    // Add event listeners
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Handle visibility change (page became visible)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Check online status when page becomes visible
-        const currentlyOnline = navigator.onLine;
-        if (currentlyOnline !== isOnline) {
-          setIsOnline(currentlyOnline);
-          if (currentlyOnline && !isOnline) {
-            // We came back online
-            setWasOffline(true);
-          }
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    }
   }, [isOnline]);
 
   // Reset wasOffline flag after some time or when explicitly handled

@@ -151,7 +151,7 @@ export function MobileNetworkError({
   showConnectionStatus = true 
 }: MobileNetworkErrorProps) {
   const [connectionType, setConnectionType] = useState<string>('unknown');
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true); // Default to true for SSR
 
   useEffect(() => {
     const updateConnection = () => {

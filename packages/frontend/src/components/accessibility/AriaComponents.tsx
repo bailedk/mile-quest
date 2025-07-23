@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useId } from 'react';
 
 // ============================================================================
 // ARIA Landmark Components
@@ -255,8 +255,9 @@ export function AriaDisclosure({
   onToggle
 }: AriaDisclosureProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const contentId = `disclosure-content-${Math.random().toString(36).substr(2, 9)}`;
-  const buttonId = `disclosure-button-${Math.random().toString(36).substr(2, 9)}`;
+  const baseId = useId();
+  const contentId = `${baseId}-content`;
+  const buttonId = `${baseId}-button`;
 
   const handleToggle = useCallback(() => {
     if (disabled) return;
@@ -365,8 +366,9 @@ export function AriaProgress({
   variant = 'bar'
 }: AriaProgressProps) {
   const percentage = Math.round((value / max) * 100);
-  const progressId = `progress-${Math.random().toString(36).substr(2, 9)}`;
-  const labelId = `progress-label-${Math.random().toString(36).substr(2, 9)}`;
+  const baseId = useId();
+  const progressId = `${baseId}-progress`;
+  const labelId = `${baseId}-label`;
 
   const displayValue = valueText || (showPercentage ? `${percentage}%` : `${value} of ${max}`);
 

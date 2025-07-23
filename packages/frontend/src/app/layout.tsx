@@ -69,7 +69,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//api.mapbox.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preload" href="/icons/icon.svg" as="image" type="image/svg+xml" />
         
         {/* Critical resource hints */}
         <link rel="modulepreload" href="/_next/static/chunks/main.js" />

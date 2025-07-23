@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { logError, getErrorMessage } from '@/utils/error-handling';
+import { reloadPage, getLocationHref, getUserAgent, safeWindow } from '@/utils/ssr-safe';
 
 export default function GlobalError({
   error,
@@ -78,7 +79,7 @@ export default function GlobalError({
   const handleRetry = () => {
     if (errorCategory === 'chunk') {
       // For chunk errors, force a hard reload
-      window.location.reload();
+      reloadPage();
     } else {
       reset();
     }
@@ -92,11 +93,14 @@ export default function GlobalError({
       `Message: ${error.message}\n` +
       `Type: ${error.name}\n` +
       `Digest: ${error.digest || 'N/A'}\n` +
-      `URL: ${window.location.href}\n` +
-      `User Agent: ${navigator.userAgent}\n` +
+      `URL: ${getLocationHref()}\n` +
+      `User Agent: ${getUserAgent()}\n` +
       `Timestamp: ${new Date().toISOString()}`
     );
-    window.open(`mailto:support@milequest.app?subject=${subject}&body=${body}`);
+    const win = safeWindow();
+    if (win) {
+      win.open(`mailto:support@milequest.app?subject=${subject}&body=${body}`);
+    }
   };
 
   return (

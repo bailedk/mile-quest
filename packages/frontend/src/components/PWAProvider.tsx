@@ -5,6 +5,7 @@ import { InstallPrompt, UpdateNotification, NotificationPermission, AdvancedOffl
 import { pwaService } from '@/services/pwa.service';
 import { offlineSyncService } from '@/services/offline/sync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { getLocationPathname, safeLocalStorage, isServiceWorkerSupported, safeNavigator, addEventListener } from '@/utils/ssr-safe';
 
 interface PWAProviderProps {
   children: React.ReactNode;
@@ -26,7 +27,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
         console.log('[PWA] Provider initialized with advanced offline capabilities');
         
         // Check if we should show notification prompt on dashboard
-        const currentPath = window.location.pathname;
+        const currentPath = getLocationPathname();
         if (currentPath === '/dashboard') {
           const permission = pwaService.getNotificationPermission();
           if (permission === 'default') {
@@ -65,21 +66,24 @@ export function PWAProvider({ children }: PWAProviderProps) {
       }
     };
 
-    window.addEventListener('pwa-install-available', handleInstallAvailable);
-    window.addEventListener('pwa-update-available', handleUpdateAvailable);
-    window.addEventListener('pwa-installed', handleInstalled);
+    const removeInstallListener = addEventListener('pwa-install-available', handleInstallAvailable);
+    const removeUpdateListener = addEventListener('pwa-update-available', handleUpdateAvailable);
+    const removeInstalledListener = addEventListener('pwa-installed', handleInstalled);
 
     // Listen for online/offline events
     const handleOnline = () => {
       console.log('[PWA] Back online');
       // Trigger background sync when coming back online
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then((registration) => {
-          if ('sync' in registration) {
-            registration.sync.register('sync-activities');
-            registration.sync.register('sync-team-progress');
-          }
-        });
+      if (isServiceWorkerSupported()) {
+        const nav = safeNavigator();
+        if (nav && nav.serviceWorker.controller) {
+          nav.serviceWorker.ready.then((registration) => {
+            if ('sync' in registration) {
+              registration.sync.register('sync-activities');
+              registration.sync.register('sync-team-progress');
+            }
+          });
+        }
       }
     };
 
@@ -87,8 +91,8 @@ export function PWAProvider({ children }: PWAProviderProps) {
       console.log('[PWA] Gone offline');
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const removeOnlineListener = addEventListener('online', handleOnline);
+    const removeOfflineListener = addEventListener('offline', handleOffline);
 
     // Listen for service worker messages
     const handleServiceWorkerMessage = (event: MessageEvent) => {
@@ -105,19 +109,24 @@ export function PWAProvider({ children }: PWAProviderProps) {
       }
     };
     
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    let removeMessageListener: (() => void) | null = null;
+    if (isServiceWorkerSupported()) {
+      const nav = safeNavigator();
+      if (nav) {
+        nav.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+        removeMessageListener = () => nav.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
     }
 
     // Cleanup
     return () => {
-      window.removeEventListener('pwa-install-available', handleInstallAvailable);
-      window.removeEventListener('pwa-update-available', handleUpdateAvailable);
-      window.removeEventListener('pwa-installed', handleInstalled);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      removeInstallListener();
+      removeUpdateListener();
+      removeInstalledListener();
+      removeOnlineListener();
+      removeOfflineListener();
+      if (removeMessageListener) {
+        removeMessageListener();
       }
       offlineSyncService.destroy();
     };
@@ -126,7 +135,7 @@ export function PWAProvider({ children }: PWAProviderProps) {
   // Show offline status when there's pending data or when offline
   useEffect(() => {
     const shouldShowStatus = !isOnline || 
-      (localStorage.getItem('hasPendingSync') === 'true');
+      (safeLocalStorage.getItem('hasPendingSync') === 'true');
     setShowOfflineStatus(shouldShowStatus);
   }, [isOnline]);
 

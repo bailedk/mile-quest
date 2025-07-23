@@ -41,6 +41,7 @@ export interface ActivityUpdateInput {
 
 export interface ActivityListItem extends Activity {
   // Activities are now team-agnostic
+  // This interface may be extended in the future with list-specific properties
 }
 
 export interface ActivityStats {

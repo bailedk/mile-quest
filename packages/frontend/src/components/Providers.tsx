@@ -1,13 +1,13 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, Suspense } from 'react';
 import { PWAProvider } from './PWAProvider';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { PerformanceProvider } from '@/components/optimization/PerformanceProvider';
 import { preloadCriticalRoutes } from '@/components/optimization/LazyRoutes';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { HydrationProvider } from '@/contexts/HydrationContext';
 import { 
   VisualAccessibilityProvider,
   KeyboardNavigationProvider,
@@ -16,16 +16,10 @@ import {
   AccessibilityDevTools
 } from '@/components/accessibility';
 import { DevOnlyWrapper } from '@/components/DevOnlyWrapper';
-
-// Dynamically import ReactQueryDevtools with no SSR to prevent hydration mismatch
-const ReactQueryDevtools = dynamic(
-  () => import('@tanstack/react-query-devtools').then((mod) => ({
-    default: mod.ReactQueryDevtools,
-  })),
-  { ssr: false }
-);
+import { ClientOnlyDevTools } from './ClientOnlyDevTools';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -58,28 +52,34 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PerformanceProvider>
-        <ToastProvider>
-          <VisualAccessibilityProvider>
-            <KeyboardNavigationProvider>
-              <MobileAccessibilityProvider>
-                <PWAProvider>
-                  <WebSocketProvider>
-                    {children}
-                    
-                    {/* Accessibility UI Components */}
-                    <AccessibilityQuickActions />
-                    <DevOnlyWrapper>
-                      <AccessibilityDevTools />
-                    </DevOnlyWrapper>
-                  </WebSocketProvider>
-                </PWAProvider>
-              </MobileAccessibilityProvider>
-            </KeyboardNavigationProvider>
-          </VisualAccessibilityProvider>
-        </ToastProvider>
-      </PerformanceProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      <HydrationProvider>
+        <PerformanceProvider>
+          <ToastProvider>
+            <VisualAccessibilityProvider>
+              <KeyboardNavigationProvider>
+                <MobileAccessibilityProvider>
+                  <PWAProvider>
+                    <WebSocketProvider>
+                      {children}
+                      
+                      {/* Accessibility UI Components */}
+                      <Suspense fallback={null}>
+                        <AccessibilityQuickActions />
+                        <DevOnlyWrapper>
+                          <AccessibilityDevTools />
+                        </DevOnlyWrapper>
+                      </Suspense>
+                    </WebSocketProvider>
+                  </PWAProvider>
+                </MobileAccessibilityProvider>
+              </KeyboardNavigationProvider>
+            </VisualAccessibilityProvider>
+          </ToastProvider>
+        </PerformanceProvider>
+        <DevOnlyWrapper>
+          <ClientOnlyDevTools />
+        </DevOnlyWrapper>
+      </HydrationProvider>
     </QueryClientProvider>
   );
 }

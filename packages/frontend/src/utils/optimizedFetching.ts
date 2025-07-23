@@ -9,7 +9,7 @@ import { useCallback, useMemo } from 'react';
 class RequestBatcher {
   private static instance: RequestBatcher;
   private batchedRequests: Map<string, {
-    requests: Array<{ resolve: Function; reject: Function; }>;
+    requests: Array<{ resolve: (value: any) => void; reject: (reason?: any) => void; }>;
     timeout: NodeJS.Timeout;
   }> = new Map();
 

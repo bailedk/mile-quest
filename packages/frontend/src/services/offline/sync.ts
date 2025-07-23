@@ -6,6 +6,7 @@ import { offlineDB, OfflineActivity, SyncQueueItem, generateChecksum } from './d
 import { activityService } from '@/services/activity.service';
 import { teamService } from '@/services/team.service';
 import { pwaService } from '@/services/pwa.service';
+import { isServer, addEventListener, isOnline, isServiceWorkerSupported, safeNavigator, safeLocalStorage } from '@/utils/ssr-safe';
 
 export interface SyncResult {
   success: boolean;
@@ -37,27 +38,35 @@ export class OfflineSyncService {
    * Initialize sync service
    */
   async init(): Promise<void> {
+    // Only initialize in browser environment
+    if (isServer()) {
+      return;
+    }
+
     // Listen for online/offline events
-    window.addEventListener('online', () => this.handleOnline());
-    window.addEventListener('offline', () => this.handleOffline());
+    addEventListener('online', () => this.handleOnline());
+    addEventListener('offline', () => this.handleOffline());
 
     // Monitor network quality
     this.startNetworkMonitoring();
 
     // Start periodic sync if online
-    if (navigator.onLine) {
+    if (isOnline()) {
       this.startPeriodicSync();
     }
 
     // Register background sync
-    if ('serviceWorker' in navigator) {
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        if (registration && 'sync' in registration) {
-          await registration.sync.register('sync-all-data');
+    if (isServiceWorkerSupported()) {
+      const nav = safeNavigator();
+      if (nav && 'SyncManager' in window) {
+        try {
+          const registration = await nav.serviceWorker.ready;
+          if (registration && 'sync' in registration) {
+            await (registration as any).sync.register('sync-all-data');
+          }
+        } catch (error) {
+          console.error('[Sync] Failed to register background sync:', error);
         }
-      } catch (error) {
-        console.error('[Sync] Failed to register background sync:', error);
       }
     }
   }
@@ -66,7 +75,7 @@ export class OfflineSyncService {
    * Perform full sync
    */
   async syncAll(): Promise<SyncResult> {
-    if (this.isSyncing || !navigator.onLine) {
+    if (this.isSyncing || !isOnline()) {
       return {
         success: false,
         synced: 0,
@@ -393,22 +402,24 @@ export class OfflineSyncService {
    * Start network quality monitoring
    */
   private startNetworkMonitoring(): void {
-    if ('connection' in navigator) {
+    if (typeof navigator !== 'undefined' && 'connection' in navigator) {
       const connection = (navigator as any).connection;
       
-      const updateNetworkQuality = () => {
-        const effectiveType = connection.effectiveType;
-        if (effectiveType === '4g') {
-          this.networkQuality = 'good';
-        } else if (effectiveType === '3g') {
-          this.networkQuality = 'fair';
-        } else {
-          this.networkQuality = 'poor';
-        }
-      };
+      if (connection) {
+        const updateNetworkQuality = () => {
+          const effectiveType = connection.effectiveType;
+          if (effectiveType === '4g') {
+            this.networkQuality = 'good';
+          } else if (effectiveType === '3g') {
+            this.networkQuality = 'fair';
+          } else {
+            this.networkQuality = 'poor';
+          }
+        };
 
-      connection.addEventListener('change', updateNetworkQuality);
-      updateNetworkQuality();
+        connection.addEventListener('change', updateNetworkQuality);
+        updateNetworkQuality();
+      }
     }
   }
 
@@ -471,7 +482,7 @@ export class OfflineSyncService {
       isSyncing: this.isSyncing,
       lastSyncTime: this.lastSyncTime,
       networkQuality: this.networkQuality,
-      isOnline: navigator.onLine,
+      isOnline: isOnline(),
     };
   }
 

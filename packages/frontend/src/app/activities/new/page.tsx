@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { TouchCard, TouchButton } from '@/components/mobile/TouchInteractions';
 import { useAuthStore } from '@/store/auth.store';
 import { activityService, formatDistance, formatDuration } from '@/services/activity.service';
-import { format } from 'date-fns';
+import { useHydration } from '@/contexts/HydrationContext';
+import { withAuth } from '@/components/auth/withAuth';
+import { getDefaultDateInputValue, getDefaultTimeInputValue } from '@/utils/date-formatting';
 
 interface ActivityFormData {
   distance: string;
@@ -17,22 +19,33 @@ interface ActivityFormData {
   isPrivate: boolean;
 }
 
-export default function NewActivityPage() {
+function NewActivityPage() {
   const router = useRouter();
+  const { isHydrated } = useHydration();
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quickDistance, setQuickDistance] = useState<number | null>(null);
   
-  // Initialize with current date/time
-  const now = new Date();
+  // Initialize with empty values to avoid hydration mismatch
   const [formData, setFormData] = useState<ActivityFormData>({
     distance: '',
     duration: '',
-    date: format(now, 'yyyy-MM-dd'),
-    time: format(now, 'HH:mm'),
+    date: '',
+    time: '',
     notes: '',
     isPrivate: false,
   });
+
+  // Set current date/time after hydration
+  useEffect(() => {
+    if (isHydrated) {
+      setFormData(prev => ({
+        ...prev,
+        date: getDefaultDateInputValue(true),
+        time: getDefaultTimeInputValue(true),
+      }));
+    }
+  }, [isHydrated]);
 
   const [errors, setErrors] = useState<Partial<ActivityFormData>>({});
 
@@ -68,9 +81,13 @@ export default function NewActivityPage() {
       newErrors.duration = 'Please enter a valid duration';
     }
 
-    const activityDateTime = new Date(`${formData.date}T${formData.time}`);
-    if (activityDateTime > new Date()) {
-      newErrors.date = 'Cannot log future activities';
+    // Only validate date if we have both date and time
+    if (formData.date && formData.time) {
+      const activityDateTime = new Date(`${formData.date}T${formData.time}`);
+      const now = new Date();
+      if (activityDateTime > now) {
+        newErrors.date = 'Cannot log future activities';
+      }
     }
 
     setErrors(newErrors);
@@ -105,7 +122,8 @@ export default function NewActivityPage() {
     }
   };
 
-  const userPreferredUnits = user?.preferredUnits || 'miles';
+  // Get user preferred units, default to miles during SSR
+  const userPreferredUnits = isHydrated ? (user?.preferredUnits || 'miles') : 'miles';
 
   return (
     <MobileLayout title="Log Walk" showBack={true}>
@@ -185,7 +203,7 @@ export default function NewActivityPage() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
-                  max={format(new Date(), 'yyyy-MM-dd')}
+                  max={getDefaultDateInputValue(isHydrated) || undefined}
                   className={`w-full px-4 py-3 border rounded-lg ${
                     errors.date ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -296,3 +314,5 @@ export default function NewActivityPage() {
     </MobileLayout>
   );
 }
+
+export default withAuth(NewActivityPage);

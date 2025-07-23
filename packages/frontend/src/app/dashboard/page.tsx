@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useResponsive } from '@/utils/responsiveUtils';
 import { SwipeableLeaderboard } from '@/components/dashboard/SwipeableLeaderboard';
 import { PersonalStatsCard } from '@/components/dashboard/PersonalStatsCard';
@@ -22,6 +23,7 @@ import { useWebSocketContext, useWebSocketStatus } from '@/contexts/WebSocketCon
 import { useRealtimeActivities } from '@/hooks/useRealtimeActivities';
 import { useRealtimeUpdates, Achievement } from '@/hooks/useRealtimeUpdates';
 import { useAuthStore } from '@/store/auth.store';
+import { withAuth } from '@/components/auth/withAuth';
 
 // Custom hooks for clean separation of concerns
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -29,8 +31,9 @@ import { useDashboardCallbacks } from '@/hooks/useDashboardCallbacks';
 import { useDashboardSelection } from '@/hooks/useDashboardSelection';
 import { transformLeaderboardData } from '@/utils/dashboardDataTransforms';
 
-export default function DashboardPage() {
+function DashboardPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const router = useRouter();
   
   // Responsive detection
   const viewport = useResponsive();
@@ -219,7 +222,7 @@ export default function DashboardPage() {
 
               {/* Log Activity Button */}
               <TouchButton 
-                onClick={() => window.location.href = '/activities/new'}
+                onClick={() => router.push('/activities/new')}
                 variant="primary"
                 size="lg"
                 className="w-full"
@@ -275,3 +278,5 @@ export default function DashboardPage() {
     </MobileLayout>
   );
 }
+
+export default withAuth(DashboardPage);
