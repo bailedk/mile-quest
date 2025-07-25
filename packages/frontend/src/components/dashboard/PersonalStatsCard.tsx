@@ -43,7 +43,7 @@ export function PersonalStatsCard({ personalStats, userPreferredUnits }: Persona
         {/* This Month */}
         <MobileStatCard
           label="This Month"
-          value={formatDistance(personalStats.thisMonth.distance, userPreferredUnits)}
+          value={formatDistance(personalStats.thisMonth?.distance || 0, userPreferredUnits)}
         />
       </div>
 
@@ -53,11 +53,11 @@ export function PersonalStatsCard({ personalStats, userPreferredUnits }: Persona
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-600">This Week</span>
-            <span className="text-sm font-semibold text-gray-900">{formatDistance(personalStats.thisWeek.distance, userPreferredUnits)}</span>
+            <span className="text-sm font-semibold text-gray-900">{formatDistance(personalStats.thisWeek?.distance || 0, userPreferredUnits)}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-600">Your Best</span>
-            <span className="text-sm font-semibold text-gray-900">{formatBestDayDate(personalStats.bestDay.date)} ({formatDistance(personalStats.bestDay.distance, userPreferredUnits)})</span>
+            <span className="text-sm font-semibold text-gray-900">{formatBestDayDate(personalStats.bestDay?.date || null)} ({formatDistance(personalStats.bestDay?.distance || 0, userPreferredUnits)})</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-600">Current Streak</span>

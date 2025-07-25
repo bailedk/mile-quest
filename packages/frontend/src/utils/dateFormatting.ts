@@ -3,9 +3,17 @@
  */
 
 // Helper function to get relative time
-export function getRelativeTime(date: Date | string): string {
+export function getRelativeTime(date: Date | string | null | undefined): string {
+  if (!date) return 'Unknown';
+  
   const now = new Date();
   const then = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if the date is valid
+  if (isNaN(then.getTime())) {
+    return 'Invalid date';
+  }
+  
   const diffInSeconds = Math.floor((now.getTime() - then.getTime()) / 1000);
   
   if (diffInSeconds < 60) return 'just now';
@@ -16,9 +24,17 @@ export function getRelativeTime(date: Date | string): string {
 }
 
 // Helper to format date for best day display
-export function formatBestDayDate(date: Date | null): string {
+export function formatBestDayDate(date: Date | string | null | undefined): string {
   if (!date) return 'No activities yet';
-  return date.toLocaleDateString('en-US', { 
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    return 'No activities yet';
+  }
+  
+  return dateObj.toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric' 
   });

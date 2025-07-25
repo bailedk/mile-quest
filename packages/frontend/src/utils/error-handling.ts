@@ -326,7 +326,12 @@ export async function handleApiResponse<T>(response: Response): Promise<T> {
     
     try {
       errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
+      // Handle wrapped error responses
+      if (errorData.error && typeof errorData.error === 'object') {
+        errorMessage = errorData.error.message || errorData.error.code || errorMessage;
+      } else {
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      }
     } catch {
       // Response might not be JSON
       errorMessage = response.statusText || errorMessage;
@@ -350,7 +355,15 @@ export async function handleApiResponse<T>(response: Response): Promise<T> {
     return {} as T;
   }
   
-  return response.json();
+  const json = await response.json();
+  
+  // If the response has a success property and data property, unwrap the data
+  if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    return json.data as T;
+  }
+  
+  // Otherwise return the response as-is (for backwards compatibility)
+  return json;
 }
 
 /**
