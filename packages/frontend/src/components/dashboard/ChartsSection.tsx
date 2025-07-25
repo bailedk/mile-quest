@@ -46,15 +46,17 @@ export function ChartsSection({
       )}
 
       {/* Activity Breakdown Chart */}
-      <MobileCard>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Breakdown</h3>
-        <ActivityBarChart
-          data={chartData.activityBreakdown}
-          userPreferredUnits={userPreferredUnits}
-          height={viewport.isMobile ? 200 : 220}
-          className="w-full"
-        />
-      </MobileCard>
+      {chartData?.activityBreakdown && chartData.activityBreakdown.length > 0 && (
+        <MobileCard>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Breakdown</h3>
+          <ActivityBarChart
+            data={chartData.activityBreakdown}
+            userPreferredUnits={userPreferredUnits}
+            height={viewport.isMobile ? 200 : 220}
+            className="w-full"
+          />
+        </MobileCard>
+      )}
 
       {/* Progress Charts with Toggle */}
       <MobileCard>
@@ -86,7 +88,7 @@ export function ChartsSection({
 
         {chartView === 'daily' ? (
           <ProgressLineChart
-            data={chartData.dailyProgress}
+            data={chartData?.dailyProgress || []}
             userPreferredUnits={userPreferredUnits}
             showCumulative={false}
             height={viewport.isMobile ? 200 : 220}
@@ -94,7 +96,7 @@ export function ChartsSection({
           />
         ) : (
           <ProgressLineChart
-            data={chartData.weeklyProgress}
+            data={chartData?.weeklyProgress || []}
             userPreferredUnits={userPreferredUnits}
             showCumulative={true}
             height={viewport.isMobile ? 200 : 220}

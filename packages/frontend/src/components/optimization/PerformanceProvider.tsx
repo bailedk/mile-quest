@@ -39,13 +39,21 @@ export function PerformanceProvider({
     passed: true,
     violations: [],
   });
+  const [isEnabled] = useState(() => process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_TRACKING !== 'false');
 
   useEffect(() => {
+    // Skip if performance tracking is disabled
+    if (!isEnabled) return;
+    
     // Update metrics periodically
     const updateMetrics = () => {
-      const currentMetrics = monitor.getMetrics();
-      setMetrics(currentMetrics);
-      setBudgetStatus(checkPerformanceBudget(currentMetrics));
+      try {
+        const currentMetrics = monitor.getMetrics();
+        setMetrics(currentMetrics);
+        setBudgetStatus(checkPerformanceBudget(currentMetrics));
+      } catch (error) {
+        console.warn('Failed to update performance metrics:', error);
+      }
     };
 
     updateMetrics();
@@ -53,33 +61,41 @@ export function PerformanceProvider({
 
     return () => {
       clearInterval(interval);
-      monitor.disconnect();
+      try {
+        monitor.disconnect();
+      } catch (error) {
+        console.warn('Failed to disconnect performance monitor:', error);
+      }
     };
-  }, [monitor]);
+  }, [monitor, isEnabled]);
 
   // Development performance devtools
   useEffect(() => {
-    if (enableDevtools && typeof window !== 'undefined') {
-      // Add performance data to window for debugging
-      (window as any).__MILE_QUEST_PERFORMANCE__ = {
-        metrics,
-        budgetStatus,
-        monitor,
-      };
+    if (enableDevtools && isEnabled && typeof window !== 'undefined') {
+      try {
+        // Add performance data to window for debugging
+        (window as any).__MILE_QUEST_PERFORMANCE__ = {
+          metrics,
+          budgetStatus,
+          monitor,
+          };
 
-      // Log budget violations
-      if (!budgetStatus.passed && budgetStatus.violations.length > 0) {
-        console.group('🚨 Performance Budget Violations');
-        budgetStatus.violations.forEach(({ metric, value, budget }) => {
-          console.warn(
-            `${metric}: ${value.toFixed(2)}ms exceeds budget of ${budget}ms ` +
-            `(${((value / budget - 1) * 100).toFixed(1)}% over)`
-          );
-        });
-        console.groupEnd();
+        // Log budget violations
+        if (!budgetStatus.passed && budgetStatus.violations.length > 0) {
+          console.group('🚨 Performance Budget Violations');
+          budgetStatus.violations.forEach(({ metric, value, budget }) => {
+            console.warn(
+              `${metric}: ${value.toFixed(2)}ms exceeds budget of ${budget}ms ` +
+              `(${((value / budget - 1) * 100).toFixed(1)}% over)`
+            );
+          });
+          console.groupEnd();
+        }
+      } catch (error) {
+        console.warn('Failed to setup performance devtools:', error);
       }
     }
-  }, [enableDevtools, metrics, budgetStatus]);
+  }, [enableDevtools, isEnabled, metrics, budgetStatus]);
 
   const contextValue: PerformanceContextType = {
     metrics,
@@ -90,7 +106,7 @@ export function PerformanceProvider({
   return (
     <PerformanceContext.Provider value={contextValue}>
       {children}
-      {enableDevtools && <PerformanceDevtools />}
+      {enableDevtools && isEnabled && <PerformanceDevtools />}
     </PerformanceContext.Provider>
   );
 }

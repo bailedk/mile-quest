@@ -26,6 +26,8 @@ export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private metrics: PerformanceMetrics = {};
   private observers: PerformanceObserver[] = [];
+  private enabled: boolean;
+  private reportingEnabled: boolean;
 
   static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
@@ -35,87 +37,102 @@ export class PerformanceMonitor {
   }
 
   constructor() {
-    if (typeof window !== 'undefined') {
+    // Check if performance tracking is enabled
+    this.enabled = process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_TRACKING !== 'false';
+    this.reportingEnabled = process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_REPORTING === 'true';
+    
+    if (typeof window !== 'undefined' && this.enabled) {
       this.initializeObservers();
       this.trackNavigationTiming();
     }
   }
 
   private initializeObservers(): void {
+    // Skip if performance tracking is disabled
+    if (!this.enabled) return;
+    
+    // Check for PerformanceObserver support
+    if (typeof window === 'undefined' || !('PerformanceObserver' in window)) {
+      console.warn('PerformanceObserver not supported in this environment');
+      return;
+    }
+    
     // Largest Contentful Paint
-    if ('PerformanceObserver' in window) {
-      try {
-        const lcpObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1] as PerformanceEntry & { startTime: number };
-          this.metrics.LCP = lastEntry.startTime;
-          this.reportMetric('LCP', lastEntry.startTime);
-        });
-        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-        this.observers.push(lcpObserver);
-      } catch (e) {
-        console.warn('LCP observer not supported', e);
-      }
+    try {
+      const lcpObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1] as PerformanceEntry & { startTime: number };
+        this.metrics.LCP = lastEntry.startTime;
+        this.reportMetric('LCP', lastEntry.startTime);
+      });
+      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+      this.observers.push(lcpObserver);
+    } catch (e) {
+      console.warn('LCP observer not supported', e);
+    }
 
-      // First Input Delay
-      try {
-        const fidObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          entries.forEach((entry) => {
-            const fidEntry = entry as PerformanceEntry & { processingStart: number; startTime: number };
-            const fid = fidEntry.processingStart - fidEntry.startTime;
-            this.metrics.FID = fid;
-            this.reportMetric('FID', fid);
-          });
+    // First Input Delay
+    try {
+      const fidObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry) => {
+          const fidEntry = entry as PerformanceEntry & { processingStart: number; startTime: number };
+          const fid = fidEntry.processingStart - fidEntry.startTime;
+          this.metrics.FID = fid;
+          this.reportMetric('FID', fid);
         });
-        fidObserver.observe({ entryTypes: ['first-input'] });
-        this.observers.push(fidObserver);
-      } catch (e) {
-        console.warn('FID observer not supported', e);
-      }
+      });
+      fidObserver.observe({ entryTypes: ['first-input'] });
+      this.observers.push(fidObserver);
+    } catch (e) {
+      console.warn('FID observer not supported', e);
+    }
 
-      // Cumulative Layout Shift
-      try {
-        const clsObserver = new PerformanceObserver((list) => {
-          let clsValue = 0;
-          const entries = list.getEntries();
-          entries.forEach((entry) => {
-            const layoutShiftEntry = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
-            if (!layoutShiftEntry.hadRecentInput) {
-              clsValue += layoutShiftEntry.value;
-            }
-          });
-          this.metrics.CLS = clsValue;
-          this.reportMetric('CLS', clsValue);
+    // Cumulative Layout Shift
+    try {
+      const clsObserver = new PerformanceObserver((list) => {
+        let clsValue = 0;
+        const entries = list.getEntries();
+        entries.forEach((entry) => {
+          const layoutShiftEntry = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
+          if (!layoutShiftEntry.hadRecentInput) {
+            clsValue += layoutShiftEntry.value;
+          }
         });
-        clsObserver.observe({ entryTypes: ['layout-shift'] });
-        this.observers.push(clsObserver);
-      } catch (e) {
-        console.warn('CLS observer not supported', e);
-      }
+        this.metrics.CLS = clsValue;
+        this.reportMetric('CLS', clsValue);
+      });
+      clsObserver.observe({ entryTypes: ['layout-shift'] });
+      this.observers.push(clsObserver);
+    } catch (e) {
+      console.warn('CLS observer not supported', e);
+    }
 
-      // Navigation timing
-      try {
-        const navigationObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          entries.forEach((entry) => {
-            const navEntry = entry as PerformanceNavigationTiming;
-            this.metrics.FCP = navEntry.responseStart - navEntry.requestStart;
-            this.metrics.TTFB = navEntry.responseStart - navEntry.requestStart;
-            this.reportMetric('FCP', this.metrics.FCP);
-            this.reportMetric('TTFB', this.metrics.TTFB);
-          });
+    // Navigation timing
+    try {
+      const navigationObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry) => {
+          const navEntry = entry as PerformanceNavigationTiming;
+          this.metrics.FCP = navEntry.responseStart - navEntry.requestStart;
+          this.metrics.TTFB = navEntry.responseStart - navEntry.requestStart;
+          this.reportMetric('FCP', this.metrics.FCP);
+          this.reportMetric('TTFB', this.metrics.TTFB);
         });
-        navigationObserver.observe({ entryTypes: ['navigation'] });
-        this.observers.push(navigationObserver);
-      } catch (e) {
-        console.warn('Navigation observer not supported', e);
-      }
+      });
+      navigationObserver.observe({ entryTypes: ['navigation'] });
+      this.observers.push(navigationObserver);
+    } catch (e) {
+      console.warn('Navigation observer not supported', e);
     }
   }
 
   private trackNavigationTiming(): void {
-    if (typeof window !== 'undefined' && window.performance) {
+    if (!this.enabled || typeof window === 'undefined' || !window.performance) {
+      return;
+    }
+    
+    try {
       // Wait for page load to get accurate timing
       window.addEventListener('load', () => {
         const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
@@ -125,40 +142,53 @@ export class PerformanceMonitor {
           this.metrics.loadComplete = navigation.loadEventEnd - navigation.navigationStart;
         }
       });
+    } catch (error) {
+      console.warn('Failed to track navigation timing:', error);
     }
   }
 
   // Mark custom timing
   public mark(name: string): void {
-    if (typeof window !== 'undefined' && window.performance) {
+    if (!this.enabled || typeof window === 'undefined' || !window.performance) {
+      return;
+    }
+    
+    try {
       performance.mark(name);
+    } catch (error) {
+      // Silently fail - performance marking should not break the app
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`Failed to mark performance: ${name}`, error);
+      }
     }
   }
 
   // Measure time between marks
   public measure(name: string, startMark: string, endMark?: string): number {
-    if (typeof window !== 'undefined' && window.performance) {
-      try {
-        if (endMark) {
-          performance.measure(name, startMark, endMark);
-        } else {
-          performance.measure(name, startMark);
-        }
-        
-        const measure = performance.getEntriesByName(name, 'measure')[0];
-        const duration = measure?.duration || 0;
-        
-        if (!this.metrics.customTiming) {
-          this.metrics.customTiming = {};
-        }
-        this.metrics.customTiming[name] = duration;
-        
-        this.reportMetric(name, duration);
-        return duration;
-      } catch (e) {
-        console.warn('Performance measurement failed', e);
-        return 0;
+    if (!this.enabled || typeof window === 'undefined' || !window.performance) {
+      return 0;
+    }
+    
+    try {
+      if (endMark) {
+        performance.measure(name, startMark, endMark);
+      } else {
+        performance.measure(name, startMark);
       }
+      
+      const measure = performance.getEntriesByName(name, 'measure')[0];
+      const duration = measure?.duration || 0;
+      
+      if (!this.metrics.customTiming) {
+        this.metrics.customTiming = {};
+      }
+      this.metrics.customTiming[name] = duration;
+      
+      this.reportMetric(name, duration);
+      return duration;
+    } catch (e) {
+      console.warn('Performance measurement failed', e);
+      return 0;
     }
     return 0;
   }
@@ -170,35 +200,63 @@ export class PerformanceMonitor {
 
   // Report metric to analytics
   private reportMetric(name: string, value: number): void {
-    // In a real app, you would send this to your analytics service
+    // Skip if reporting is disabled
+    if (!this.reportingEnabled) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Performance metric - ${name}: ${value.toFixed(2)}ms (reporting disabled)`);
+      }
+      return;
+    }
+    
+    // Log in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`Performance metric - ${name}: ${value.toFixed(2)}ms`);
     }
 
-    // Example: Send to Google Analytics 4
+    // Send to Google Analytics 4 (with error handling)
     if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'performance_metric', {
-        metric_name: name,
-        metric_value: value,
-        custom_parameter_1: 'mile_quest_performance'
-      });
+      try {
+        (window as any).gtag('event', 'performance_metric', {
+          metric_name: name,
+          metric_value: value,
+          custom_parameter_1: 'mile_quest_performance'
+        });
+      } catch (error) {
+        // Silently fail - analytics should not break the app
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to send metric to Google Analytics:', error);
+        }
+      }
     }
 
-    // Example: Send to custom analytics endpoint
-    if (typeof window !== 'undefined') {
-      fetch('/api/analytics/performance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          metric: name,
-          value,
-          timestamp: Date.now(),
-          userAgent: navigator.userAgent,
-          url: window.location.href
-        })
-      }).catch(() => {
-        // Silently fail for analytics
-      });
+    // Send to custom analytics endpoint (with error handling)
+    if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+      // Use requestIdleCallback to avoid blocking the main thread
+      const sendAnalytics = () => {
+        fetch('/api/analytics/performance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            metric: name,
+            value,
+            timestamp: Date.now(),
+            userAgent: navigator.userAgent,
+            url: window.location.href
+          })
+        }).catch((error) => {
+          // Silently fail for analytics
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Failed to send performance metric:', error);
+          }
+        });
+      };
+      
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(sendAnalytics, { timeout: 1000 });
+      } else {
+        // Fallback for browsers that don't support requestIdleCallback
+        setTimeout(sendAnalytics, 0);
+      }
     }
   }
 
@@ -292,6 +350,10 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
 }
 
 // Initialize global performance monitoring
-if (typeof window !== 'undefined') {
-  PerformanceMonitor.getInstance();
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_TRACKING !== 'false') {
+  try {
+    PerformanceMonitor.getInstance();
+  } catch (error) {
+    console.warn('Failed to initialize performance monitoring:', error);
+  }
 }
