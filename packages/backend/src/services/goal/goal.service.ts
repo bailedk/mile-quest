@@ -309,7 +309,7 @@ export class GoalService {
       const isDraftGoal = goalStatus === GoalStatus.DRAFT;
       
       // Set appropriate start and end dates based on status
-      let endDate = input.targetDate || defaultEndDate;
+      let endDate = input.targetDate ? new Date(input.targetDate) : defaultEndDate;
       
       // For active goals, start date is now
       // For draft goals, start date can be in the future (when they plan to start)
@@ -324,7 +324,7 @@ export class GoalService {
           name: input.name.trim(),
           description: input.description?.trim(),
           targetDistance: routeResult.totalDistance,
-          targetDate: input.targetDate,
+          targetDate: input.targetDate ? new Date(input.targetDate) : null,
           endDate: endDate,
           startLocation: input.startLocation as any,
           endLocation: input.endLocation as any,
