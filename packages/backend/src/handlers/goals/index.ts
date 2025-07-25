@@ -3,10 +3,11 @@
  * INT-1.2: Implement Goal Creation API with Maps
  */
 
-import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
+import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
+import { isAuthError } from '../../utils/auth/jwt.utils';
+import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { GoalService } from '../../services/goal/goal.service';
 import { MapService } from '../../services/map/types';
@@ -24,17 +25,6 @@ const goalService = new GoalService(prisma, mapService);
 // Create router
 const router = createRouter();
 
-// Helper to extract user from token
-const getUserFromEvent = (event: APIGatewayProxyEvent) => {
-  const authHeader = event.headers.Authorization || event.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-  
-  if (!token) {
-    throw new UnauthorizedError('No token provided');
-  }
-  
-  return verifyToken(token);
-};
 
 // INT-1.2: Enhanced goal creation with advanced map features
 router.post('/goals', async (event, context) => {
@@ -56,7 +46,7 @@ router.post('/goals', async (event, context) => {
     }
 
     // Create goal with map integration
-    const goal = await goalService.createTeamGoal(input.teamId, user.sub, input);
+    const goal = await goalService.createTeamGoal(input.teamId, user.id, input);
 
     return {
       statusCode: 201,
@@ -361,7 +351,7 @@ router.get('/goals/:goalId', async (event, context, params) => {
     const user = getUserFromEvent(event);
     const includeProgress = event.queryStringParameters?.includeProgress === 'true';
 
-    const goal = await goalService.getGoalProgress(params.goalId, user.sub);
+    const goal = await goalService.getGoalProgress(params.goalId, user.id);
 
     // Enhance with additional visualization data
     const enhancedGoal = {
@@ -439,7 +429,7 @@ router.get('/goals/:goalId/elevation', async (event, context, params) => {
     const user = getUserFromEvent(event);
     
     // Verify goal access
-    await goalService.getGoalProgress(params.goalId, user.sub);
+    await goalService.getGoalProgress(params.goalId, user.id);
 
     // Mock elevation data for now
     // In a real implementation, this would use a terrain/elevation API

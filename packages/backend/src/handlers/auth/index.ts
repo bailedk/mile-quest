@@ -22,6 +22,8 @@ import {
 } from '@mile-quest/shared';
 import { logger } from '../../services/logger';
 import { z } from 'zod';
+import { withRateLimit } from '../../middleware/rate-limiting.middleware';
+import type { RateLimitConfig } from '../../middleware/rate-limiting.middleware';
 
 // Validate environment on cold start
 validateEnvironment();
@@ -335,5 +337,51 @@ router.post('/verify-email', async (event, context, params) => {
   }
 });
 
-// Export handler
-export const handler = createHandler(router.handle.bind(router));
+// Rate limiting configuration for auth endpoints
+const rateLimitConfig: RateLimitConfig = {
+  // Stricter limits for authentication endpoints to prevent brute force attacks
+  perEndpoint: {
+    'POST:/register': {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      maxRequests: 5, // Only 5 registration attempts per 15 minutes
+      message: 'Too many registration attempts. Please try again later.',
+      headers: true,
+    },
+    'POST:/login': {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      maxRequests: 10, // 10 login attempts per 15 minutes
+      message: 'Too many login attempts. Please try again later.',
+      headers: true,
+      skipSuccessfulRequests: true, // Only count failed attempts
+    },
+    'POST:/refresh': {
+      windowMs: 60 * 1000, // 1 minute
+      maxRequests: 10, // 10 refresh attempts per minute
+      message: 'Too many refresh attempts. Please try again later.',
+      headers: true,
+    },
+    'POST:/verify-email': {
+      windowMs: 5 * 60 * 1000, // 5 minutes
+      maxRequests: 5, // 5 verification attempts per 5 minutes
+      message: 'Too many verification attempts. Please try again later.',
+      headers: true,
+    },
+  },
+  // Global burst protection
+  burstLimit: {
+    windowMs: 10 * 1000, // 10 seconds
+    maxRequests: 5, // Max 5 requests per 10 seconds from same IP
+  },
+  // Different limits for anonymous users (all auth endpoints are anonymous)
+  anonymous: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 50, // 50 requests per hour for all auth endpoints combined
+    headers: true,
+  },
+};
+
+// Export handler with rate limiting
+export const handler = withRateLimit(
+  createHandler(router.handle.bind(router)),
+  rateLimitConfig
+);

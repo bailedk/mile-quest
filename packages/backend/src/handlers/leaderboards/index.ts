@@ -3,10 +3,11 @@
  * Handles team and global leaderboard endpoints for BE-018
  */
 
-import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
+import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
+import { isAuthError } from '../../utils/auth/jwt.utils';
+import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { LeaderboardService, LeaderboardPeriod } from '../../services/leaderboard';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
@@ -20,17 +21,6 @@ const leaderboardService = new LeaderboardService(prisma);
 // Create router
 const router = createRouter();
 
-// Helper to extract user from token
-const getUserFromEvent = (event: APIGatewayProxyEvent) => {
-  const authHeader = event.headers.Authorization || event.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-  
-  if (!token) {
-    throw new UnauthorizedError('No token provided');
-  }
-  
-  return verifyToken(token);
-};
 
 // Helper to validate period parameter
 const validatePeriod = (period: string | undefined): LeaderboardPeriod => {
@@ -73,11 +63,11 @@ router.get('/teams/:teamId/leaderboard', async (event, context, params) => {
 
     const leaderboard = await leaderboardService.getTeamLeaderboard(
       teamId,
-      user.sub,
+      user.id,
       {
         period,
         limit,
-        userId: user.sub,
+        userId: user.id,
         teamGoalId,
       }
     );
@@ -144,11 +134,11 @@ router.get('/leaderboards/global', async (event, context, params) => {
     const limit = validateLimit(event.queryStringParameters?.limit);
 
     const leaderboard = await leaderboardService.getGlobalLeaderboard(
-      user.sub,
+      user.id,
       {
         period,
         limit,
-        userId: user.sub,
+        userId: user.id,
       }
     );
 
@@ -213,7 +203,7 @@ router.get('/teams/:teamId/leaderboard/rank', async (event, context, params) => 
     const teamGoalId = event.queryStringParameters?.teamGoalId;
 
     const rank = await leaderboardService.getUserRank(
-      user.sub,
+      user.id,
       teamId,
       {
         period,

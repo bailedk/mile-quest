@@ -85,6 +85,16 @@ export function validateEnvironment(): void {
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
+  
+  // Additional validation for JWT_SECRET in production
+  if (config.STAGE === 'production') {
+    if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters long in production');
+    }
+    if (config.JWT_SECRET.includes('dev') || config.JWT_SECRET.includes('secret')) {
+      throw new Error('JWT_SECRET appears to be a development value. Please use a secure secret in production.');
+    }
+  }
 }
 
 // Export singleton config

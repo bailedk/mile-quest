@@ -2,10 +2,11 @@
  * Users Lambda handler with routing
  */
 
-import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
+import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
+import { isAuthError } from '../../utils/auth/jwt.utils';
+import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
@@ -36,17 +37,6 @@ function initializeServices() {
 // Create router
 const router = createRouter();
 
-// Helper to extract user from token
-const getUserFromEvent = (event: APIGatewayProxyEvent) => {
-  const authHeader = event.headers.Authorization || event.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-  
-  if (!token) {
-    throw new UnauthorizedError('No token provided');
-  }
-  
-  return verifyToken(token);
-};
 
 // Test endpoint
 router.get('/test', async (_event, _context, _params) => {
@@ -73,7 +63,7 @@ router.get('/me/teams', async (event, _context, _params) => {
   
   try {
     const user = getUserFromEvent(event);
-    const teams = await teamService.getUserTeams(user.sub);
+    const teams = await teamService.getUserTeams(user.id);
     
     return {
       statusCode: 200,
@@ -101,7 +91,7 @@ router.get('/me/stats', async (event, _context, _params) => {
   
   try {
     const user = getUserFromEvent(event);
-    const stats = await activityService.getUserStats(user.sub);
+    const stats = await activityService.getUserStats(user.id);
     
     return {
       statusCode: 200,
@@ -136,7 +126,7 @@ router.get('/me/activities', async (event, _context, _params) => {
     const startDate = queryParams.startDate;
     const endDate = queryParams.endDate;
     
-    const activities = await activityService.getActivities(user.sub, {
+    const activities = await activityService.getActivities(user.id, {
       limit,
       cursor,
       startDate,
@@ -165,7 +155,7 @@ router.get('/me/activities', async (event, _context, _params) => {
 router.get('/me/achievements', async (event, _context, _params) => {
   try {
     const user = getUserFromEvent(event);
-    const achievements = await achievementService.getUserAchievements(user.sub);
+    const achievements = await achievementService.getUserAchievements(user.id);
     
     return {
       statusCode: 200,
@@ -191,7 +181,7 @@ router.get('/me/achievements', async (event, _context, _params) => {
 router.post('/me/achievements/check', async (event, _context, _params) => {
   try {
     const user = getUserFromEvent(event);
-    const result = await achievementService.checkUserAchievements(user.sub);
+    const result = await achievementService.checkUserAchievements(user.id);
     
     return {
       statusCode: 200,

@@ -82,7 +82,7 @@ function withLazyRoute<P extends object>(
 // Dashboard route - heavy with charts and real-time data
 export const LazyDashboard = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/dashboard/page'),
+    () => import('@/app/(authenticated)/dashboard/page'),
     'dashboard'
   ),
   'Loading dashboard...'
@@ -91,7 +91,7 @@ export const LazyDashboard = withLazyRoute(
 // Activities route - potentially large lists
 export const LazyActivities = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/activities/page'),
+    () => import('@/app/(authenticated)/activities/page'),
     'activities'
   ),
   'Loading activities...'
@@ -100,7 +100,7 @@ export const LazyActivities = withLazyRoute(
 // New Activity route - includes maps and forms
 export const LazyNewActivity = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/activities/new/page'),
+    () => import('@/app/(authenticated)/activities/new/page'),
     'new-activity'
   ),
   'Loading activity form...'
@@ -109,7 +109,7 @@ export const LazyNewActivity = withLazyRoute(
 // Teams route - lists and team management
 export const LazyTeams = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/teams/page'),
+    () => import('@/app/(authenticated)/teams/page'),
     'teams'
   ),
   'Loading teams...'
@@ -118,7 +118,7 @@ export const LazyTeams = withLazyRoute(
 // Team details route - charts and member lists
 export const LazyTeamDetails = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/teams/[id]/page'),
+    () => import('@/app/(authenticated)/teams/[id]/page'),
     'team-details'
   ),
   'Loading team details...'
@@ -127,7 +127,7 @@ export const LazyTeamDetails = withLazyRoute(
 // New Team route - forms and validation
 export const LazyNewTeam = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/teams/new/page'),
+    () => import('@/app/(authenticated)/teams/new/page'),
     'new-team'
   ),
   'Loading team creation...'
@@ -136,7 +136,7 @@ export const LazyNewTeam = withLazyRoute(
 // Join Team route - search and validation
 export const LazyJoinTeam = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/teams/join/page'),
+    () => import('@/app/(authenticated)/teams/join/page'),
     'join-team'
   ),
   'Loading team search...'
@@ -145,7 +145,7 @@ export const LazyJoinTeam = withLazyRoute(
 // Profile route - forms and settings
 export const LazyProfile = withLazyRoute(
   createLazyComponent(
-    () => import('@/app/profile/page'),
+    () => import('@/app/(authenticated)/profile/page'),
     'profile'
   ),
   'Loading profile...'
@@ -225,8 +225,8 @@ export function preloadCriticalRoutes() {
   if (typeof window !== 'undefined') {
     // Preload dashboard and activities as they're commonly accessed
     setTimeout(() => {
-      import('@/app/dashboard/page');
-      import('@/app/activities/page');
+      import('@/app/(authenticated)/dashboard/page');
+      import('@/app/(authenticated)/activities/page');
     }, 2000); // Wait 2 seconds after initial load
   }
 }
@@ -234,14 +234,14 @@ export function preloadCriticalRoutes() {
 // Route-based preloading
 export function preloadRoute(routePath: string) {
   const preloadMap: Record<string, () => Promise<any>> = {
-    '/dashboard': () => import('@/app/dashboard/page'),
-    '/activities': () => import('@/app/activities/page'),
-    '/activities/new': () => import('@/app/activities/new/page'),
-    '/teams': () => import('@/app/teams/page'),
-    '/teams/new': () => import('@/app/teams/new/page'),
-    '/teams/join': () => import('@/app/teams/join/page'),
-    '/teams/[id]': () => import('@/app/teams/[id]/page'),
-    '/profile': () => import('@/app/profile/page'),
+    '/dashboard': () => import('@/app/(authenticated)/dashboard/page'),
+    '/activities': () => import('@/app/(authenticated)/activities/page'),
+    '/activities/new': () => import('@/app/(authenticated)/activities/new/page'),
+    '/teams': () => import('@/app/(authenticated)/teams/page'),
+    '/teams/new': () => import('@/app/(authenticated)/teams/new/page'),
+    '/teams/join': () => import('@/app/(authenticated)/teams/join/page'),
+    '/teams/[id]': () => import('@/app/(authenticated)/teams/[id]/page'),
+    '/profile': () => import('@/app/(authenticated)/profile/page'),
     '/signin': () => import('@/app/signin/page'),
     '/signup': () => import('@/app/signup/page'),
   };

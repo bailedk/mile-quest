@@ -6,18 +6,13 @@ import { Button } from '@/components/patterns/Button';
 import { Card } from '@/components/patterns/Card';
 import { PlusIcon, CalendarIcon, ClockIcon, MapPinIcon, LockIcon } from '@/components/icons';
 import { useAuthStore } from '@/store/auth.store';
-import { AuthGuard } from '@/components/auth/AuthGuard';
 import { activityService, formatDistance, formatDuration, calculatePace } from '@/services/activity.service';
 import { ActivityListItem, ActivityStats } from '@/types/activity.types';
 import { useHydration } from '@/contexts/HydrationContext';
 import { formatDateSafe, dateFormats } from '@/utils/date-formatting';
 
 export default function ActivitiesPage() {
-  return (
-    <AuthGuard redirectTo="/signin">
-      <ActivitiesContent />
-    </AuthGuard>
-  );
+  return <ActivitiesContent />;
 }
 
 function ActivitiesContent() {

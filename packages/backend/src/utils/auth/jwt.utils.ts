@@ -10,9 +10,17 @@ interface TokenPayload {
   exp?: number;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '1h';
-const REFRESH_TOKEN_EXPIRES_IN = '7d';
+// Security: JWT_SECRET must be set in production environments
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  console.warn('WARNING: JWT_SECRET not set. Using default value for development only.');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-do-not-use-in-production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
 export function generateAccessToken(user: AuthUser): string {
   const payload: TokenPayload = {

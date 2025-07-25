@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { createRouter } from '../../utils/router';
-import { UnauthorizedError } from '../../utils/lambda-handler';
-import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
+import { isAuthError } from '../../utils/auth/jwt.utils';
+import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { ProgressService } from '../../services/progress';
 import { createLogger } from '../../services/logger';
@@ -37,17 +37,6 @@ router.get('/test', async (event, context, params) => {
   }
 });
 
-// Helper to extract user from token
-const getUserFromEvent = (event: APIGatewayProxyEvent) => {
-  const authHeader = event.headers.Authorization || event.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-  
-  if (!token) {
-    throw new UnauthorizedError('No token provided');
-  }
-  
-  return verifyToken(token);
-};
 
 /**
  * GET /progress/team/:teamId
@@ -69,7 +58,7 @@ router.get('/team/:teamId', async (event, context, params) => {
     const membership = await prisma.teamMember.findFirst({
       where: {
         teamId,
-        userId: user.sub,
+        userId: user.id,
         leftAt: null,
       },
     });
@@ -135,7 +124,7 @@ router.get('/goal/:goalId', async (event, context, params) => {
           include: {
             members: {
               where: {
-                userId: user.sub,
+                userId: user.id,
                 leftAt: null,
               },
             },
@@ -203,7 +192,7 @@ router.get('/goal/:goalId/daily', async (event, context, params) => {
           include: {
             members: {
               where: {
-                userId: user.sub,
+                userId: user.id,
                 leftAt: null,
               },
             },
@@ -270,7 +259,7 @@ router.get('/goal/:goalId/trend', async (event, context, params) => {
           include: {
             members: {
               where: {
-                userId: user.sub,
+                userId: user.id,
                 leftAt: null,
               },
             },

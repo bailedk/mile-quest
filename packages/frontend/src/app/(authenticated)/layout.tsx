@@ -1,6 +1,7 @@
 'use client';
 
 import { Header } from '@/components/layout/Header';
+import { BottomNavigation, defaultNavItems, useBottomNavigation } from '@/components/mobile/BottomNavigation';
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
@@ -15,6 +16,7 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
   const hydrated = useHydrated();
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { shouldShow: shouldShowBottomNav } = useBottomNavigation();
 
   useEffect(() => {
     if (!hydrated) return;
@@ -61,9 +63,12 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      {children}
-    </>
+      <main className={`flex-1 ${shouldShowBottomNav ? 'pb-20' : ''}`}>
+        {children}
+      </main>
+      {shouldShowBottomNav && <BottomNavigation items={defaultNavItems} />}
+    </div>
   );
 }

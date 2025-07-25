@@ -12,6 +12,7 @@ import { createLogger, MileQuestLogger } from '../services/logger';
 import { withOptimization, monitorMemoryUsage } from './lambda-optimization';
 import { withCompression } from '../middleware/compression.middleware';
 import { withRateLimit } from '../middleware/rate-limiting.middleware';
+import { withErrorHandler } from '../middleware/error-handler.middleware';
 
 export type LambdaHandler = (
   event: APIGatewayProxyEvent,
@@ -98,64 +99,48 @@ export function createHandler(
     
     const timer = logger.startTimer('request-processing');
     
-    try {
-      // Set context settings for performance
-      context.callbackWaitsForEmptyEventLoop = false;
+    // Set context settings for performance
+    context.callbackWaitsForEmptyEventLoop = false;
 
-      // Handle CORS preflight
-      if (enableCors && event.httpMethod === 'OPTIONS') {
-        const response = createResponse(200, {}, getCorsHeaders());
-        logger.info('CORS preflight response', { statusCode: 200 });
-        return response;
-      }
-
-      // Process the request
-      const result = await handler(event, enhancedContext);
-
-      // Stop timer
-      const processingTime = timer();
-
-      // Monitor memory usage after processing
-      const memoryAfter = monitorMemoryUsage();
-      const memoryDelta = memoryAfter.heapUsed - memoryBefore.heapUsed;
-
-      // Return successful response
-      const response = createResponse(
-        result.statusCode || 200,
-        result.body || result,
-        {
-          ...(enableCors ? getCorsHeaders() : {}),
-          'X-Processing-Time': `${processingTime}ms`,
-          'X-Memory-Used': `${memoryAfter.heapUsed}MB`,
-          'X-Memory-Delta': `${memoryDelta}MB`,
-        }
-      );
-      
-      logger.info('Request completed', {
-        statusCode: response.statusCode,
-        correlationId,
-        processingTime,
-        memoryUsage: memoryAfter,
-        memoryDelta,
-      });
-      
+    // Handle CORS preflight
+    if (enableCors && event.httpMethod === 'OPTIONS') {
+      const response = createResponse(200, {}, getCorsHeaders());
+      logger.info('CORS preflight response', { statusCode: 200 });
       return response;
-    } catch (error) {
-      // Stop timer
-      const processingTime = timer();
-      
-      // Log error with performance context
-      logger.error('Lambda handler error', error as Error, {
-        correlationId,
-        httpMethod: event.httpMethod,
-        path: event.path,
-        processingTime,
-        memoryUsage: monitorMemoryUsage(),
-      });
-      
-      // Return error response
-      return createErrorResponse(error as Error, enableCors);
     }
+
+    // Process the request
+    const result = await handler(event, enhancedContext);
+
+    // Stop timer
+    const processingTime = timer();
+
+    // Monitor memory usage after processing
+    const memoryAfter = monitorMemoryUsage();
+    const memoryDelta = memoryAfter.heapUsed - memoryBefore.heapUsed;
+
+    // Return successful response
+    const response = createResponse(
+      result.statusCode || 200,
+      result.body || result,
+      {
+        ...(enableCors ? getCorsHeaders() : {}),
+        'X-Processing-Time': `${processingTime}ms`,
+        'X-Memory-Used': `${memoryAfter.heapUsed}MB`,
+        'X-Memory-Delta': `${memoryDelta}MB`,
+        'X-Correlation-ID': correlationId,
+      }
+    );
+    
+    logger.info('Request completed', {
+      statusCode: response.statusCode,
+      correlationId,
+      processingTime,
+      memoryUsage: memoryAfter,
+      memoryDelta,
+    });
+    
+    return response;
   };
 
   // Apply middleware layers in reverse order (outermost first)
@@ -176,10 +161,16 @@ export function createHandler(
     finalHandler = withCompression(finalHandler, compressionConfig);
   }
 
-  // Apply rate limiting middleware (outermost)
+  // Apply rate limiting middleware
   if (enableRateLimit) {
     finalHandler = withRateLimit(finalHandler, rateLimitConfig);
   }
+
+  // Apply error handler middleware (outermost)
+  finalHandler = withErrorHandler(finalHandler, {
+    logErrors: true,
+    includeStackTrace: process.env.NODE_ENV !== 'production',
+  });
 
   return finalHandler;
 }

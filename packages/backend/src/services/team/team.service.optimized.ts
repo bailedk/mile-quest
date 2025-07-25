@@ -1,4 +1,4 @@
-import { PrismaClient, TeamRole, InviteStatus, Prisma } from '@prisma/client';
+import { PrismaClient, TeamRole, InviteStatus } from '@prisma/client';
 import { 
   CreateTeamInput, 
   UpdateTeamInput, 
@@ -6,16 +6,54 @@ import {
   TeamWithMembers,
   TeamListItem
 } from './types';
+import { GoalService } from '../goal/goal.service';
 
-export class OptimizedTeamService {
-  constructor(private prisma: PrismaClient) {}
+export class TeamService {
+  private goalService: GoalService;
+
+  constructor(private prisma: PrismaClient) {
+    this.goalService = new GoalService(prisma);
+  }
 
   /**
-   * Optimized getUserTeams with better index usage
-   * Uses compound index on (userId, leftAt, joinedAt DESC)
+   * Soft delete a team (admin only)
+   * BE-204: Delete team endpoint implementation
    */
+  async deleteTeam(teamId: string, userId: string): Promise<void> {
+    // Check if team exists and user is an admin
+    const teamMember = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId,
+        leftAt: null,
+        team: {
+          deletedAt: null,
+        },
+      },
+      include: {
+        team: true,
+      },
+    });
+
+    if (!teamMember) {
+      throw new Error('Team not found or user is not a member');
+    }
+
+    if (teamMember.role !== TeamRole.ADMIN) {
+      throw new Error('Only team admins can delete teams');
+    }
+
+    // Soft delete the team
+    await this.prisma.team.update({
+      where: { id: teamId },
+      data: { deletedAt: new Date() },
+    });
+
+    // Note: We don't update member records as they retain historical data
+    // The deletedAt check in queries will exclude this team from results
+  }
+
   async getUserTeams(userId: string): Promise<TeamListItem[]> {
-    // Use select to minimize data transfer
     const memberships = await this.prisma.teamMember.findMany({
       where: {
         userId,
@@ -25,8 +63,8 @@ export class OptimizedTeamService {
         },
       },
       select: {
-        joinedAt: true,
         role: true,
+        joinedAt: true,
         team: {
           select: {
             id: true,
@@ -61,56 +99,210 @@ export class OptimizedTeamService {
     }));
   }
 
-  /**
-   * Optimized getTeamById with selective loading
-   */
   async getTeamById(teamId: string, userId?: string): Promise<TeamWithMembers | null> {
-    // First, check if team exists and if user has access (lighter query)
-    const teamAccess = await this.prisma.team.findFirst({
+    const team = await this.prisma.team.findFirst({
       where: {
         id: teamId,
         deletedAt: null,
       },
       select: {
         id: true,
+        name: true,
+        description: true,
+        avatarUrl: true,
         isPublic: true,
-        members: userId ? {
-          where: {
-            userId,
-            leftAt: null,
-          },
-          select: {
-            id: true,
-          },
-        } : undefined,
-      },
-    });
-
-    if (!teamAccess) {
-      return null;
-    }
-
-    // Check access for private teams
-    if (!teamAccess.isPublic && userId) {
-      const isMember = teamAccess.members && teamAccess.members.length > 0;
-      if (!isMember) {
-        return null;
-      }
-    }
-
-    // Now fetch full team data
-    const team = await this.prisma.team.findUnique({
-      where: { id: teamId },
-      include: {
+        maxMembers: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
         members: {
           where: {
             leftAt: null,
           },
           select: {
             id: true,
+            teamId: true,
+            userId: true,
             role: true,
             joinedAt: true,
+            leftAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+          },
+          orderBy: [
+            { role: 'asc' },
+            { joinedAt: 'asc' },
+          ],
+        },
+        _count: {
+          select: {
+            members: {
+              where: {
+                leftAt: null,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!team) {
+      return null;
+    }
+
+    // Check if team is private and user is not a member
+    if (!team.isPublic && userId) {
+      const isMember = team.members.some((member) => member.userId === userId);
+      if (!isMember) {
+        return null;
+      }
+    }
+
+    return team;
+  }
+
+  async createTeam(userId: string, input: CreateTeamInput): Promise<TeamWithMembers> {
+    // Check if team name already exists
+    const existingTeam = await this.prisma.team.findFirst({
+      where: {
+        name: input.name,
+        deletedAt: null,
+      },
+    });
+
+    if (existingTeam) {
+      throw new Error('Team name already exists');
+    }
+
+    // Extract goal from input
+    const { goal, ...teamInput } = input;
+
+    // Create team and add creator as admin
+    const team = await this.prisma.team.create({
+      data: {
+        ...teamInput,
+        createdById: userId,
+        members: {
+          create: {
+            userId,
+            role: TeamRole.ADMIN,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        avatarUrl: true,
+        isPublic: true,
+        maxMembers: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+        members: {
+          where: {
+            leftAt: null,
+          },
+          select: {
+            id: true,
+            teamId: true,
             userId: true,
+            role: true,
+            joinedAt: true,
+            leftAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            members: true,
+          },
+        },
+      },
+    });
+
+    // Create goal if provided
+    if (goal) {
+      try {
+        await this.goalService.createTeamGoal(team.id, userId, {
+          name: goal.name,
+          description: goal.description,
+          startLocation: goal.startLocation,
+          endLocation: goal.endLocation,
+          waypoints: goal.waypoints,
+          targetDate: goal.targetDate,
+        });
+      } catch (error) {
+        // If goal creation fails, we should still return the team
+        // but log the error for debugging
+        console.error('Failed to create goal during team creation:', error);
+      }
+    }
+
+    return team;
+  }
+
+  async updateTeam(
+    teamId: string,
+    userId: string,
+    input: UpdateTeamInput
+  ): Promise<TeamWithMembers> {
+    // Check if user is team admin
+    const membership = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId,
+        role: TeamRole.ADMIN,
+        leftAt: null,
+      },
+    });
+
+    if (!membership) {
+      throw new Error('Unauthorized: Only team admins can update team details');
+    }
+
+    // Check if new name already exists (if name is being changed)
+    if (input.name) {
+      const existingTeam = await this.prisma.team.findFirst({
+        where: {
+          name: input.name,
+          id: { not: teamId },
+          deletedAt: null,
+        },
+      });
+
+      if (existingTeam) {
+        throw new Error('Team name already exists');
+      }
+    }
+
+    const team = await this.prisma.team.update({
+      where: { id: teamId },
+      data: {
+        ...input,
+        updatedAt: new Date(),
+      },
+      include: {
+        members: {
+          where: {
+            leftAt: null,
+          },
+          include: {
             user: {
               select: {
                 id: true,
@@ -140,403 +332,219 @@ export class OptimizedTeamService {
     return team;
   }
 
-  /**
-   * Optimized createTeam with single transaction
-   */
-  async createTeam(userId: string, input: CreateTeamInput): Promise<TeamWithMembers> {
-    // Use transaction for atomicity
-    return await this.prisma.$transaction(async (tx) => {
-      // Check if team name already exists (uses name index)
-      const existingTeam = await tx.team.findFirst({
+  async joinTeam(userId: string, input: JoinTeamInput): Promise<TeamWithMembers> {
+    let teamId: string;
+
+    if (input.inviteCode) {
+      // Join by invite code
+      const invite = await this.prisma.teamInvite.findFirst({
         where: {
-          name: input.name,
-          deletedAt: null,
+          code: input.inviteCode,
+          status: InviteStatus.PENDING,
+          expiresAt: { gt: new Date() },
         },
-        select: { id: true },
       });
 
-      if (existingTeam) {
-        throw new Error('Team name already exists');
+      if (!invite) {
+        throw new Error('Invalid or expired invite code');
       }
 
-      // Create team and add creator as admin in one query
-      const team = await tx.team.create({
+      // Update invite status
+      await this.prisma.teamInvite.update({
+        where: { id: invite.id },
         data: {
-          ...input,
-          createdById: userId,
-          members: {
-            create: {
-              userId,
-              role: TeamRole.ADMIN,
-            },
-          },
-        },
-        include: {
-          members: {
-            where: {
-              leftAt: null,
-            },
-            select: {
-              id: true,
-              role: true,
-              joinedAt: true,
-              userId: true,
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              members: true,
-            },
-          },
+          status: InviteStatus.ACCEPTED,
+          acceptedAt: new Date(),
+          userId,
         },
       });
 
-      return team;
-    });
-  }
+      teamId = invite.teamId;
+    } else if (input.teamId) {
+      // Direct join (only for public teams)
+      const team = await this.prisma.team.findFirst({
+        where: {
+          id: input.teamId,
+          isPublic: true,
+          deletedAt: null,
+        },
+      });
 
-  /**
-   * Optimized member role check using compound index
-   */
-  async isTeamAdmin(teamId: string, userId: string): Promise<boolean> {
-    const admin = await this.prisma.teamMember.findFirst({
+      if (!team) {
+        throw new Error('Team not found or is not public');
+      }
+
+      teamId = team.id;
+    } else {
+      throw new Error('Either teamId or inviteCode must be provided');
+    }
+
+    // Check if user is already a member
+    const existingMembership = await this.prisma.teamMember.findFirst({
       where: {
         teamId,
         userId,
+        leftAt: null,
+      },
+    });
+
+    if (existingMembership) {
+      throw new Error('User is already a member of this team');
+    }
+
+    // Check team member limit
+    const memberCount = await this.prisma.teamMember.count({
+      where: {
+        teamId,
+        leftAt: null,
+      },
+    });
+
+    const team = await this.prisma.team.findUnique({
+      where: { id: teamId },
+    });
+
+    if (team && memberCount >= team.maxMembers) {
+      throw new Error('Team has reached maximum member limit');
+    }
+
+    // Add user to team
+    await this.prisma.teamMember.create({
+      data: {
+        teamId,
+        userId,
+        role: TeamRole.MEMBER,
+      },
+    });
+
+    // Return updated team
+    return this.getTeamById(teamId, userId) as Promise<TeamWithMembers>;
+  }
+
+  async leaveTeam(teamId: string, userId: string): Promise<void> {
+    const membership = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId,
+        leftAt: null,
+      },
+    });
+
+    if (!membership) {
+      throw new Error('User is not a member of this team');
+    }
+
+    // Check if user is the only admin
+    if (membership.role === TeamRole.ADMIN) {
+      const adminCount = await this.prisma.teamMember.count({
+        where: {
+          teamId,
+          role: TeamRole.ADMIN,
+          leftAt: null,
+        },
+      });
+
+      if (adminCount === 1) {
+        throw new Error('Cannot leave team: You are the only admin. Promote another member first.');
+      }
+    }
+
+    // Mark as left
+    await this.prisma.teamMember.update({
+      where: { id: membership.id },
+      data: { leftAt: new Date() },
+    });
+  }
+
+  async removeMember(teamId: string, adminUserId: string, memberUserId: string): Promise<void> {
+    // Check if admin has permission
+    const adminMembership = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId: adminUserId,
         role: TeamRole.ADMIN,
         leftAt: null,
       },
-      select: { id: true },
     });
 
-    return !!admin;
-  }
-
-  /**
-   * Optimized updateTeam with permission check
-   */
-  async updateTeam(
-    teamId: string,
-    userId: string,
-    input: UpdateTeamInput
-  ): Promise<TeamWithMembers> {
-    return await this.prisma.$transaction(async (tx) => {
-      // Check admin permission (uses compound index)
-      const isAdmin = await this.isTeamAdmin(teamId, userId);
-      if (!isAdmin) {
-        throw new Error('Unauthorized: Only team admins can update team details');
-      }
-
-      // Check name uniqueness if name is changing
-      if (input.name) {
-        const existingTeam = await tx.team.findFirst({
-          where: {
-            name: input.name,
-            id: { not: teamId },
-            deletedAt: null,
-          },
-          select: { id: true },
-        });
-
-        if (existingTeam) {
-          throw new Error('Team name already exists');
-        }
-      }
-
-      // Update team
-      const team = await tx.team.update({
-        where: { id: teamId },
-        data: {
-          ...input,
-          updatedAt: new Date(),
-        },
-        include: {
-          members: {
-            where: {
-              leftAt: null,
-            },
-            select: {
-              id: true,
-              role: true,
-              joinedAt: true,
-              userId: true,
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-            orderBy: [
-              { role: 'asc' },
-              { joinedAt: 'asc' },
-            ],
-          },
-          _count: {
-            select: {
-              members: {
-                where: {
-                  leftAt: null,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      return team;
-    });
-  }
-
-  /**
-   * Optimized joinTeam with better index usage
-   */
-  async joinTeam(userId: string, input: JoinTeamInput): Promise<TeamWithMembers> {
-    return await this.prisma.$transaction(async (tx) => {
-      let teamId: string;
-
-      if (input.inviteCode) {
-        // Use compound index on (code, status, expiresAt)
-        const invite = await tx.teamInvite.findFirst({
-          where: {
-            code: input.inviteCode,
-            status: InviteStatus.PENDING,
-            expiresAt: { gt: new Date() },
-          },
-          select: {
-            id: true,
-            teamId: true,
-          },
-        });
-
-        if (!invite) {
-          throw new Error('Invalid or expired invite code');
-        }
-
-        // Update invite status
-        await tx.teamInvite.update({
-          where: { id: invite.id },
-          data: {
-            status: InviteStatus.ACCEPTED,
-            acceptedAt: new Date(),
-            userId,
-          },
-        });
-
-        teamId = invite.teamId;
-      } else if (input.teamId) {
-        // Check if team is public
-        const team = await tx.team.findFirst({
-          where: {
-            id: input.teamId,
-            isPublic: true,
-            deletedAt: null,
-          },
-          select: { id: true, maxMembers: true },
-        });
-
-        if (!team) {
-          throw new Error('Team not found or is not public');
-        }
-
-        teamId = team.id;
-      } else {
-        throw new Error('Either teamId or inviteCode must be provided');
-      }
-
-      // Check existing membership (uses compound index)
-      const existingMembership = await tx.teamMember.findFirst({
-        where: {
-          teamId,
-          userId,
-          leftAt: null,
-        },
-        select: { id: true },
-      });
-
-      if (existingMembership) {
-        throw new Error('User is already a member of this team');
-      }
-
-      // Check team member limit
-      const memberCount = await tx.teamMember.count({
-        where: {
-          teamId,
-          leftAt: null,
-        },
-      });
-
-      const team = await tx.team.findUnique({
-        where: { id: teamId },
-        select: { maxMembers: true },
-      });
-
-      if (team && memberCount >= team.maxMembers) {
-        throw new Error('Team has reached maximum member limit');
-      }
-
-      // Add user to team
-      await tx.teamMember.create({
-        data: {
-          teamId,
-          userId,
-          role: TeamRole.MEMBER,
-        },
-      });
-
-      // Return updated team
-      return this.getTeamById(teamId, userId) as Promise<TeamWithMembers>;
-    });
-  }
-
-  /**
-   * Batch operation for getting multiple teams
-   */
-  async getTeamsByIds(teamIds: string[]): Promise<Map<string, TeamListItem>> {
-    const teams = await this.prisma.team.findMany({
-      where: {
-        id: { in: teamIds },
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        avatarUrl: true,
-        _count: {
-          select: {
-            members: {
-              where: {
-                leftAt: null,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const teamMap = new Map<string, TeamListItem>();
-    teams.forEach(team => {
-      teamMap.set(team.id, {
-        id: team.id,
-        name: team.name,
-        description: team.description,
-        avatarUrl: team.avatarUrl,
-        memberCount: team._count.members,
-        role: TeamRole.MEMBER, // Will be overridden by caller
-        joinedAt: new Date(), // Will be overridden by caller
-      });
-    });
-
-    return teamMap;
-  }
-
-  /**
-   * Search teams with optimized query
-   */
-  async searchTeams(query: string, limit: number = 10): Promise<TeamListItem[]> {
-    const teams = await this.prisma.team.findMany({
-      where: {
-        AND: [
-          { deletedAt: null },
-          { isPublic: true },
-          {
-            OR: [
-              { name: { contains: query, mode: 'insensitive' } },
-              { description: { contains: query, mode: 'insensitive' } },
-            ],
-          },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        avatarUrl: true,
-        _count: {
-          select: {
-            members: {
-              where: {
-                leftAt: null,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-    });
-
-    return teams.map(team => ({
-      id: team.id,
-      name: team.name,
-      description: team.description,
-      avatarUrl: team.avatarUrl,
-      memberCount: team._count.members,
-      role: TeamRole.MEMBER,
-      joinedAt: new Date(),
-    }));
-  }
-
-  /**
-   * Get team statistics using raw SQL for performance
-   */
-  async getTeamStats(teamId: string): Promise<{
-    memberCount: number;
-    adminCount: number;
-    totalDistance: number;
-    totalActivities: number;
-    lastActivityAt: Date | null;
-  }> {
-    const stats = await this.prisma.$queryRaw<Array<{
-      member_count: bigint;
-      admin_count: bigint;
-      total_distance: number;
-      total_activities: bigint;
-      last_activity_at: Date | null;
-    }>>`
-      SELECT 
-        COUNT(DISTINCT CASE WHEN tm."leftAt" IS NULL THEN tm."userId" END) as member_count,
-        COUNT(DISTINCT CASE WHEN tm."leftAt" IS NULL AND tm."role" = 'ADMIN' THEN tm."userId" END) as admin_count,
-        COALESCE(SUM(a."distance"), 0) as total_distance,
-        COUNT(DISTINCT a."id") as total_activities,
-        MAX(a."startTime") as last_activity_at
-      FROM "teams" t
-      LEFT JOIN "team_members" tm ON t."id" = tm."teamId"
-      LEFT JOIN "activities" a ON t."id" = a."teamId" AND a."startTime" >= NOW() - INTERVAL '30 days'
-      WHERE t."id" = ${teamId}
-      GROUP BY t."id"
-    `;
-
-    if (stats.length === 0) {
-      return {
-        memberCount: 0,
-        adminCount: 0,
-        totalDistance: 0,
-        totalActivities: 0,
-        lastActivityAt: null,
-      };
+    if (!adminMembership) {
+      throw new Error('Unauthorized: Only team admins can remove members');
     }
 
-    const stat = stats[0];
-    return {
-      memberCount: Number(stat.member_count),
-      adminCount: Number(stat.admin_count),
-      totalDistance: stat.total_distance,
-      totalActivities: Number(stat.total_activities),
-      lastActivityAt: stat.last_activity_at,
-    };
+    // Cannot remove yourself
+    if (adminUserId === memberUserId) {
+      throw new Error('Cannot remove yourself. Use leave team instead.');
+    }
+
+    const memberToRemove = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId: memberUserId,
+        leftAt: null,
+      },
+    });
+
+    if (!memberToRemove) {
+      throw new Error('User is not a member of this team');
+    }
+
+    // Mark as left
+    await this.prisma.teamMember.update({
+      where: { id: memberToRemove.id },
+      data: { leftAt: new Date() },
+    });
+  }
+
+  async updateMemberRole(
+    teamId: string,
+    adminUserId: string,
+    memberUserId: string,
+    newRole: TeamRole
+  ): Promise<void> {
+    // Check if admin has permission
+    const adminMembership = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId: adminUserId,
+        role: TeamRole.ADMIN,
+        leftAt: null,
+      },
+    });
+
+    if (!adminMembership) {
+      throw new Error('Unauthorized: Only team admins can update member roles');
+    }
+
+    const memberToUpdate = await this.prisma.teamMember.findFirst({
+      where: {
+        teamId,
+        userId: memberUserId,
+        leftAt: null,
+      },
+    });
+
+    if (!memberToUpdate) {
+      throw new Error('User is not a member of this team');
+    }
+
+    // If demoting an admin, check if they're the last admin
+    if (memberToUpdate.role === TeamRole.ADMIN && newRole !== TeamRole.ADMIN) {
+      const adminCount = await this.prisma.teamMember.count({
+        where: {
+          teamId,
+          role: TeamRole.ADMIN,
+          leftAt: null,
+        },
+      });
+
+      if (adminCount === 1) {
+        throw new Error('Cannot demote the only admin in the team');
+      }
+    }
+
+    await this.prisma.teamMember.update({
+      where: { id: memberToUpdate.id },
+      data: { role: newRole },
+    });
   }
 }

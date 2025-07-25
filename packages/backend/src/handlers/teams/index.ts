@@ -2,10 +2,11 @@
  * Teams Lambda handler with routing
  */
 
-import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
+import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
+import { isAuthError } from '../../utils/auth/jwt.utils';
+import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { CreateTeamInput, UpdateTeamInput, JoinTeamInput } from '../../services/team/types';
@@ -25,17 +26,6 @@ const goalService = new GoalService(prisma);
 // Create router
 const router = createRouter();
 
-// Helper to extract user from token
-const getUserFromEvent = (event: APIGatewayProxyEvent) => {
-  const authHeader = event.headers.Authorization || event.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-  
-  if (!token) {
-    throw new UnauthorizedError('No token provided');
-  }
-  
-  return verifyToken(token);
-};
 
 // Create team (BE-011)
 router.post('/', async (event, context, params) => {
@@ -53,7 +43,7 @@ router.post('/', async (event, context, params) => {
       };
     }
 
-    const team = await teamService.createTeam(user.sub, input);
+    const team = await teamService.createTeam(user.id, input);
 
     return {
       statusCode: 201,
@@ -87,7 +77,7 @@ router.get('/:id', async (event, context, params) => {
     let userId: string | undefined;
     try {
       const user = getUserFromEvent(event);
-      userId = user.sub;
+      userId = user.id;
     } catch {
       // No auth header - continue without user ID
     }
@@ -117,7 +107,7 @@ router.get('/:id', async (event, context, params) => {
 router.get('/:id/progress', async (event, context, params) => {
   try {
     const user = getUserFromEvent(event);
-    const teamProgress = await activityService.getTeamProgress(params.id, user.sub);
+    const teamProgress = await activityService.getTeamProgress(params.id, user.id);
 
     return {
       statusCode: 200,
@@ -196,7 +186,7 @@ router.patch('/:id', async (event, context, params) => {
     const user = getUserFromEvent(event);
     const input: UpdateTeamInput = JSON.parse(event.body || '{}');
 
-    const team = await teamService.updateTeam(params.id, user.sub, input);
+    const team = await teamService.updateTeam(params.id, user.id, input);
 
     return {
       statusCode: 200,
@@ -235,7 +225,7 @@ router.delete('/:id', async (event, context, params) => {
   try {
     const user = getUserFromEvent(event);
     
-    await teamService.deleteTeam(params.id, user.sub);
+    await teamService.deleteTeam(params.id, user.id);
 
     return {
       statusCode: 200,
@@ -313,7 +303,7 @@ router.post('/join', async (event, context, params) => {
     const user = getUserFromEvent(event);
     const input: JoinTeamInput = JSON.parse(event.body || '{}');
 
-    const team = await teamService.joinTeam(user.sub, input);
+    const team = await teamService.joinTeam(user.id, input);
 
     return {
       statusCode: 200,
@@ -355,7 +345,7 @@ router.post('/:id/goals', async (event, context, params) => {
     const input: CreateGoalInput = JSON.parse(event.body || '{}');
 
     // All validation is now handled in the service layer with detailed error messages
-    const goal = await goalService.createTeamGoal(params.id, user.sub, input);
+    const goal = await goalService.createTeamGoal(params.id, user.id, input);
 
     return {
       statusCode: 201,
@@ -466,7 +456,7 @@ router.post('/:id/goals', async (event, context, params) => {
 router.get('/:id/goals', async (event, context, params) => {
   try {
     const user = getUserFromEvent(event);
-    const goals = await goalService.getTeamGoals(params.id, user.sub);
+    const goals = await goalService.getTeamGoals(params.id, user.id);
 
     return {
       statusCode: 200,
@@ -507,7 +497,7 @@ router.get('/:id/goals', async (event, context, params) => {
 router.get('/:id/goals/active', async (event, context, params) => {
   try {
     const user = getUserFromEvent(event);
-    const goal = await goalService.getTeamActiveGoal(params.id, user.sub);
+    const goal = await goalService.getTeamActiveGoal(params.id, user.id);
 
     if (!goal) {
       return {
@@ -561,7 +551,7 @@ router.get('/:id/goals/active', async (event, context, params) => {
 router.get('/goals/:goalId/progress', async (event, context, params) => {
   try {
     const user = getUserFromEvent(event);
-    const progress = await goalService.getGoalProgress(params.goalId, user.sub);
+    const progress = await goalService.getGoalProgress(params.goalId, user.id);
 
     return {
       statusCode: 200,
@@ -634,7 +624,7 @@ router.patch('/goals/:goalId', async (event, context, params) => {
     const user = getUserFromEvent(event);
     const input: UpdateGoalInput = JSON.parse(event.body || '{}');
 
-    const goal = await goalService.updateTeamGoal(params.goalId, user.sub, input);
+    const goal = await goalService.updateTeamGoal(params.goalId, user.id, input);
 
     return {
       statusCode: 200,

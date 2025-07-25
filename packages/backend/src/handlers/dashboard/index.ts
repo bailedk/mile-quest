@@ -2,10 +2,11 @@
  * Dashboard Lambda handler - BE-017
  */
 
-import { createHandler, UnauthorizedError } from '../../utils/lambda-handler';
+import { createHandler } from '../../utils/lambda-handler';
 import { createRouter } from '../../utils/router';
 import { validateEnvironment } from '../../config/environment';
-import { verifyToken, isAuthError } from '../../utils/auth/jwt.utils';
+import { isAuthError } from '../../utils/auth/jwt.utils';
+import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
@@ -26,17 +27,6 @@ const materializedViewsService = new MaterializedViewsService(prisma);
 // Create router
 const router = createRouter();
 
-// Helper to extract user from token
-const getUserFromEvent = (event: APIGatewayProxyEvent) => {
-  const authHeader = event.headers.Authorization || event.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-  
-  if (!token) {
-    throw new UnauthorizedError('No token provided');
-  }
-  
-  return verifyToken(token);
-};
 
 // Dashboard data types
 interface DashboardTeam {
@@ -111,10 +101,10 @@ router.get('/', async (event, context, params) => {
   try {
     console.log('Dashboard: Starting request');
     const user = getUserFromEvent(event);
-    console.log('Dashboard: User authenticated:', { userId: user.sub, email: user.email });
+    console.log('Dashboard: User authenticated:', { userId: user.id, email: user.email });
     
     // Skip cache for debugging
-    const cacheKey = `dashboard:${user.sub}`;
+    const cacheKey = `dashboard:${user.id}`;
     // const cached = cache.get<DashboardResponse>(cacheKey);
     // if (cached) {
     //   console.log('Dashboard: Returning cached data');
@@ -126,7 +116,7 @@ router.get('/', async (event, context, params) => {
 
     // Get user's teams with progress data
     console.log('Dashboard: Getting user teams');
-    const userTeams = await teamService.getUserTeams(user.sub);
+    const userTeams = await teamService.getUserTeams(user.id);
     console.log('Dashboard: Found teams:', userTeams.length);
     
     // Get team progress for each team
@@ -190,13 +180,13 @@ router.get('/', async (event, context, params) => {
     console.log('Dashboard: Getting recent activities');
     const teamIds = userTeams.map(t => t.id);
     const recentActivities: DashboardActivity[] = teamIds.length > 0 
-      ? await getRecentActivitiesForDashboard(user.sub, teamIds)
+      ? await getRecentActivitiesForDashboard(user.id, teamIds)
       : [];
     console.log('Dashboard: Found activities:', recentActivities.length);
 
     // Get user's personal stats
     console.log('Dashboard: Getting personal stats');
-    const personalStats = await getUserPersonalStats(user.sub);
+    const personalStats = await getUserPersonalStats(user.id);
     console.log('Dashboard: Personal stats:', personalStats);
 
     // Get team leaderboards (top 5 members per team)
