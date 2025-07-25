@@ -21,7 +21,6 @@
     "test:activities": "tsx src/scripts/test-activities.ts",
     "test:aggregations": "tsx src/scripts/test-aggregations.ts",
     "test:leaderboards": "tsx src/scripts/test-leaderboards.ts",
-    "test:websocket": "tsx src/scripts/test-websocket-auth.ts",
     "test:mapbox": "tsx scripts/test-mapbox.ts",
     "test:teamgoal": "tsx scripts/test-teamgoal-schema.ts",
     "test:goal-enhancements": "tsx scripts/test-goal-enhancements.ts",
@@ -51,7 +50,6 @@
     "jsonwebtoken": "^9.0.2",
     "jwks-client": "^2.0.5",
     "pg": "^8.11.0",
-    "pusher": "^5.2.0",
     "zod": "^3.22.0"
   },
   "prisma": {

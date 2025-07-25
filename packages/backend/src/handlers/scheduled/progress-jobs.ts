@@ -6,8 +6,6 @@ import { ScheduledEvent, Context } from 'aws-lambda';
 import { prisma } from '../../lib/database';
 import { ProgressService } from '../../services/progress';
 import { ProgressScheduledJobs } from '../../services/progress/scheduled-jobs';
-import { ProgressWebSocketIntegration } from '../../services/progress/websocket-integration';
-import { createWebSocketService } from '../../services/websocket/factory';
 import { createEmailService } from '../../services/email';
 import { createLogger } from '../../services/logger';
 
@@ -15,13 +13,10 @@ const logger = createLogger('ProgressScheduledJobs');
 
 // Initialize services
 const progressService = new ProgressService(prisma);
-const websocketService = createWebSocketService();
 const emailService = createEmailService();
-const progressWebSocket = new ProgressWebSocketIntegration(progressService, websocketService);
 const scheduledJobs = new ProgressScheduledJobs(
   prisma,
   progressService,
-  progressWebSocket,
   emailService,
   logger
 );

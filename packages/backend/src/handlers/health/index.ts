@@ -31,7 +31,6 @@ interface HealthCheckResponse {
       services?: Record<string, string>;
     };
     external?: {
-      pusher: string;
       cognito: string;
       mapbox: string;
     };
@@ -182,24 +181,22 @@ async function healthHandler(
   // External services check (simplified)
   try {
     response.checks.external = {
-      pusher: 'healthy', // In production, you'd actually test connectivity
-      cognito: 'healthy',
+      cognito: 'healthy', // In production, you'd actually test connectivity
       mapbox: 'healthy',
     };
     
-    totalChecks += 3;
-    healthyCount += 3; // Assuming healthy for now
+    totalChecks += 2;
+    healthyCount += 2; // Assuming healthy for now
     
     logger.debug('External services check completed', {
-      pusher: 'healthy',
       cognito: 'healthy',
       mapbox: 'healthy',
     });
     
   } catch (error) {
     logger.error('External services check failed', error as Error);
-    totalChecks += 3;
-    unhealthyCount += 3;
+    totalChecks += 2;
+    unhealthyCount += 2;
   }
 
   // Determine overall status

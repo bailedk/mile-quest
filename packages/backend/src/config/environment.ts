@@ -20,14 +20,9 @@ interface EnvironmentConfig {
   STAGE: 'dev' | 'staging' | 'production';
   
   // External Services
-  PUSHER_APP_ID?: string;
-  PUSHER_KEY?: string;
-  PUSHER_SECRET?: string;
-  PUSHER_CLUSTER?: string;
   MAPBOX_ACCESS_TOKEN?: string;
   
   // Feature Flags
-  ENABLE_REAL_TIME?: boolean;
   ENABLE_OFFLINE_SYNC?: boolean;
   
   // Logging
@@ -56,14 +51,9 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     STAGE: stage,
     
     // External Services
-    PUSHER_APP_ID: process.env.PUSHER_APP_ID,
-    PUSHER_KEY: process.env.PUSHER_KEY,
-    PUSHER_SECRET: process.env.PUSHER_SECRET,
-    PUSHER_CLUSTER: process.env.PUSHER_CLUSTER || 'us2',
     MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN,
     
     // Feature Flags
-    ENABLE_REAL_TIME: process.env.ENABLE_REAL_TIME === 'true',
     ENABLE_OFFLINE_SYNC: process.env.ENABLE_OFFLINE_SYNC === 'true',
     
     // Logging

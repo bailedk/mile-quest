@@ -5,9 +5,7 @@
 
 import { PrismaClient, Prisma, NotificationStatus, NotificationChannel, NotificationBatchStatus } from '@prisma/client';
 import { BaseAWSService, ServiceConfig, ServiceMetrics } from '../aws/base-service';
-import { WebSocketService } from '../websocket/types';
 import { EmailService } from '../email/types';
-import { createWebSocketService } from '../websocket/factory';
 import { cache, cacheKeys, cacheTTL } from '../../utils/cache';
 import {
   NotificationService,
@@ -37,12 +35,10 @@ import {
 } from './types';
 
 interface InternalNotificationServiceConfig extends NotificationServiceConfig, ServiceConfig {
-  websocketService?: WebSocketService;
   emailService?: EmailService;
 }
 
 export class NotificationServiceImpl extends BaseAWSService implements NotificationService {
-  private websocketService: WebSocketService;
   private emailService?: EmailService;
   private config: Required<NotificationServiceConfig>;
   private rateLimitCache = new Map<string, { count: number; resetTime: number }>();
@@ -75,7 +71,6 @@ export class NotificationServiceImpl extends BaseAWSService implements Notificat
     };
 
     // Initialize services
-    this.websocketService = config?.websocketService || createWebSocketService();
     this.emailService = config?.emailService;
   }
 
@@ -1028,21 +1023,12 @@ export class NotificationServiceImpl extends BaseAWSService implements Notificat
   }
 
   private async sendRealtimeNotification(notification: any): Promise<void> {
-    const channel = `private-user-${notification.userId}`;
-    const event = 'notification';
-    
-    const data = {
-      id: notification.id,
+    // Real-time notifications are disabled - notifications will be fetched via REST API
+    this.logger.debug('Real-time notification skipped (WebSocket disabled)', {
+      notificationId: notification.id,
+      userId: notification.userId,
       type: notification.type,
-      category: notification.category,
-      priority: notification.priority,
-      title: notification.title,
-      content: notification.content,
-      data: notification.data,
-      createdAt: notification.createdAt.toISOString(),
-    };
-
-    await this.websocketService.trigger(channel, event, data);
+    });
   }
 
   private async sendEmailNotification(notification: any): Promise<void> {

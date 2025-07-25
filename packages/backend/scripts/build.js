@@ -18,7 +18,6 @@ const functions = [
   'dashboard',
   'progress',
   'leaderboards',
-  'websocket',
   'scheduled',
   'goals',
 ];

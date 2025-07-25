@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Achievement } from '@/hooks/useRealtimeUpdates';
+
+// Define Achievement type locally
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  icon?: string;
+}
 
 interface AchievementNotificationProps {
   achievement: Achievement;
@@ -39,106 +47,73 @@ export function AchievementNotification({
   };
 
   return (
-    <div 
+    <div
       className={`
-        fixed top-4 right-4 z-50 max-w-sm w-full
-        transform transition-all duration-300 ease-out
-        ${isVisible && !isExiting 
-          ? 'translate-x-0 opacity-100' 
-          : 'translate-x-full opacity-0'
-        }
+        fixed top-20 right-4 bg-white rounded-lg shadow-xl p-4 
+        transform transition-all duration-300 ease-out max-w-sm
+        ${isVisible && !isExiting ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
       `}
     >
-      <div className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 rounded-lg shadow-lg overflow-hidden">
-        <div className="p-4 text-white">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                {achievement.icon ? (
-                  <span className="text-2xl">{achievement.icon}</span>
-                ) : (
-                  <div className="w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center">
-                    <span className="text-yellow-800 font-bold text-sm">🏆</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-white mb-1">
-                  Achievement Earned!
-                </h3>
-                <p className="text-lg font-bold text-white mb-1">
-                  {achievement.name}
-                </p>
-                <p className="text-sm text-yellow-100 opacity-90">
-                  {achievement.description}
-                </p>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleDismiss}
-              className="flex-shrink-0 ml-2 text-yellow-100 hover:text-white transition-colors"
-              aria-label="Dismiss notification"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path 
-                  fillRule="evenodd" 
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" 
-                  clipRule="evenodd" 
-                />
-              </svg>
-            </button>
-          </div>
+      <div className="flex items-start">
+        <div className="text-3xl mr-3">
+          {achievement.icon || '🏆'}
         </div>
-        
-        {/* Progress bar for auto-dismiss */}
-        <div className="h-1 bg-yellow-300">
-          <div 
-            className="h-full bg-yellow-600 transition-all ease-linear"
-            style={{
-              width: '100%',
-              animation: `shrink ${duration}ms linear`,
-            }}
-          />
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900">
+            {achievement.title}
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            {achievement.description}
+          </p>
+          {achievement.points && (
+            <p className="text-sm font-semibold text-green-600 mt-2">
+              +{achievement.points} points
+            </p>
+          )}
         </div>
+        <button
+          onClick={handleDismiss}
+          className="ml-2 text-gray-400 hover:text-gray-600"
+        >
+          ✕
+        </button>
       </div>
-      
-      <style jsx>{`
-        @keyframes shrink {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
     </div>
   );
 }
 
 interface AchievementNotificationManagerProps {
   achievements: Achievement[];
-  onDismiss: (id: string) => void;
+  onDismiss: (achievementId: string) => void;
 }
 
-export function AchievementNotificationManager({ 
-  achievements, 
-  onDismiss 
+export function AchievementNotificationManager({
+  achievements,
+  onDismiss,
 }: AchievementNotificationManagerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  const currentAchievement = achievements[currentIndex];
+
+  const handleDismiss = () => {
+    if (currentAchievement) {
+      onDismiss(currentAchievement.id);
+      
+      // Move to next achievement if available
+      if (currentIndex < achievements.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      }
+    }
+  };
+
+  if (!currentAchievement) {
+    return null;
+  }
+
   return (
-    <>
-      {achievements.map((achievement, index) => (
-        <div
-          key={achievement.id}
-          style={{
-            top: `${1 + index * 6}rem`, // Stack notifications with spacing
-          }}
-          className="absolute"
-        >
-          <AchievementNotification
-            achievement={achievement}
-            onDismiss={() => onDismiss(achievement.id)}
-          />
-        </div>
-      ))}
-    </>
+    <AchievementNotification
+      achievement={currentAchievement}
+      onDismiss={handleDismiss}
+    />
   );
 }

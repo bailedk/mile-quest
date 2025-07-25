@@ -1,9 +1,19 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
-import { Achievement } from '@/hooks/useRealtimeUpdates';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { ManagedAchievementCelebration } from './ManagedAchievementCelebration';
+
+// Define Achievement type locally
+export interface Achievement {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  points: number;
+  icon?: string;
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+  unlockedAt?: string;
+}
 
 interface AchievementContextValue {
   triggerAchievement: (achievement: Achievement) => void;
@@ -19,73 +29,28 @@ interface AchievementProviderProps {
   children: React.ReactNode;
   defaultEnableSound?: boolean;
   defaultEnableSharing?: boolean;
+  celebrationStyle?: 'minimal' | 'standard' | 'epic';
 }
 
-export function AchievementProvider({ 
+export function AchievementProvider({
   children,
   defaultEnableSound = true,
-  defaultEnableSharing = true,
+  defaultEnableSharing = false,
+  celebrationStyle = 'standard',
 }: AchievementProviderProps) {
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [enableSound, setEnableSound] = useState(defaultEnableSound);
   const [enableSharing, setEnableSharing] = useState(defaultEnableSharing);
-  const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
 
-  // Subscribe to achievement events via WebSocket
-  useRealtimeUpdates({
-    channels: ['achievements'],
-    onAchievement: (achievement) => {
-      setAchievementQueue(prev => [...prev, achievement]);
-    },
-    enableLogging: process.env.NODE_ENV === 'development',
-  });
-
-  // Load user preferences from localStorage
-  useEffect(() => {
-    const savedSoundPref = localStorage.getItem('achievementSoundEnabled');
-    const savedSharingPref = localStorage.getItem('achievementSharingEnabled');
-    
-    if (savedSoundPref !== null) {
-      setEnableSound(savedSoundPref === 'true');
-    }
-    if (savedSharingPref !== null) {
-      setEnableSharing(savedSharingPref === 'true');
-    }
-  }, []);
-
-  // Save preferences to localStorage
-  useEffect(() => {
-    localStorage.setItem('achievementSoundEnabled', String(enableSound));
-  }, [enableSound]);
-
-  useEffect(() => {
-    localStorage.setItem('achievementSharingEnabled', String(enableSharing));
-  }, [enableSharing]);
-
-  // Manual trigger for achievements (useful for testing or manual triggers)
   const triggerAchievement = useCallback((achievement: Achievement) => {
-    setAchievementQueue(prev => [...prev, achievement]);
+    setAchievements(prev => [...prev, achievement]);
   }, []);
 
-  const handleShare = useCallback((achievement: Achievement) => {
-    if (navigator.share) {
-      navigator.share({
-        title: `Achievement Unlocked: ${achievement.name}`,
-        text: `I just earned the "${achievement.name}" achievement in Mile Quest! ${achievement.description}`,
-        url: window.location.origin,
-      }).catch(() => {
-        // User cancelled or share failed
-      });
-    } else {
-      // Fallback: Copy to clipboard
-      const text = `I just earned the "${achievement.name}" achievement in Mile Quest! ${achievement.description}`;
-      navigator.clipboard.writeText(text).then(() => {
-        // You could show a toast notification here
-        console.log('Achievement copied to clipboard');
-      });
-    }
+  const handleDismiss = useCallback((achievementId: string) => {
+    setAchievements(prev => prev.filter(a => a.id !== achievementId));
   }, []);
 
-  const contextValue: AchievementContextValue = {
+  const value: AchievementContextValue = {
     triggerAchievement,
     enableSound,
     setEnableSound,
@@ -94,29 +59,15 @@ export function AchievementProvider({
   };
 
   return (
-    <AchievementContext.Provider value={contextValue}>
+    <AchievementContext.Provider value={value}>
       {children}
-      
-      {/* Achievement Celebration Component */}
       <ManagedAchievementCelebration
-        achievement={achievementQueue[0] || null}
-        onComplete={() => {
-          setAchievementQueue(prev => prev.slice(1));
-        }}
+        achievements={achievements}
+        onDismiss={handleDismiss}
+        celebrationStyle={celebrationStyle}
         enableSound={enableSound}
         enableSharing={enableSharing}
-        onShare={handleShare}
-        autoHideDuration={6000}
       />
-      
-      {/* Queue indicator */}
-      {achievementQueue.length > 1 && (
-        <div className="fixed top-40 left-1/2 transform -translate-x-1/2 z-40 text-center">
-          <p className="text-sm text-gray-600 bg-white/90 px-3 py-1 rounded-full shadow-md">
-            +{achievementQueue.length - 1} more achievement{achievementQueue.length > 2 ? 's' : ''} unlocked
-          </p>
-        </div>
-      )}
     </AchievementContext.Provider>
   );
 }

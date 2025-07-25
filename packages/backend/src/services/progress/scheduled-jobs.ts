@@ -1,6 +1,5 @@
 import { PrismaClient, GoalStatus } from '@prisma/client';
 import { ProgressService } from './progress.service';
-import { ProgressWebSocketIntegration } from './websocket-integration';
 import { EmailService } from '../email/types';
 import { LoggerService } from '../logger';
 
@@ -10,7 +9,6 @@ export class ProgressScheduledJobs {
   constructor(
     private prisma: PrismaClient,
     private progressService: ProgressService,
-    private websocketIntegration: ProgressWebSocketIntegration,
     private emailService: EmailService,
     logger: LoggerService
   ) {
@@ -112,19 +110,21 @@ export class ProgressScheduledJobs {
     // Get current progress
     const progress = await this.progressService.calculateTeamProgress(goal.id);
 
-    // Broadcast summary
-    await this.websocketIntegration.broadcastDailySummary(goal.teamId, {
-      ...summary,
-      topContributor: topContributor ? {
-        userId: topContributor[0],
-        name: topContributor[1].name,
-        distance: topContributor[1].distance,
-      } : undefined,
-      progressToday: summary.totalDistance,
-      percentComplete: progress.percentComplete,
+    // TODO: In the future, store summary for team members to retrieve via REST API
+    // For now, just log the summary
+    this.logger.info('Daily summary generated', {
+      teamId: goal.teamId,
+      summary: {
+        ...summary,
+        topContributor: topContributor ? {
+          userId: topContributor[0],
+          name: topContributor[1].name,
+          distance: topContributor[1].distance,
+        } : undefined,
+        progressToday: summary.totalDistance,
+        percentComplete: progress.percentComplete,
+      }
     });
-
-    this.logger.info(`Daily summary sent for team ${goal.teamId}`, { summary });
   }
 
   /**
@@ -190,12 +190,17 @@ export class ProgressScheduledJobs {
       return; // No encouragement needed
     }
 
-    await this.websocketIntegration.broadcastEncouragement(goal.teamId, {
-      type,
-      message,
-      daysRemaining: progress.daysRemaining,
-      percentComplete: progress.percentComplete,
-      requiredDailyDistance: progress.requiredDailyDistance,
+    // TODO: In the future, store encouragement messages for team members to retrieve
+    // For now, just log the encouragement
+    this.logger.info('Encouragement message generated', {
+      teamId: goal.teamId,
+      encouragement: {
+        type,
+        message,
+        daysRemaining: progress.daysRemaining,
+        percentComplete: progress.percentComplete,
+        requiredDailyDistance: progress.requiredDailyDistance,
+      }
     });
 
     // Also send email to team admins

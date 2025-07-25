@@ -12,8 +12,6 @@ import { prisma } from '../../lib/database';
 import { ActivityService } from '../../services/activity/activity.service';
 import { UpdateActivityInput } from '../../services/activity/types';
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { ProgressService, ProgressWebSocketIntegration } from '../../services/progress';
-import { createWebSocketService } from '../../services/websocket';
 import { createLogger } from '../../services/logger';
 import { 
   successResponse, 
@@ -28,33 +26,16 @@ validateEnvironment();
 
 // Initialize services lazily to avoid cold start issues
 let activityService: ActivityService;
-let progressService: ProgressService;
-let websocketService: ReturnType<typeof createWebSocketService>;
-let progressWebSocket: ProgressWebSocketIntegration;
 let logger: ReturnType<typeof createLogger>;
 
 function initializeServices() {
   if (!activityService) {
     logger = createLogger('ActivitiesHandler');
     logger.info('Initializing services', {
-      WEBSOCKET_PROVIDER: process.env.WEBSOCKET_PROVIDER,
       NODE_ENV: process.env.NODE_ENV
     });
     
     activityService = new ActivityService(prisma);
-    progressService = new ProgressService(prisma);
-    
-    // Create WebSocket service with fallback to mock for local development
-    try {
-      websocketService = createWebSocketService();
-    } catch (error) {
-      logger.warn('Failed to create WebSocket service, falling back to mock:', error);
-      // Force mock service creation
-      const { MockWebSocketService } = require('../../services/websocket/mock.service');
-      websocketService = new MockWebSocketService({});
-    }
-    
-    progressWebSocket = new ProgressWebSocketIntegration(progressService, websocketService);
   }
 }
 
@@ -112,29 +93,6 @@ router.post('/', async (event, context, params) => {
     });
     
     logger.info('Activity created successfully', { activityId: result.activity.id });
-
-    // Send real-time updates to user's teams if needed
-    try {
-      const userTeams = await prisma.teamMember.findMany({
-        where: {
-          userId: user.id,
-          leftAt: null,
-        },
-        select: { teamId: true }
-      });
-
-      await Promise.all(
-        userTeams.map(({ teamId }) => 
-          progressWebSocket.handleActivityUpdate(
-            teamId,
-            result.activity.teamGoalId || undefined
-          )
-        )
-      );
-    } catch (wsError) {
-      logger.error('Failed to send WebSocket updates', wsError);
-      // Don't fail the request if WebSocket fails
-    }
     
     return successResponse(result, 201);
   } catch (error) {

@@ -3,7 +3,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, Suspense } from 'react';
 import { PWAProvider } from './PWAProvider';
-import { WebSocketProvider } from '@/contexts/WebSocketContext';
 import { PerformanceProvider } from '@/components/optimization/PerformanceProvider';
 import { preloadCriticalRoutes } from '@/components/optimization/LazyRoutes';
 import { ToastProvider } from '@/contexts/ToastContext';
@@ -59,17 +58,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
               <KeyboardNavigationProvider>
                 <MobileAccessibilityProvider>
                   <PWAProvider>
-                    <WebSocketProvider>
-                      {children}
-                      
-                      {/* Accessibility UI Components */}
-                      <Suspense fallback={null}>
-                        <AccessibilityQuickActions />
-                        <DevOnlyWrapper>
-                          <AccessibilityDevTools />
-                        </DevOnlyWrapper>
-                      </Suspense>
-                    </WebSocketProvider>
+                    {children}
+                    
+                    {/* Accessibility UI Components */}
+                    <Suspense fallback={null}>
+                      <AccessibilityQuickActions />
+                      <DevOnlyWrapper>
+                        <AccessibilityDevTools />
+                      </DevOnlyWrapper>
+                    </Suspense>
                   </PWAProvider>
                 </MobileAccessibilityProvider>
               </KeyboardNavigationProvider>
