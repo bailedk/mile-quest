@@ -58,7 +58,7 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 CREATE OR REPLACE VIEW v_index_usage AS
 SELECT 
     s.schemaname,
-    s.tablename,
+    s.relname as tablename,
     s.indexrelname as indexname,
     s.idx_scan,
     s.idx_tup_read,
@@ -70,7 +70,7 @@ ORDER BY s.idx_scan DESC;
 CREATE OR REPLACE VIEW v_table_stats AS
 SELECT 
     s.schemaname,
-    s.tablename,
+    s.relname as tablename,
     s.n_live_tup as live_rows,
     s.n_dead_tup as dead_rows,
     ROUND(100.0 * s.n_dead_tup / NULLIF(s.n_live_tup + s.n_dead_tup, 0), 2) as dead_percentage,
@@ -97,13 +97,13 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT 
-        s.schemaname||'.'||s.tablename AS table_name,
-        pg_size_pretty(pg_total_relation_size(s.schemaname||'.'||s.tablename)) AS total_size,
-        pg_size_pretty(pg_relation_size(s.schemaname||'.'||s.tablename)) AS table_size,
-        pg_size_pretty(pg_total_relation_size(s.schemaname||'.'||s.tablename) - pg_relation_size(s.schemaname||'.'||s.tablename)) AS indexes_size,
+        s.schemaname||'.'||s.relname AS table_name,
+        pg_size_pretty(pg_total_relation_size(s.schemaname||'.'||s.relname)) AS total_size,
+        pg_size_pretty(pg_relation_size(s.schemaname||'.'||s.relname)) AS table_size,
+        pg_size_pretty(pg_total_relation_size(s.schemaname||'.'||s.relname) - pg_relation_size(s.schemaname||'.'||s.relname)) AS indexes_size,
         s.n_live_tup AS row_estimate
     FROM pg_stat_user_tables s
-    ORDER BY pg_total_relation_size(s.schemaname||'.'||s.tablename) DESC;
+    ORDER BY pg_total_relation_size(s.schemaname||'.'||s.relname) DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -121,7 +121,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         s.indexrelname AS index_name,
-        s.tablename AS table_name,
+        s.relname AS table_name,
         pg_size_pretty(pg_relation_size(s.indexrelid)) AS index_size,
         s.idx_scan AS index_scans,
         CASE 

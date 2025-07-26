@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "darwin-arm64"]
 }
 
@@ -9,25 +9,25 @@ datasource db {
 }
 
 model User {
-  id                      String                    @id @default(uuid())
-  email                   String                    @unique
+  id                      String                   @id @default(uuid())
+  email                   String                   @unique
   name                    String
   avatarUrl               String?
-  emailVerified           Boolean                   @default(false)
-  cognitoId               String                    @unique
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
+  emailVerified           Boolean                  @default(false)
+  cognitoId               String                   @unique
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
   deletedAt               DateTime?
   activities              Activity[]
-  createdGoals            TeamGoal[]                @relation("GoalCreator")
-  sentInvites             TeamInvite[]              @relation("InviteSender")
-  receivedInvites         TeamInvite[]              @relation("InviteRecipient")
+  notificationPreferences NotificationPreference[]
+  notifications           Notification[]
+  createdGoals            TeamGoal[]               @relation("GoalCreator")
+  sentInvites             TeamInvite[]             @relation("InviteSender")
+  receivedInvites         TeamInvite[]             @relation("InviteRecipient")
   teamMemberships         TeamMember[]
-  createdTeams            Team[]                    @relation("TeamCreator")
+  createdTeams            Team[]                   @relation("TeamCreator")
   achievements            UserAchievement[]
   stats                   UserStats?
-  notifications           Notification[]
-  notificationPreferences NotificationPreference[]
 
   @@index([email])
   @@index([cognitoId])
@@ -80,15 +80,15 @@ model TeamGoal {
   teamId         String
   name           String
   description    String?
-  targetDistance Float         // Total distance in meters
+  targetDistance Float
   targetDate     DateTime?
-  startDate      DateTime      // When tracking starts for this goal
-  endDate        DateTime      // When tracking ends for this goal
-  startLocation  Json          // { lat: number, lng: number, address?: string }
-  endLocation    Json          // { lat: number, lng: number, address?: string }
-  waypoints      Json[]        // Array of waypoint objects
-  routePolyline  String        // Encoded polyline for the entire route
-  routeData      Json          // Additional route metadata (segments, bounds, etc.)
+  startDate      DateTime
+  endDate        DateTime
+  startLocation  Json
+  endLocation    Json
+  waypoints      Json[]
+  routePolyline  String
+  routeData      Json
   status         GoalStatus    @default(DRAFT)
   createdById    String
   completedAt    DateTime?
@@ -102,15 +102,16 @@ model TeamGoal {
   @@index([status])
   @@index([teamId, status])
   @@index([startDate, endDate])
+  @@index([teamId, status, createdAt(sort: Desc)], map: "idx_team_goals_team_status_created")
   @@map("team_goals")
 }
 
 model Activity {
   id                 String            @id @default(uuid())
   userId             String
-  distance           Float             // Distance in meters
-  duration           Int               // Duration in seconds
-  timestamp          DateTime          // Single timestamp for the activity
+  distance           Float
+  duration           Int
+  timestamp          DateTime
   notes              String?
   source             ActivitySource    @default(MANUAL)
   externalId         String?
@@ -121,20 +122,13 @@ model Activity {
   achievementsEarned UserAchievement[]
 
   @@unique([source, externalId])
-  // Single column indexes
   @@index([userId])
   @@index([timestamp])
   @@index([isPrivate])
   @@index([createdAt])
-  
-  // Compound indexes for common query patterns
-  // For user activity lists with date filtering
   @@index([userId, timestamp(sort: Desc)])
-  // For daily aggregations (using date function on timestamp)
   @@index([userId, timestamp, isPrivate])
-  // For cursor-based pagination
   @@index([createdAt(sort: Desc), id])
-  
   @@map("activities")
 }
 
@@ -222,7 +216,108 @@ model UserAchievement {
   @@unique([userId, achievementId])
   @@index([userId])
   @@index([earnedAt])
+  @@index([userId, earnedAt(sort: Desc)], map: "idx_user_achievements_user_earned")
   @@map("user_achievements")
+}
+
+model NotificationTemplate {
+  id            String               @id @default(uuid())
+  key           String               @unique
+  name          String
+  description   String?
+  category      NotificationCategory
+  priority      NotificationPriority @default(MEDIUM)
+  subject       String
+  content       String
+  emailContent  String?
+  variables     Json                 @default("[]")
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  notifications Notification[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("notification_templates")
+}
+
+model Notification {
+  id           String                @id @default(uuid())
+  userId       String
+  templateId   String?
+  type         NotificationType
+  category     NotificationCategory
+  priority     NotificationPriority  @default(MEDIUM)
+  title        String
+  content      String
+  data         Json?
+  channels     NotificationChannel[] @default([REALTIME])
+  status       NotificationStatus    @default(PENDING)
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  readAt       DateTime?
+  clickedAt    DateTime?
+  expiresAt    DateTime?
+  retryCount   Int                   @default(0)
+  maxRetries   Int                   @default(3)
+  lastError    String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id])
+  user         User                  @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([category])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, scheduledFor])
+  @@index([expiresAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id              String                @id @default(uuid())
+  userId          String
+  category        NotificationCategory
+  channels        NotificationChannel[]
+  isEnabled       Boolean               @default(true)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  timezone        String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  user            User                  @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category])
+  @@index([userId])
+  @@index([category])
+  @@map("notification_preferences")
+}
+
+model NotificationBatch {
+  id           String                  @id @default(uuid())
+  name         String?
+  description  String?
+  type         NotificationType
+  category     NotificationCategory
+  totalCount   Int                     @default(0)
+  sentCount    Int                     @default(0)
+  failedCount  Int                     @default(0)
+  status       NotificationBatchStatus @default(PENDING)
+  scheduledFor DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([type])
+  @@index([category])
+  @@map("notification_batches")
 }
 
 enum TeamRole {
@@ -257,106 +352,6 @@ enum AchievementCategory {
   SPEED
   TEAM
   SPECIAL
-}
-
-model NotificationTemplate {
-  id           String                 @id @default(uuid())
-  key          String                 @unique
-  name         String
-  description  String?
-  category     NotificationCategory
-  priority     NotificationPriority   @default(MEDIUM)
-  subject      String
-  content      String
-  emailContent String?
-  variables    Json                   @default("[]")
-  isActive     Boolean                @default(true)
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-  notifications Notification[]
-
-  @@index([category])
-  @@index([isActive])
-  @@map("notification_templates")
-}
-
-model Notification {
-  id               String                @id @default(uuid())
-  userId           String
-  templateId       String?
-  type             NotificationType
-  category         NotificationCategory
-  priority         NotificationPriority  @default(MEDIUM)
-  title            String
-  content          String
-  data             Json?
-  channels         NotificationChannel[] @default([REALTIME])
-  status           NotificationStatus    @default(PENDING)
-  scheduledFor     DateTime?
-  sentAt           DateTime?
-  readAt           DateTime?
-  clickedAt        DateTime?
-  expiresAt        DateTime?
-  retryCount       Int                   @default(0)
-  maxRetries       Int                   @default(3)
-  lastError        String?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  user             User                  @relation(fields: [userId], references: [id])
-  template         NotificationTemplate? @relation(fields: [templateId], references: [id])
-
-  @@index([userId])
-  @@index([type])
-  @@index([category])
-  @@index([status])
-  @@index([scheduledFor])
-  @@index([userId, status])
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([status, scheduledFor])
-  @@index([expiresAt])
-  @@map("notifications")
-}
-
-model NotificationPreference {
-  id               String               @id @default(uuid())
-  userId           String
-  category         NotificationCategory
-  channels         NotificationChannel[]
-  isEnabled        Boolean              @default(true)
-  quietHoursStart  String?              // Format: "HH:MM"
-  quietHoursEnd    String?              // Format: "HH:MM"
-  timezone         String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  user             User                 @relation(fields: [userId], references: [id])
-
-  @@unique([userId, category])
-  @@index([userId])
-  @@index([category])
-  @@map("notification_preferences")
-}
-
-model NotificationBatch {
-  id               String                  @id @default(uuid())
-  name             String?
-  description      String?
-  type             NotificationType
-  category         NotificationCategory
-  totalCount       Int                     @default(0)
-  sentCount        Int                     @default(0)
-  failedCount      Int                     @default(0)
-  status           NotificationBatchStatus @default(PENDING)
-  scheduledFor     DateTime?
-  startedAt        DateTime?
-  completedAt      DateTime?
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
-
-  @@index([status])
-  @@index([scheduledFor])
-  @@index([type])
-  @@index([category])
-  @@map("notification_batches")
 }
 
 enum NotificationType {
