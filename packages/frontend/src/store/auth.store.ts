@@ -82,12 +82,11 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        set({ isLoading: true });
         const state = get();
         
         // If we have a user and tokens, consider authenticated
         if (state.user && state.tokens) {
-          set({ isLoading: false });
+          set({ isAuthenticated: true, isLoading: false });
           return;
         }
         
@@ -169,7 +168,7 @@ export const useAuthStore = create<AuthStore>()(
         tokens: state.tokens,
         isAuthenticated: state.isAuthenticated,
       }),
-      skipHydration: true, // Prevents hydration mismatch
+      skipHydration: true, // Prevent automatic hydration to avoid SSR issues
     }
   )
 );

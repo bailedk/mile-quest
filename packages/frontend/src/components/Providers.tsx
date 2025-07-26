@@ -1,81 +1,30 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, useEffect, Suspense } from 'react';
-import { PWAProvider } from './PWAProvider';
-import { PerformanceProvider } from '@/components/optimization/PerformanceProvider';
-import { preloadCriticalRoutes } from '@/components/optimization/LazyRoutes';
+import { ReactNode } from 'react';
+import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { HydrationProvider } from '@/contexts/HydrationContext';
-import { 
-  VisualAccessibilityProvider,
-  KeyboardNavigationProvider,
-  MobileAccessibilityProvider,
-  AccessibilityQuickActions,
-  AccessibilityDevTools
-} from '@/components/accessibility';
-import { DevOnlyWrapper } from '@/components/DevOnlyWrapper';
-import { ClientOnlyDevTools } from './ClientOnlyDevTools';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+// Create query client outside of component to avoid recreation
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            // With SSR, we usually want to set some default staleTime
-            // above 0 to avoid refetching immediately on the client
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
-            retry: 2,
-            refetchOnWindowFocus: false,
-            refetchOnMount: false,
-            refetchOnReconnect: false,
-            // Performance optimization: reduce network waterfall
-            networkMode: 'online',
-          },
-          mutations: {
-            // Optimize mutation error handling
-            retry: 1,
-            networkMode: 'online',
-          },
-        },
-      })
-  );
-
-  // Preload critical routes after initial load
-  useEffect(() => {
-    preloadCriticalRoutes();
-  }, []);
-
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthInitializer />
       <HydrationProvider>
-        <PerformanceProvider>
-          <ToastProvider>
-            <VisualAccessibilityProvider>
-              <KeyboardNavigationProvider>
-                <MobileAccessibilityProvider>
-                  <PWAProvider>
-                    {children}
-                    
-                    {/* Accessibility UI Components */}
-                    <Suspense fallback={null}>
-                      <AccessibilityQuickActions />
-                      <DevOnlyWrapper>
-                        <AccessibilityDevTools />
-                      </DevOnlyWrapper>
-                    </Suspense>
-                  </PWAProvider>
-                </MobileAccessibilityProvider>
-              </KeyboardNavigationProvider>
-            </VisualAccessibilityProvider>
-          </ToastProvider>
-        </PerformanceProvider>
-        <DevOnlyWrapper>
-          <ClientOnlyDevTools />
-        </DevOnlyWrapper>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </HydrationProvider>
     </QueryClientProvider>
   );

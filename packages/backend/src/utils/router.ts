@@ -75,7 +75,24 @@ export class Router {
     context: Context
   ): Promise<any> {
     const method = event.httpMethod;
-    const path = event.pathParameters?.proxy || '';
+    
+    // Get the path from various sources
+    let path = '';
+    
+    // First check pathParameters.proxy (API Gateway proxy integration)
+    if (event.pathParameters?.proxy) {
+      path = event.pathParameters.proxy;
+    }
+    // Then check the raw path
+    else if (event.path) {
+      // Remove the base path (e.g., /activities) to get the relative path
+      const pathParts = event.path.split('/').filter(p => p);
+      if (pathParts.length > 1) {
+        // Remove the first part (e.g., 'activities') to get the subpath
+        path = pathParts.slice(1).join('/');
+      }
+    }
+    
     const normalizedPath = '/' + path.replace(/^\/+|\/+$/g, '');
 
     // Find matching route

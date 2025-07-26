@@ -178,7 +178,7 @@ router.get('/', async (event, context, params) => {
       ? parseInt(event.queryStringParameters.offset) 
       : 0;
 
-    const activities = await activityService.getUserActivities(
+    const activities = await activityService.getActivities(
       user.id,
       {
         startDate: startDate ? new Date(startDate) : undefined,

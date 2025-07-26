@@ -85,25 +85,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         
         {/* Viewport is now handled by the viewport export above */}
-        
-        {/* Performance monitoring script */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Early performance monitoring
-              if ('PerformanceObserver' in window) {
-                const observer = new PerformanceObserver((list) => {
-                  for (const entry of list.getEntries()) {
-                    if (entry.entryType === 'largest-contentful-paint') {
-                      window.__MILE_QUEST_LCP__ = entry.startTime;
-                    }
-                  }
-                });
-                observer.observe({entryTypes: ['largest-contentful-paint']});
-              }
-            `,
-          }}
-        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

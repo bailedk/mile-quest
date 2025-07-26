@@ -134,9 +134,14 @@ export function PWAProvider({ children }: PWAProviderProps) {
 
   // Show offline status when there's pending data or when offline
   useEffect(() => {
-    const shouldShowStatus = !isOnline || 
-      (safeLocalStorage.getItem('hasPendingSync') === 'true');
-    setShowOfflineStatus(shouldShowStatus);
+    // Only check localStorage on client side
+    if (typeof window !== 'undefined') {
+      const shouldShowStatus = !isOnline || 
+        (safeLocalStorage.getItem('hasPendingSync') === 'true');
+      setShowOfflineStatus(shouldShowStatus);
+    } else {
+      setShowOfflineStatus(!isOnline);
+    }
   }, [isOnline]);
 
   const handleInstallSuccess = () => {

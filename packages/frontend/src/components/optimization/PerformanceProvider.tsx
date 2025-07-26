@@ -33,17 +33,32 @@ export function PerformanceProvider({
   children, 
   enableDevtools = process.env.NODE_ENV === 'development' 
 }: PerformanceProviderProps) {
-  const [monitor] = useState(() => PerformanceMonitor.getInstance());
+  const [monitor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return PerformanceMonitor.getInstance();
+      } catch (error) {
+        console.warn('Failed to initialize PerformanceMonitor:', error);
+        return null;
+      }
+    }
+    return null;
+  });
   const [metrics, setMetrics] = useState<PerformanceMetrics>({});
   const [budgetStatus, setBudgetStatus] = useState({
     passed: true,
     violations: [],
   });
-  const [isEnabled] = useState(() => process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_TRACKING !== 'false');
+  const [isEnabled] = useState(() => typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_TRACKING !== 'false');
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Skip if performance tracking is disabled
-    if (!isEnabled) return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Skip if performance tracking is disabled or monitor not available
+    if (!isEnabled || !monitor) return;
     
     // Update metrics periodically
     const updateMetrics = () => {
@@ -100,13 +115,13 @@ export function PerformanceProvider({
   const contextValue: PerformanceContextType = {
     metrics,
     budgetStatus,
-    monitor,
+    monitor: monitor || ({} as PerformanceMonitor), // Provide empty object as fallback for SSR
   };
 
   return (
     <PerformanceContext.Provider value={contextValue}>
       {children}
-      {enableDevtools && isEnabled && <PerformanceDevtools />}
+      {enableDevtools && isEnabled && isMounted && <PerformanceDevtools />}
     </PerformanceContext.Provider>
   );
 }

@@ -28,9 +28,6 @@ export function HydrationProvider({ children }: HydrationProviderProps) {
     // Initialize auth store
     const initializeAuth = async () => {
       try {
-        // Rehydrate the persisted auth state
-        await useAuthStore.persist.rehydrate();
-        
         // Check current auth status
         const store = useAuthStore.getState();
         await store.checkAuth();
