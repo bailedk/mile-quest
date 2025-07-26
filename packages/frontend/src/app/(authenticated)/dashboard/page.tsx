@@ -21,6 +21,15 @@ import { AchievementNotificationManager } from '@/components/AchievementNotifica
 import { useAuthStore } from '@/store/auth.store';
 import { withAuth } from '@/components/auth/withAuth';
 
+// Define Achievement type locally (matching AchievementNotification)
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  icon?: string;
+}
+
 // Custom hooks for clean separation of concerns
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardCallbacks } from '@/hooks/useDashboardCallbacks';

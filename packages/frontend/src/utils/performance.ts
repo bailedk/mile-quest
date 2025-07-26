@@ -41,9 +41,21 @@ export class PerformanceMonitor {
     this.enabled = process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_TRACKING !== 'false';
     this.reportingEnabled = process.env.NEXT_PUBLIC_ENABLE_PERFORMANCE_REPORTING === 'true';
     
+    // Only initialize in browser environment and after hydration
     if (typeof window !== 'undefined' && this.enabled) {
-      this.initializeObservers();
-      this.trackNavigationTiming();
+      // Delay initialization to avoid hydration issues
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          this.initializeObservers();
+          this.trackNavigationTiming();
+        });
+      } else {
+        // DOM already loaded
+        setTimeout(() => {
+          this.initializeObservers();
+          this.trackNavigationTiming();
+        }, 0);
+      }
     }
   }
 
@@ -233,22 +245,42 @@ export class PerformanceMonitor {
     if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
       // Use requestIdleCallback to avoid blocking the main thread
       const sendAnalytics = () => {
-        fetch('/api/analytics/performance', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            metric: name,
-            value,
-            timestamp: Date.now(),
-            userAgent: navigator.userAgent,
-            url: window.location.href
-          })
-        }).catch((error) => {
-          // Silently fail for analytics
+        // Wrap in try-catch to prevent any errors from propagating
+        try {
+          // Create a timeout using AbortController for better compatibility
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          fetch('/api/analytics/performance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              metric: name,
+              value,
+              timestamp: Date.now(),
+              userAgent: navigator.userAgent,
+              url: window.location.href
+            }),
+            signal: controller.signal
+          }).then(response => {
+            clearTimeout(timeoutId);
+            // Check if response is ok
+            if (!response.ok && process.env.NODE_ENV === 'development') {
+              console.warn(`Performance metric endpoint returned ${response.status}`);
+            }
+          }).catch((error) => {
+            clearTimeout(timeoutId);
+            // Silently fail for analytics
+            if (process.env.NODE_ENV === 'development' && error.name !== 'AbortError') {
+              console.warn('Failed to send performance metric:', error);
+            }
+          });
+        } catch (error) {
+          // Extra safety - catch any synchronous errors
           if (process.env.NODE_ENV === 'development') {
-            console.warn('Failed to send performance metric:', error);
+            console.warn('Error preparing performance metric:', error);
           }
-        });
+        }
       };
       
       if ('requestIdleCallback' in window) {

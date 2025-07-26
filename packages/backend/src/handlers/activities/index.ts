@@ -107,6 +107,61 @@ router.post('/', async (event, context, params) => {
   }
 });
 
+// Get activity summary
+router.get('/summary', async (event, context, params) => {
+  initializeServices();
+  
+  try {
+    const user = getUserFromEvent(event);
+    const period = event.queryStringParameters?.period || 'week';
+    const startDate = event.queryStringParameters?.startDate;
+    const endDate = event.queryStringParameters?.endDate;
+    const teamId = event.queryStringParameters?.teamId;
+
+    const summary = await activityService.getActivitySummary(
+      user.id,
+      period as any,
+      {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        teamId,
+      }
+    );
+    
+    return successResponse(summary);
+  } catch (error) {
+    logger.error('Failed to get activity summary', error);
+    
+    if (isAuthError(error)) {
+      return CommonResponses.unauthorized();
+    }
+    
+    const apiError = toApiError(error);
+    return errorResponse(apiError, apiError.statusCode);
+  }
+});
+
+// Get current streak
+router.get('/streak', async (event, context, params) => {
+  initializeServices();
+  
+  try {
+    const user = getUserFromEvent(event);
+    const streak = await activityService.getCurrentStreak(user.id);
+    
+    return successResponse({ streak });
+  } catch (error) {
+    logger.error('Failed to get streak', error);
+    
+    if (isAuthError(error)) {
+      return CommonResponses.unauthorized();
+    }
+    
+    const apiError = toApiError(error);
+    return errorResponse(apiError, apiError.statusCode);
+  }
+});
+
 // Get user's activities
 router.get('/', async (event, context, params) => {
   initializeServices();
@@ -235,61 +290,6 @@ router.delete('/:id', async (event, context, params) => {
     
     if (error instanceof Error && error.message.includes('not found')) {
       return CommonResponses.notFound('Activity');
-    }
-    
-    const apiError = toApiError(error);
-    return errorResponse(apiError, apiError.statusCode);
-  }
-});
-
-// Get activity summary
-router.get('/summary', async (event, context, params) => {
-  initializeServices();
-  
-  try {
-    const user = getUserFromEvent(event);
-    const period = event.queryStringParameters?.period || 'week';
-    const startDate = event.queryStringParameters?.startDate;
-    const endDate = event.queryStringParameters?.endDate;
-    const teamId = event.queryStringParameters?.teamId;
-
-    const summary = await activityService.getActivitySummary(
-      user.id,
-      period as any,
-      {
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        teamId,
-      }
-    );
-    
-    return successResponse(summary);
-  } catch (error) {
-    logger.error('Failed to get activity summary', error);
-    
-    if (isAuthError(error)) {
-      return CommonResponses.unauthorized();
-    }
-    
-    const apiError = toApiError(error);
-    return errorResponse(apiError, apiError.statusCode);
-  }
-});
-
-// Get current streak
-router.get('/streak', async (event, context, params) => {
-  initializeServices();
-  
-  try {
-    const user = getUserFromEvent(event);
-    const streak = await activityService.getCurrentStreak(user.id);
-    
-    return successResponse({ streak });
-  } catch (error) {
-    logger.error('Failed to get streak', error);
-    
-    if (isAuthError(error)) {
-      return CommonResponses.unauthorized();
     }
     
     const apiError = toApiError(error);

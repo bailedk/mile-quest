@@ -874,24 +874,24 @@ export class GoalService {
   /**
    * Format goal data with progress information
    */
-  private formatGoalWithProgress(goal: any): GoalWithProgress {
+  private formatGoalWithProgress(goal: any): any {
+    // Format to match TeamGoal interface from shared types
+    const currentDistance = goal.progress?.totalDistance || 0;
+    
     return {
       id: goal.id,
       teamId: goal.teamId,
       name: goal.name,
       description: goal.description,
-      targetDistance: goal.targetDistance,
-      targetDate: goal.targetDate,
-      startLocation: goal.startLocation,
-      endLocation: goal.endLocation,
-      waypoints: goal.waypoints,
-      routePolyline: goal.routePolyline,
-      routeData: goal.routeData,
+      targetDate: goal.targetDate ? goal.targetDate.toISOString() : undefined,
       status: goal.status,
-      createdAt: goal.createdAt,
-      updatedAt: goal.updatedAt,
-      startedAt: goal.startDate,
-      completedAt: goal.completedAt,
+      waypoints: goal.waypoints,
+      routeData: goal.routeData,
+      totalDistance: goal.targetDistance, // Rename targetDistance to totalDistance
+      currentDistance: currentDistance,   // Add currentDistance from progress
+      createdAt: goal.createdAt.toISOString(),
+      updatedAt: goal.updatedAt.toISOString(),
+      // Include progress data for backward compatibility
       progress: goal.progress ? {
         totalDistance: goal.progress.totalDistance,
         totalActivities: goal.progress.totalActivities,
@@ -903,6 +903,12 @@ export class GoalService {
           ? Math.min((goal.progress.totalDistance / goal.targetDistance) * 100, 100)
           : 0,
       } : undefined,
+      // Additional fields that might be needed
+      startLocation: goal.startLocation,
+      endLocation: goal.endLocation,
+      routePolyline: goal.routePolyline,
+      startedAt: goal.startDate,
+      completedAt: goal.completedAt,
     };
   }
 }
