@@ -173,7 +173,7 @@ export class RateLimitingMiddleware {
     }
 
     const key = 'global';
-    return this.checkRateLimit(key, this.config.global, event);
+    return this.checkRateLimitRule(key, this.config.global, event);
   }
 
   /**
@@ -392,19 +392,22 @@ export class RateLimitingMiddleware {
    * Extract user ID from event
    */
   private extractUserId(event: APIGatewayProxyEvent): string | null {
-    // Try to get user ID from JWT claims
-    const claims = event.requestContext.authorizer?.claims;
-    if (claims?.sub) {
-      return claims.sub;
-    }
+    // Check if requestContext exists and has authorizer
+    if (event.requestContext?.authorizer) {
+      // Try to get user ID from JWT claims
+      const claims = event.requestContext.authorizer.claims;
+      if (claims?.sub) {
+        return claims.sub;
+      }
 
-    // Try to get from custom authorizer
-    if (event.requestContext.authorizer?.userId) {
-      return event.requestContext.authorizer.userId;
+      // Try to get from custom authorizer
+      if (event.requestContext.authorizer.userId) {
+        return event.requestContext.authorizer.userId;
+      }
     }
 
     // Try to get from headers
-    const authHeader = event.headers.Authorization || event.headers.authorization;
+    const authHeader = event.headers?.Authorization || event.headers?.authorization;
     if (authHeader) {
       // This would need proper JWT parsing - simplified for now
       return 'authenticated_user';
@@ -417,8 +420,8 @@ export class RateLimitingMiddleware {
    * Get client ID (IP or other identifier)
    */
   private getClientId(event: APIGatewayProxyEvent): string {
-    return event.requestContext.identity.sourceIp || 
-           event.headers['X-Forwarded-For']?.split(',')[0]?.trim() ||
+    return event.requestContext?.identity?.sourceIp || 
+           event.headers?.['X-Forwarded-For']?.split(',')[0]?.trim() ||
            'unknown';
   }
 
@@ -426,8 +429,8 @@ export class RateLimitingMiddleware {
    * Get normalized endpoint path
    */
   private getEndpoint(event: APIGatewayProxyEvent): string {
-    const path = event.path || event.requestContext.path || '';
-    const method = event.httpMethod || event.requestContext.httpMethod || 'GET';
+    const path = event.path || event.requestContext?.path || event.resource || '/';
+    const method = event.httpMethod || event.requestContext?.httpMethod || 'GET';
     
     // Normalize path parameters (e.g., /users/123 -> /users/{id})
     const normalizedPath = path
