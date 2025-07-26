@@ -60,10 +60,8 @@ export class DB701OrchestratorService {
     results.push(await this.executePhase('Table Partitioning', async () => {
       await this.partitioningService.setupPartitioning();
       const activityPartitions = await this.partitioningService.getPartitionStats('activities_partitioned');
-      const notificationPartitions = await this.partitioningService.getPartitionStats('notifications_partitioned');
       return {
         activityPartitions: activityPartitions.length,
-        notificationPartitions: notificationPartitions.length,
       };
     }));
 

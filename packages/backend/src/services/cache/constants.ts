@@ -31,7 +31,6 @@ export const cacheTTL = {
   
   // System data
   achievements: 3600,        // 1 hour
-  notifications: 300,        // 5 minutes
   systemConfig: 1800,        // 30 minutes
   
   // API responses
@@ -60,7 +59,6 @@ export const cacheKeys = {
       `user:activities:${userId}${period ? `:${period}` : ''}`,
     teams: (userId: string) => `user:teams:${userId}`,
     achievements: (userId: string) => `user:achievements:${userId}`,
-    notifications: (userId: string) => `user:notifications:${userId}`,
     session: (sessionId: string) => `session:${sessionId}`,
   },
   
@@ -118,11 +116,6 @@ export const cacheKeys = {
   system: {
     config: (key: string) => `system:config:${key}`,
     achievements: () => 'system:achievements',
-    notifications: {
-      template: (key: string) => `notification:template:${key}`,
-      stats: (userId: string) => `notification:stats:${userId}`,
-      preferences: (userId: string) => `notification:preferences:${userId}`,
-    },
   },
   
   // Lock keys (for distributed operations)

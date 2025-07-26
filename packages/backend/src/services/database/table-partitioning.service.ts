@@ -35,8 +35,6 @@ export class TablePartitioningService {
     // Partition activities table by month
     await this.partitionActivitiesTable();
     
-    // Partition notifications table by month
-    await this.partitionNotificationsTable();
     
     // Set up automatic partition management
     await this.setupAutomaticPartitionManagement();
@@ -121,81 +119,13 @@ export class TablePartitioningService {
     }
   }
 
-  /**
-   * Partition notifications table by month
-   */
-  private async partitionNotificationsTable(): Promise<void> {
-    console.log('Partitioning notifications table...');
-    
-    const createPartitionedTable = `
-      -- Create new partitioned table
-      CREATE TABLE IF NOT EXISTS notifications_partitioned (
-        LIKE notifications INCLUDING ALL
-      ) PARTITION BY RANGE (created_at);
-      
-      -- Create function to automatically create monthly partitions
-      CREATE OR REPLACE FUNCTION create_notifications_partition(start_date DATE)
-      RETURNS void AS $$
-      DECLARE
-        partition_name TEXT;
-        start_of_month DATE;
-        end_of_month DATE;
-      BEGIN
-        start_of_month := DATE_TRUNC('month', start_date);
-        end_of_month := start_of_month + INTERVAL '1 month';
-        partition_name := 'notifications_' || TO_CHAR(start_of_month, 'YYYY_MM');
-        
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_class WHERE relname = partition_name
-        ) THEN
-          EXECUTE format(
-            'CREATE TABLE %I PARTITION OF notifications_partitioned 
-             FOR VALUES FROM (%L) TO (%L)',
-            partition_name,
-            start_of_month,
-            end_of_month
-          );
-          
-          -- Create indexes on partition
-          EXECUTE format(
-            'CREATE INDEX %I ON %I (user_id, created_at DESC)',
-            partition_name || '_user_time_idx',
-            partition_name
-          );
-          
-          EXECUTE format(
-            'CREATE INDEX %I ON %I (user_id, status) WHERE read_at IS NULL',
-            partition_name || '_unread_idx',
-            partition_name
-          );
-          
-          RAISE NOTICE 'Created partition %', partition_name;
-        END IF;
-      END;
-      $$ LANGUAGE plpgsql;
-    `;
-
-    try {
-      await this.prisma.$executeRawUnsafe(createPartitionedTable);
-      
-      // Create partitions for existing data
-      await this.createHistoricalPartitions('notifications');
-      
-      // Create future partitions
-      await this.createFuturePartitions('notifications', 3);
-      
-      console.log('Notifications table partitioning complete');
-    } catch (error) {
-      console.error('Failed to partition notifications table:', error);
-    }
-  }
 
   /**
    * Create partitions for historical data
    */
   private async createHistoricalPartitions(tableName: string): Promise<void> {
     // Get date range of existing data
-    const dateColumn = tableName === 'activities' ? 'start_time' : 'created_at';
+    const dateColumn = 'start_time';
     const dateRange = await this.prisma.$queryRaw<Array<{
       min_date: Date;
       max_date: Date;
@@ -216,9 +146,7 @@ export class TablePartitioningService {
     // Create monthly partitions
     const current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
     while (current <= endDate) {
-      const functionName = tableName === 'activities' 
-        ? 'create_activities_partition' 
-        : 'create_notifications_partition';
+      const functionName = 'create_activities_partition';
       
       await this.prisma.$executeRawUnsafe(
         `SELECT ${functionName}('${current.toISOString()}'::DATE)`
@@ -235,9 +163,7 @@ export class TablePartitioningService {
     const current = new Date();
     
     for (let i = 0; i < months; i++) {
-      const functionName = tableName === 'activities' 
-        ? 'create_activities_partition' 
-        : 'create_notifications_partition';
+      const functionName = 'create_activities_partition';
       
       await this.prisma.$executeRawUnsafe(
         `SELECT ${functionName}('${current.toISOString()}'::DATE)`
@@ -263,13 +189,11 @@ export class TablePartitioningService {
         
         FOR i IN 0..2 LOOP
           PERFORM create_activities_partition(future_date);
-          PERFORM create_notifications_partition(future_date);
           future_date := future_date + INTERVAL '1 month';
         END LOOP;
         
         -- Drop old partitions (optional - based on retention policy)
         PERFORM drop_old_partitions('activities_partitioned', 12); -- Keep 12 months
-        PERFORM drop_old_partitions('notifications_partitioned', 6); -- Keep 6 months
       END;
       $$ LANGUAGE plpgsql;
       
@@ -369,7 +293,7 @@ export class TablePartitioningService {
     
     while (offset < totalRows) {
       // Copy batch to partitioned table
-      const dateColumn = tableName === 'activities' ? 'start_time' : 'created_at';
+      const dateColumn = 'start_time';
       
       await this.prisma.$executeRawUnsafe(`
         INSERT INTO ${partitionedTable}
@@ -456,8 +380,6 @@ export class TablePartitioningService {
       // Create optimized indexes for each partition
       if (parentTable === 'activities_partitioned') {
         await this.createActivityPartitionIndexes(partition.name);
-      } else if (parentTable === 'notifications_partitioned') {
-        await this.createNotificationPartitionIndexes(partition.name);
       }
     }
   }
@@ -477,29 +399,6 @@ export class TablePartitioningService {
       `CREATE INDEX IF NOT EXISTS ${partitionName}_public_rank_idx 
        ON ${partitionName} (team_id, distance DESC) 
        WHERE is_private = false`,
-    ];
-
-    for (const sql of indexes) {
-      try {
-        await this.prisma.$executeRawUnsafe(sql);
-      } catch (error) {
-        console.error(`Failed to create index on ${partitionName}:`, error);
-      }
-    }
-  }
-
-  /**
-   * Create indexes for notification partition
-   */
-  private async createNotificationPartitionIndexes(partitionName: string): Promise<void> {
-    const indexes = [
-      `CREATE INDEX IF NOT EXISTS ${partitionName}_user_unread_idx 
-       ON ${partitionName} (user_id, created_at DESC) 
-       WHERE read_at IS NULL`,
-      
-      `CREATE INDEX IF NOT EXISTS ${partitionName}_scheduled_idx 
-       ON ${partitionName} (scheduled_for) 
-       WHERE status = 'SCHEDULED'`,
     ];
 
     for (const sql of indexes) {

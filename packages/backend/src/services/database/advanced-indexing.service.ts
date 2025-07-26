@@ -90,14 +90,6 @@ export class AdvancedIndexingService {
         type: 'partial',
         condition: 'is_public = true AND deleted_at IS NULL',
       },
-      // Notifications - Unread only
-      {
-        name: 'idx_notifications_unread_user',
-        table: 'notifications',
-        columns: ['user_id', 'created_at'],
-        type: 'partial',
-        condition: 'read_at IS NULL AND status = \'SENT\'',
-      },
       // Team invites - Valid invites only
       {
         name: 'idx_team_invites_valid',
@@ -255,8 +247,6 @@ export class AdvancedIndexingService {
       'CREATE INDEX IF NOT EXISTS idx_team_goals_route_data_gin ON team_goals USING gin (route_data)',
       // Achievement criteria
       'CREATE INDEX IF NOT EXISTS idx_achievements_criteria_gin ON achievements USING gin (criteria)',
-      // Notification data
-      'CREATE INDEX IF NOT EXISTS idx_notifications_data_gin ON notifications USING gin (data)',
     ];
 
     for (const sql of ginIndexes) {
@@ -303,8 +293,6 @@ export class AdvancedIndexingService {
       'CREATE INDEX IF NOT EXISTS idx_activities_user_history_complex ON activities (user_id, team_id, is_private, start_time DESC) INCLUDE (distance, duration)',
       // Team member activity summary
       'CREATE INDEX IF NOT EXISTS idx_activities_team_member_summary ON activities (team_id, user_id, start_time) INCLUDE (distance, duration) WHERE is_private = false',
-      // Notification queries with filters
-      'CREATE INDEX IF NOT EXISTS idx_notifications_user_filtered ON notifications (user_id, status, category, created_at DESC) WHERE read_at IS NULL',
       // Achievement progress tracking
       'CREATE INDEX IF NOT EXISTS idx_user_achievements_progress ON user_achievements (user_id, earned_at DESC) INCLUDE (achievement_id, team_id)',
     ];
@@ -459,7 +447,6 @@ export class AdvancedIndexingService {
     return [
       'Consider index on activities(user_id, team_id, start_time) for multi-team queries',
       'Consider index on team_goals(team_id, status) for active goal queries',
-      'Consider index on notifications(user_id, read_at, created_at) for unread notifications',
     ];
   }
 
