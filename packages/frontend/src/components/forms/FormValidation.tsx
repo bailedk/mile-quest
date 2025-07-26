@@ -36,6 +36,8 @@ interface ValidatedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEl
   rules?: ValidationRule[];
   icon?: React.ReactNode;
   endAdornment?: React.ReactNode;
+  isTouched?: boolean;
+  onBlur?: () => void;
 }
 
 export function ValidatedInput({
@@ -52,10 +54,15 @@ export function ValidatedInput({
   icon,
   endAdornment,
   className = '',
+  isTouched: touchedProp,
+  onBlur: onBlurProp,
   ...inputProps
 }: ValidatedInputProps) {
-  const [isTouched, setIsTouched] = useState(false);
+  const [localTouched, setLocalTouched] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  
+  // Use prop touched state if provided, otherwise use local state
+  const isTouched = touchedProp !== undefined ? touchedProp : localTouched;
 
   const hasError = error && showValidation && (isTouched || validateOnChange);
   const showSuccess = showValidation && isTouched && !error && value.length > 0;
@@ -66,8 +73,13 @@ export function ValidatedInput({
   };
 
   const handleBlur = () => {
-    setIsTouched(true);
+    if (!touchedProp) {
+      setLocalTouched(true);
+    }
     setIsFocused(false);
+    if (onBlurProp) {
+      onBlurProp();
+    }
   };
 
   const handleFocus = () => {
@@ -228,17 +240,20 @@ export function useFormValidation<T extends Record<string, any>>(
   // Validate all fields
   const validateAll = useCallback((): boolean => {
     const newErrors: Record<string, FieldError> = {};
+    const newTouched: Record<string, boolean> = {};
     let isValid = true;
     
     Object.keys(values).forEach(name => {
       const error = validateField(name, values[name]);
       if (error) {
         newErrors[name] = error;
+        newTouched[name] = true; // Mark field as touched when validation fails
         isValid = false;
       }
     });
     
     setErrors(newErrors);
+    setTouched(prev => ({ ...prev, ...newTouched }));
     return isValid;
   }, [values, validateField]);
 
@@ -291,8 +306,9 @@ export function useFormValidation<T extends Record<string, any>>(
     value: values[name] || '',
     onChange: setValue,
     error: errors[name],
+    isTouched: touched[name] || false,
     onBlur: () => setFieldTouched(name)
-  }), [values, errors, setValue, setFieldTouched]);
+  }), [values, errors, touched, setValue, setFieldTouched]);
 
   const isValid = useMemo(() => Object.keys(errors).length === 0, [errors]);
   const hasErrors = useMemo(() => Object.keys(errors).length > 0, [errors]);
