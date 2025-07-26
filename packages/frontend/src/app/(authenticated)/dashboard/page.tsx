@@ -143,7 +143,7 @@ function DashboardPage() {
             <TeamSelector
               teams={teams}
               selectedTeamId={selectedTeamId}
-              onTeamChange={setSelectedTeamId}
+              setSelectedTeamId={setSelectedTeamId}
             />
             
             {selectedTeamLeaderboard && (

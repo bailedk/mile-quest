@@ -13,6 +13,7 @@ import {
   TeamGoalProgress,
   ActivitySummaryItem,
 } from '@/types/activity.types';
+import { dashboardService } from './dashboard.service';
 
 
 export const activityService = {
@@ -27,6 +28,11 @@ export const activityService = {
     isPrivate?: boolean;
   }): Promise<Activity> {
     const response = await apiClient.post<Activity>('/activities', data);
+    
+    // Clear dashboard cache after creating an activity
+    // so the new activity appears immediately
+    dashboardService.clearCache();
+    
     return response.data;
   },
 
@@ -85,6 +91,10 @@ export const activityService = {
    */
   async updateActivity(id: string, data: ActivityUpdateInput): Promise<Activity> {
     const response = await apiClient.patch<Activity>(`/activities/${id}`, data);
+    
+    // Clear dashboard cache after updating an activity
+    dashboardService.clearCache();
+    
     return response.data;
   },
 
@@ -93,6 +103,9 @@ export const activityService = {
    */
   async deleteActivity(id: string): Promise<void> {
     await apiClient.delete(`/activities/${id}`);
+    
+    // Clear dashboard cache after deleting an activity
+    dashboardService.clearCache();
   },
 
   /**

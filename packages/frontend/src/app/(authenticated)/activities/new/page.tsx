@@ -113,6 +113,7 @@ function NewActivityPage() {
       });
 
       // Redirect to dashboard
+      // The cache has already been cleared in activityService.createActivity
       router.push('/dashboard');
     } catch (error) {
       console.error('Failed to create activity:', error);
