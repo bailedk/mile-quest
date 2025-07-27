@@ -133,21 +133,21 @@ function ActivitiesContent() {
         <div className={`grid gap-4 mb-8 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-4'}`}>
           {isMobile ? (
             <>
-              <TouchCard className="p-4">
+              <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">Total Distance</p>
                 <p className="text-xl font-bold">
                   {formatDistance(stats.totalDistance)}
                 </p>
               </TouchCard>
-              <TouchCard className="p-4">
+              <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">Total Activities</p>
                 <p className="text-xl font-bold">{stats.totalActivities}</p>
               </TouchCard>
-              <TouchCard className="p-4">
+              <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">Current Streak</p>
                 <p className="text-xl font-bold">{stats.currentStreak} days</p>
               </TouchCard>
-              <TouchCard className="p-4">
+              <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">Average Distance</p>
                 <p className="text-xl font-bold">
                   {formatDistance(stats.averageDistance)}
@@ -184,7 +184,7 @@ function ActivitiesContent() {
       {/* Activities List */}
       {!activities || activities.length === 0 ? (
         isMobile ? (
-          <TouchCard className="text-center p-6">
+          <TouchCard className="text-center p-6 bg-white rounded-lg border border-gray-100 shadow-sm">
             <h3 className="text-lg font-semibold mb-2">No Activities Yet</h3>
             <p className="text-gray-600 mb-4">
               Start logging your activities to track your progress
@@ -209,9 +209,9 @@ function ActivitiesContent() {
         <div className="space-y-4">
           {activities && activities.map((activity) => (
             isMobile ? (
-              <TouchCard key={activity.id}>
+              <div key={activity.id} className="bg-white rounded-lg border border-gray-100 shadow-sm p-6">
                 <ActivityItem activity={activity} formatDate={formatDate} formatTime={formatTime} />
-              </TouchCard>
+              </div>
             ) : (
               <Card key={activity.id} hoverable>
                 <ActivityItem activity={activity} formatDate={formatDate} formatTime={formatTime} />
