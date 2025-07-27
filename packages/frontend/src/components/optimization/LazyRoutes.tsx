@@ -152,14 +152,6 @@ export const LazyProfile = withLazyRoute(
 );
 
 // Demo routes - can be loaded on demand
-export const LazyDemoAchievements = withLazyRoute(
-  createLazyComponent(
-    () => import('@/app/demo/achievements/page'),
-    'demo-achievements'
-  ),
-  'Loading achievements demo...'
-);
-
 export const LazyDemoProgress = withLazyRoute(
   createLazyComponent(
     () => import('@/app/demo/progress/page'),
@@ -212,7 +204,6 @@ export const LAZY_ROUTES = {
   '/teams/join': LazyJoinTeam,
   '/teams/[id]': LazyTeamDetails,
   '/profile': LazyProfile,
-  '/demo/achievements': LazyDemoAchievements,
   '/demo/progress': LazyDemoProgress,
   '/demo/offline': LazyDemoOffline,
   '/signin': LazySignIn,

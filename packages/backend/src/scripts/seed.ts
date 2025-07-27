@@ -3,7 +3,7 @@
  * Creates realistic test data for development
  */
 
-import { PrismaClient, TeamRole, GoalStatus, ActivitySource, InviteStatus, AchievementCategory } from '@prisma/client';
+import { PrismaClient, TeamRole, GoalStatus, ActivitySource, InviteStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -31,8 +31,6 @@ async function seed() {
 
   // Clean existing data
   console.log('🧹 Cleaning existing data...');
-  await prisma.userAchievement.deleteMany();
-  await prisma.achievement.deleteMany();
   await prisma.activity.deleteMany();
   await prisma.teamProgress.deleteMany();
   await prisma.teamGoal.deleteMany();
@@ -572,133 +570,6 @@ async function seed() {
   
   await prisma.userStats.createMany({ data: userStats });
 
-  // Create achievements
-  console.log('🏆 Creating achievements...');
-  const achievements = await Promise.all([
-    prisma.achievement.create({
-      data: {
-        key: 'first-walk',
-        name: 'First Steps',
-        description: 'Complete your first walk',
-        iconUrl: '🚶',
-        points: 10,
-        category: AchievementCategory.DISTANCE,
-        criteria: { type: 'first_activity' },
-      },
-    }),
-    prisma.achievement.create({
-      data: {
-        key: 'team-player',
-        name: 'Team Player',
-        description: 'Join your first team',
-        iconUrl: '👥',
-        points: 20,
-        category: AchievementCategory.TEAM,
-        criteria: { type: 'join_team' },
-      },
-    }),
-    prisma.achievement.create({
-      data: {
-        key: 'week-streak',
-        name: 'Week Warrior',
-        description: 'Walk every day for a week',
-        iconUrl: '🔥',
-        points: 50,
-        category: AchievementCategory.STREAK,
-        criteria: { type: 'streak', days: 7 },
-      },
-    }),
-    prisma.achievement.create({
-      data: {
-        key: 'distance-10k',
-        name: '10K Club',
-        description: 'Walk 10 kilometers in a single activity',
-        iconUrl: '🏃',
-        points: 30,
-        category: AchievementCategory.DISTANCE,
-        criteria: { type: 'single_distance', distance: 10000 },
-      },
-    }),
-    prisma.achievement.create({
-      data: {
-        key: 'total-100k',
-        name: 'Century Walker',
-        description: 'Walk a total of 100 kilometers',
-        iconUrl: '💯',
-        points: 100,
-        category: AchievementCategory.DISTANCE,
-        criteria: { type: 'total_distance', distance: 100000 },
-      },
-    }),
-  ]);
-
-  // Award achievements to users
-  console.log('🎖️ Awarding achievements...');
-  const userAchievements = [];
-  
-  // Create a map of achievement keys to IDs
-  const achievementMap = {};
-  achievements.forEach(a => {
-    achievementMap[a.key] = a.id;
-  });
-  
-  // Everyone gets first walk
-  for (const user of users) {
-    if (activities.filter(a => a.userId === user.id).length > 0) {
-      userAchievements.push({
-        userId: user.id,
-        achievementId: achievementMap['first-walk'],
-        earnedAt: randomDate(30),
-      });
-    }
-  }
-  
-  // Team members get team player
-  const teamMembers = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5', 'user-6', 'user-7', 'user-8', 'user-9', 'user-10'];
-  for (const userId of teamMembers) {
-    userAchievements.push({
-      userId,
-      achievementId: achievementMap['team-player'],
-      earnedAt: randomDate(25),
-    });
-  }
-  
-  // Some users get streak achievements
-  const streakUsers = ['user-1', 'user-2', 'user-4'];
-  for (const userId of streakUsers) {
-    userAchievements.push({
-      userId,
-      achievementId: achievementMap['week-streak'],
-      earnedAt: randomDate(15),
-    });
-  }
-  
-  // Check for distance achievements
-  for (const user of users) {
-    const userActivities = activities.filter(a => a.userId === user.id);
-    
-    // 10K single walk
-    if (userActivities.some(a => a.distance >= 10000)) {
-      userAchievements.push({
-        userId: user.id,
-        achievementId: achievementMap['distance-10k'],
-        earnedAt: randomDate(20),
-      });
-    }
-    
-    // 100K total
-    const totalDistance = userActivities.reduce((sum, a) => sum + a.distance, 0);
-    if (totalDistance >= 100000) {
-      userAchievements.push({
-        userId: user.id,
-        achievementId: achievementMap['total-100k'],
-        earnedAt: randomDate(10),
-      });
-    }
-  }
-  
-  await prisma.userAchievement.createMany({ data: userAchievements });
-
   // Create some pending invites
   console.log('✉️ Creating team invites...');
   await Promise.all([
@@ -730,8 +601,6 @@ async function seed() {
   console.log(`   - ${users.length} users`);
   console.log(`   - ${teams.length} teams`);
   console.log(`   - ${activities.length} activities`);
-  console.log(`   - ${achievements.length} achievements`);
-  console.log(`   - ${userAchievements.length} user achievements`);
   console.log(`   - 2 pending team invites`);
   
   // Display some interesting stats

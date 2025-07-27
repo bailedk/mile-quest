@@ -17,6 +17,9 @@ export interface DashboardTeam {
     percentComplete: number;
     daysRemaining: number | null;
     isOnTrack: boolean | null;
+    startDate?: Date | string;
+    endDate?: Date | string;
+    status?: string;
   } | null;
 }
 

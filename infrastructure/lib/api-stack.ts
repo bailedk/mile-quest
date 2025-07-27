@@ -80,7 +80,6 @@ export class ApiStack extends cdk.Stack {
     const usersResource = v1Resource.addResource('users');
     usersResource.addResource('profile');
     usersResource.addResource('stats');
-    usersResource.addResource('achievements');
 
     // Team endpoints
     const teamsResource = v1Resource.addResource('teams');

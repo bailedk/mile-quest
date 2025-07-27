@@ -27,14 +27,6 @@ export const InviteStatus = {
   EXPIRED: 'EXPIRED',
 } as const;
 
-export const AchievementCategory = {
-  DISTANCE: 'DISTANCE',
-  STREAK: 'STREAK',
-  SPEED: 'SPEED',
-  TEAM: 'TEAM',
-  SPECIAL: 'SPECIAL',
-} as const;
-
 // Zod schemas for validation
 export const CreateUserSchema = z.object({
   email: z.string().email(),
@@ -210,13 +202,6 @@ export interface DashboardData {
     duration: number;
     startTime: Date;
     teamName: string;
-  }>;
-  achievements: Array<{
-    id: string;
-    name: string;
-    description: string;
-    iconUrl: string;
-    earnedAt: Date;
   }>;
 }
 

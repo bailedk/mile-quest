@@ -133,9 +133,6 @@ export const queryKeys = {
   activity: (id: string) => [...queryKeys.activities(), id] as const,
   userActivities: (userId: string) => [...queryKeys.activities(), 'user', userId] as const,
   
-  achievements: () => [...queryKeys.all, 'achievements'] as const,
-  userAchievements: (userId: string) => [...queryKeys.achievements(), 'user', userId] as const,
-  
   leaderboards: () => [...queryKeys.all, 'leaderboards'] as const,
   teamLeaderboard: (teamId: string) => [...queryKeys.leaderboards(), 'team', teamId] as const,
 } as const;

@@ -1,5 +1,4 @@
 import { Activity, Team, User, ActivitySource } from '@prisma/client';
-import { AchievementWithUser } from '../achievement/types';
 
 export interface ActivityWithRelations extends Activity {
   user: Pick<User, 'id' | 'name' | 'avatarUrl'>;
@@ -40,7 +39,6 @@ export interface TeamProgressUpdate {
 
 export interface CreateActivityResult {
   activity: ActivityWithRelations;
-  achievements: AchievementWithUser[];
 }
 
 export interface DeleteActivityResult {

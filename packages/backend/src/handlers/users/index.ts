@@ -10,7 +10,6 @@ import { getUserFromEvent } from '../../utils/auth/auth-helpers';
 import { prisma } from '../../lib/database';
 import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
-import { AchievementService } from '../../services/achievement';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { AuthUser } from '@mile-quest/shared';
 
@@ -20,7 +19,6 @@ validateEnvironment();
 // Initialize services lazily to avoid cold start issues
 let teamService: TeamService;
 let activityService: ActivityService;
-let achievementService: AchievementService;
 
 function initializeServices() {
   if (!teamService) {
@@ -31,7 +29,6 @@ function initializeServices() {
     });
     teamService = new TeamService(prisma);
     activityService = new ActivityService(prisma);
-    achievementService = new AchievementService(prisma);
   }
 }
 
@@ -185,62 +182,6 @@ router.get('/me/activities', async (event, _context, _params) => {
     return {
       statusCode: 500,
       body: { error: 'Failed to fetch activities' },
-    };
-  }
-});
-
-// Get user achievements (BE-019)
-router.get('/me/achievements', async (event, _context, _params) => {
-  try {
-    const user = getUserFromEvent(event);
-    const achievements = await achievementService.getUserAchievements(user.id);
-    
-    return {
-      statusCode: 200,
-      body: achievements,
-    };
-  } catch (error: any) {
-    if (isAuthError(error)) {
-      return {
-        statusCode: 401,
-        body: { error: error.message || 'Authentication required' },
-      };
-    }
-    
-    console.error('Error fetching user achievements:', error);
-    return {
-      statusCode: 500,
-      body: { error: 'Failed to fetch achievements' },
-    };
-  }
-});
-
-// Manual achievement check for user (BE-019)
-router.post('/me/achievements/check', async (event, _context, _params) => {
-  try {
-    const user = getUserFromEvent(event);
-    const result = await achievementService.checkUserAchievements(user.id);
-    
-    return {
-      statusCode: 200,
-      body: {
-        message: 'Achievement check completed',
-        newAchievements: result.newAchievements,
-        checkedCount: result.checkedAchievements.length,
-      },
-    };
-  } catch (error: any) {
-    if (isAuthError(error)) {
-      return {
-        statusCode: 401,
-        body: { error: error.message || 'Authentication required' },
-      };
-    }
-    
-    console.error('Error checking achievements:', error);
-    return {
-      statusCode: 500,
-      body: { error: 'Failed to check achievements' },
     };
   }
 });

@@ -26,7 +26,6 @@ model User {
   receivedInvites TeamInvite[]      @relation("InviteRecipient")
   teamMemberships TeamMember[]
   createdTeams    Team[]            @relation("TeamCreator")
-  achievements    UserAchievement[]
   stats           UserStats?
 
   @@index([email])
@@ -125,7 +124,6 @@ model Activity {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   user               User              @relation(fields: [userId], references: [id])
-  achievementsEarned UserAchievement[]
 
   @@unique([source, externalId])
   @@index([userId])
@@ -193,41 +191,6 @@ model TeamInvite {
   @@map("team_invites")
 }
 
-model Achievement {
-  id               String              @id @default(uuid())
-  key              String              @unique
-  name             String
-  description      String
-  iconUrl          String
-  category         AchievementCategory
-  criteria         Json
-  points           Int                 @default(10)
-  createdAt        DateTime            @default(now())
-  userAchievements UserAchievement[]
-
-  @@index([category])
-  @@index([category], map: "idx_achievements_category")
-  @@map("achievements")
-}
-
-model UserAchievement {
-  id            String      @id @default(uuid())
-  userId        String
-  achievementId String
-  earnedAt      DateTime    @default(now())
-  teamId        String?
-  activityId    String?
-  achievement   Achievement @relation(fields: [achievementId], references: [id])
-  activity      Activity?   @relation(fields: [activityId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
-
-  @@unique([userId, achievementId])
-  @@index([userId])
-  @@index([earnedAt])
-  @@index([userId, earnedAt(sort: Desc)], map: "idx_user_achievements_user_earned")
-  @@map("user_achievements")
-}
-
 enum TeamRole {
   ADMIN
   MEMBER
@@ -251,12 +214,4 @@ enum InviteStatus {
   ACCEPTED
   DECLINED
   EXPIRED
-}
-
-enum AchievementCategory {
-  DISTANCE
-  STREAK
-  SPEED
-  TEAM
-  SPECIAL
 }

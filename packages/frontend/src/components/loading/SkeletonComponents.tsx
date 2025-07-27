@@ -382,13 +382,11 @@ export function LeaderboardSkeleton({
 
 interface ProfileSkeletonProps {
   className?: string;
-  showAchievements?: boolean;
   showStats?: boolean;
 }
 
 export function ProfileSkeleton({ 
   className = '',
-  showAchievements = true,
   showStats = true
 }: ProfileSkeletonProps) {
   return (
@@ -421,26 +419,6 @@ export function ProfileSkeleton({
               <Skeleton width="50%" height="1.5rem" className="mx-auto" />
             </div>
           ))}
-        </motion.div>
-      )}
-
-      {/* Achievements */}
-      {showAchievements && (
-        <motion.div 
-          className="bg-white rounded-lg shadow-sm p-4 space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Skeleton width="40%" height="1.25rem" />
-          <div className="grid grid-cols-3 gap-3">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="text-center space-y-2">
-                <Skeleton variant="circular" width="3rem" height="3rem" className="mx-auto" />
-                <Skeleton width="100%" height="0.75rem" />
-              </div>
-            ))}
-          </div>
         </motion.div>
       )}
     </div>

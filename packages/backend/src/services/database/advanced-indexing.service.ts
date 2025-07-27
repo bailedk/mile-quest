@@ -142,14 +142,6 @@ export class AdvancedIndexingService {
         type: 'covering',
         includes: ['user_id', 'role', 'joined_at'],
       },
-      // Achievement progress queries
-      {
-        name: 'idx_user_achievements_progress_covering',
-        table: 'user_achievements',
-        columns: ['user_id', 'achievement_id'],
-        type: 'covering',
-        includes: ['earned_at', 'team_id'],
-      },
     ];
 
     for (const index of coveringIndexes) {
@@ -245,8 +237,6 @@ export class AdvancedIndexingService {
       'CREATE INDEX IF NOT EXISTS idx_team_goals_waypoints_gin ON team_goals USING gin (waypoints)',
       // Team goal route data
       'CREATE INDEX IF NOT EXISTS idx_team_goals_route_data_gin ON team_goals USING gin (route_data)',
-      // Achievement criteria
-      'CREATE INDEX IF NOT EXISTS idx_achievements_criteria_gin ON achievements USING gin (criteria)',
     ];
 
     for (const sql of ginIndexes) {
@@ -293,8 +283,6 @@ export class AdvancedIndexingService {
       'CREATE INDEX IF NOT EXISTS idx_activities_user_history_complex ON activities (user_id, team_id, is_private, start_time DESC) INCLUDE (distance, duration)',
       // Team member activity summary
       'CREATE INDEX IF NOT EXISTS idx_activities_team_member_summary ON activities (team_id, user_id, start_time) INCLUDE (distance, duration) WHERE is_private = false',
-      // Achievement progress tracking
-      'CREATE INDEX IF NOT EXISTS idx_user_achievements_progress ON user_achievements (user_id, earned_at DESC) INCLUDE (achievement_id, team_id)',
     ];
 
     for (const sql of compositeIndexes) {

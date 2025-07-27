@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useResponsive } from '@/utils/responsiveUtils';
@@ -13,34 +13,40 @@ import { PersonalStatsCard } from '@/components/dashboard/PersonalStatsCard';
 import { ChartsSection } from '@/components/dashboard/ChartsSection';
 import { TeamSelector } from '@/components/dashboard/TeamSelector';
 import { EnhancedRecentActivities } from '@/components/dashboard/EnhancedRecentActivities';
+import { TeamGoalCard } from '@/components/dashboard/TeamGoalCard';
 import { formatDistance } from '@/services/activity.service';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { PullToRefresh, TouchButton } from '@/components/mobile/TouchInteractions';
 import { MobileCard } from '@/components/mobile/MobileCard';
-import { AchievementNotificationManager } from '@/components/AchievementNotification';
 import { useAuthStore } from '@/store/auth.store';
 import { withAuth } from '@/components/auth/withAuth';
+import { DashboardTeam, TeamLeaderboard } from '@/types/dashboard';
 
-// Define Achievement type locally (matching AchievementNotification)
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  points: number;
-  icon?: string;
-}
 
 // Custom hooks for clean separation of concerns
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardCallbacks } from '@/hooks/useDashboardCallbacks';
 import { useDashboardSelection } from '@/hooks/useDashboardSelection';
 
+// Helper function to calculate personal contribution from leaderboard data
+function calculatePersonalContribution(
+  team: DashboardTeam,
+  teamLeaderboards: TeamLeaderboard[],
+  userId?: string
+): number {
+  if (!userId || !team.progress) return 0;
+  
+  const teamLeaderboard = teamLeaderboards.find(lb => lb.teamId === team.id);
+  if (!teamLeaderboard) return 0;
+  
+  const userEntry = teamLeaderboard.members.find(m => m.userId === userId);
+  return userEntry?.distance || 0;
+}
+
 function DashboardPage() {
   const router = useRouter();
   const { isMobile } = useResponsive();
   
-  // Achievement notifications state
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
   
   // Auth state
   const { user, isAuthenticated } = useAuthStore();
@@ -72,13 +78,19 @@ function DashboardPage() {
   const {
     handleActivityUpdate,
     handleActivityError,
-    handleAchievement,
     handleRefresh,
-    handleAchievementDismiss,
   } = useDashboardCallbacks({
     refresh,
-    setAchievements,
   });
+
+  // Force refresh function that clears cache
+  const forceRefresh = useCallback(() => {
+    // Clear the dashboard service cache
+    const { dashboardService } = require('@/services/dashboard.service');
+    dashboardService.clearCache();
+    // Then refresh
+    refresh();
+  }, [refresh]);
 
   // User preferences
   const userPreferredUnits = user?.preferredUnits || 'kilometers';
@@ -119,19 +131,13 @@ function DashboardPage() {
   const dashboardContent = (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="space-y-6 pb-20">
-        {/* Achievement Notifications */}
-        <AchievementNotificationManager
-          achievements={achievements}
-          onDismiss={handleAchievementDismiss}
-        />
-        
         {/* Personal Stats Card */}
         <PersonalStatsCard
           personalStats={personalStats}
           userPreferredUnits={userPreferredUnits}
         />
         
-        {/* Team Selector and Leaderboard */}
+        {/* Team Selector and Goal Card */}
         {teams.length > 0 && (
           <>
             <TeamSelector
@@ -140,6 +146,17 @@ function DashboardPage() {
               setSelectedTeamId={setSelectedTeamId}
             />
             
+            {/* Team Goal Card */}
+            {selectedTeam && (
+              <TeamGoalCard
+                team={selectedTeam}
+                userPreferredUnits={userPreferredUnits}
+                personalContribution={calculatePersonalContribution(selectedTeam, teamLeaderboards, user?.id)}
+                onRefresh={forceRefresh}
+              />
+            )}
+            
+            {/* Team Leaderboard */}
             {selectedTeamLeaderboard && (
               <SwipeableLeaderboard
                 leaderboard={selectedTeamLeaderboard}
@@ -238,15 +255,6 @@ function DashboardPage() {
       </div>
     </div>
   );
-}
-
-// Define minimal Achievement type locally if needed
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  points: number;
-  icon?: string;
 }
 
 export default withAuth(DashboardPage);

@@ -51,11 +51,12 @@ class GoalService {
     return response.data;
   }
 
-  async updateGoal(teamId: string, goalId: string, data: Partial<GoalFormData>): Promise<TeamGoal> {
+  async updateGoal(teamId: string, goalId: string, data: Partial<GoalFormData> & { status?: string }): Promise<TeamGoal> {
     const updatePayload: any = {
       name: data.name,
       description: data.description,
       targetDate: data.targetDate,
+      status: data.status,
     };
 
     // If waypoints are being updated, transform them to the expected format

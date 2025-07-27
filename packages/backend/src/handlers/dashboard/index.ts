@@ -123,7 +123,7 @@ router.get('/', async (event, context, params) => {
     const teamsWithProgress: DashboardTeam[] = await Promise.all(
       userTeams.map(async (team) => {
         try {
-          // Get current active goal for the team
+          // Get current active goal for the team (or any goal if none active)
           const activeGoal = await prisma.teamGoal.findFirst({
             where: {
               teamId: team.id,
@@ -136,6 +136,19 @@ router.get('/', async (event, context, params) => {
               createdAt: 'desc',
             },
           });
+          
+          // If no active goal, check if there's any goal at all for debugging
+          if (!activeGoal) {
+            const anyGoal = await prisma.teamGoal.findFirst({
+              where: {
+                teamId: team.id,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            });
+            console.log(`Team ${team.id} has no ACTIVE goal. Any goal found:`, anyGoal ? `Yes - Status: ${anyGoal.status}` : 'No');
+          }
 
           let progress = null;
           if (activeGoal) {
@@ -148,6 +161,9 @@ router.get('/', async (event, context, params) => {
               percentComplete: progressData.percentComplete,
               daysRemaining: progressData.daysRemaining || null,
               isOnTrack: progressData.isOnTrack || null,
+              startDate: activeGoal.startDate,
+              endDate: activeGoal.endDate,
+              status: activeGoal.status,
             };
           }
 

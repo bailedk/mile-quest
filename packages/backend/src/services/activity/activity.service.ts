@@ -14,14 +14,11 @@ import {
 } from './types';
 import { cache, cacheKeys, cacheTTL } from '../../utils/cache';
 import { LeaderboardService } from '../leaderboard/leaderboard.service';
-import { AchievementService } from '../achievement';
 
 export class ActivityService {
-  private achievementService: AchievementService;
   private leaderboardService: LeaderboardService;
 
   constructor(private prisma: PrismaClient) {
-    this.achievementService = new AchievementService(prisma);
     this.leaderboardService = new LeaderboardService(prisma);
   }
 
@@ -88,73 +85,8 @@ export class ActivityService {
       // Invalidate relevant caches
       cache.delete(cacheKeys.userStats(userId));
 
-      // Check for achievements
-      const achievements = [];
-      
-      // First activity achievement
-      const userStats = await tx.userStats.findUnique({
-        where: { userId },
-      });
-      
-      if (userStats?.totalActivities === 1) {
-        achievements.push({
-          type: 'FIRST_WALK',
-          userId,
-          activityId: activity.id,
-        });
-      }
-
-      // Distance milestones
-      const distanceMilestones = [
-        { distance: 16093.4, type: '10_MILE_CLUB' },      // 10 miles
-        { distance: 80467, type: '50_MILE_WARRIOR' },     // 50 miles  
-        { distance: 160934, type: 'CENTURY_WALKER' },     // 100 miles
-      ];
-
-      for (const milestone of distanceMilestones) {
-        if (userStats && 
-            userStats.totalDistance >= milestone.distance &&
-            userStats.totalDistance - input.distance < milestone.distance) {
-          achievements.push({
-            type: milestone.type,
-            userId,
-            activityId: activity.id,
-          });
-        }
-      }
-
-      // Create achievement records
-      const newAchievements = [];
-      if (achievements.length > 0) {
-        for (const achievement of achievements) {
-          try {
-            const created = await tx.userAchievement.create({
-              data: {
-                userId: achievement.userId,
-                achievementId: achievement.type,
-                activityId: achievement.activityId,
-              },
-              include: {
-                achievement: true,
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    avatarUrl: true,
-                  },
-                },
-              },
-            });
-            newAchievements.push(created);
-          } catch (e) {
-            // Skip if achievement already exists
-          }
-        }
-      }
-
       return {
         activity: activityWithRelations,
-        achievements: newAchievements,
       };
     });
 
