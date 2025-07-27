@@ -49,7 +49,6 @@ export {
   VisualAccessibilityProvider,
   useVisualAccessibility,
   AccessibilityPanel,
-  AccessibilityQuickActions,
   useResponsiveTypography,
   useColorBlindFriendly
 } from './VisualAccessibility';

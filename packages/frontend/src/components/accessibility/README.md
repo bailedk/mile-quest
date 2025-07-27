@@ -276,15 +276,23 @@ function Settings() {
 }
 ```
 
-#### Quick Actions
+#### Accessibility Panel
 ```tsx
-import { AccessibilityQuickActions } from '@/components/accessibility';
+import { AccessibilityPanel } from '@/components/accessibility';
 
 function App() {
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  
   return (
     <div>
       {/* Your app content */}
-      <AccessibilityQuickActions />
+      <button onClick={() => setIsPanelOpen(true)}>
+        Open Accessibility Settings
+      </button>
+      <AccessibilityPanel 
+        isOpen={isPanelOpen} 
+        onClose={() => setIsPanelOpen(false)} 
+      />
     </div>
   );
 }
