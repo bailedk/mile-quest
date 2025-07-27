@@ -12,6 +12,7 @@ import { TeamService } from '../../services/team/team.service';
 import { ActivityService } from '../../services/activity/activity.service';
 import { AchievementService } from '../../services/achievement';
 import { APIGatewayProxyEvent } from 'aws-lambda';
+import { AuthUser } from '@mile-quest/shared';
 
 // Validate environment on cold start
 validateEnvironment();
@@ -46,15 +47,52 @@ router.get('/test', async (_event, _context, _params) => {
   };
 });
 
-// Get current user (to be implemented in Sprint 1)
-router.get('/me', async (_event, _context, _params) => {
-  return {
-    statusCode: 501,
-    body: {
-      message: 'Get current user endpoint - to be implemented in Sprint 1',
-      task: 'BE-106',
-    },
-  };
+// Get current user (BE-106)
+router.get('/me', async (event, _context, _params) => {
+  try {
+    const user = getUserFromEvent(event);
+    
+    // Get user from database with latest data
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    });
+    
+    if (!dbUser) {
+      return {
+        statusCode: 404,
+        body: { error: 'User not found' },
+      };
+    }
+    
+    const authUser: AuthUser = {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      emailVerified: dbUser.emailVerified,
+      preferredUnits: dbUser.preferredUnits as 'miles' | 'kilometers',
+      timezone: dbUser.timezone,
+      createdAt: dbUser.createdAt.toISOString(),
+      updatedAt: dbUser.updatedAt.toISOString(),
+    };
+    
+    return {
+      statusCode: 200,
+      body: authUser,
+    };
+  } catch (error: any) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { error: error.message || 'Authentication required' },
+      };
+    }
+    
+    console.error('Error fetching user profile:', error);
+    return {
+      statusCode: 500,
+      body: { error: 'Failed to fetch user profile' },
+    };
+  }
 });
 
 // Get user teams (BE-010)
@@ -207,14 +245,68 @@ router.post('/me/achievements/check', async (event, _context, _params) => {
   }
 });
 
-router.patch('/me', async (_event, _context, _params) => {
-  return {
-    statusCode: 501,
-    body: {
-      message: 'Update current user endpoint - to be implemented in Sprint 1',
-      task: 'BE-107',
-    },
-  };
+// Update current user (BE-107)
+router.patch('/me', async (event, _context, _params) => {
+  try {
+    const user = getUserFromEvent(event);
+    const body = JSON.parse(event.body || '{}');
+    
+    // Validate input - only allow updating name for now
+    const updates: { name?: string } = {};
+    
+    if (body.name !== undefined) {
+      if (typeof body.name !== 'string' || body.name.trim().length === 0) {
+        return {
+          statusCode: 400,
+          body: { error: 'Name must be a non-empty string' },
+        };
+      }
+      updates.name = body.name.trim();
+    }
+    
+    // If no valid updates provided
+    if (Object.keys(updates).length === 0) {
+      return {
+        statusCode: 400,
+        body: { error: 'No valid fields to update' },
+      };
+    }
+    
+    // Update user in database
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: updates,
+    });
+    
+    const authUser: AuthUser = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      emailVerified: updatedUser.emailVerified,
+      preferredUnits: updatedUser.preferredUnits as 'miles' | 'kilometers',
+      timezone: updatedUser.timezone,
+      createdAt: updatedUser.createdAt.toISOString(),
+      updatedAt: updatedUser.updatedAt.toISOString(),
+    };
+    
+    return {
+      statusCode: 200,
+      body: authUser,
+    };
+  } catch (error: any) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: { error: error.message || 'Authentication required' },
+      };
+    }
+    
+    console.error('Error updating user profile:', error);
+    return {
+      statusCode: 500,
+      body: { error: 'Failed to update user profile' },
+    };
+  }
 });
 
 router.get('/:id', async (_event, _context, params) => {

@@ -87,7 +87,7 @@ export class GoalService {
     
     return {
       goalName: input.name,
-      status: input.status || 'DRAFT',
+      status: 'ACTIVE',
       startLocation: input.startLocation,
       endLocation: input.endLocation,
       intermediateWaypoints,
@@ -99,7 +99,7 @@ export class GoalService {
         coordinatesValid: 'to be validated',
         waypointCountValid: totalWaypoints >= GOAL_VALIDATION.MIN_WAYPOINTS && totalWaypoints <= GOAL_VALIDATION.MAX_WAYPOINTS,
         targetDateValid: !input.targetDate || new Date(input.targetDate) > new Date(),
-        statusValid: !input.status || ['DRAFT', 'ACTIVE'].includes(input.status)
+        statusValid: true // Status is always ACTIVE when creating
       }
     };
   }
@@ -198,7 +198,23 @@ export class GoalService {
       });
     }
 
-    // Validate target date if provided
+    // Validate dates if provided
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Start of today
+    
+    if (input.startDate) {
+      const startDate = new Date(input.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      if (startDate < now) {
+        throw new GoalServiceError(
+          'Start date cannot be in the past',
+          GoalErrorCode.INVALID_TARGET_DATE,
+          { startDate, currentDate: now }
+        );
+      }
+    }
+    
     if (input.targetDate) {
       const targetDate = new Date(input.targetDate);
       const now = new Date();
@@ -210,19 +226,21 @@ export class GoalService {
           { targetDate, currentDate: now }
         );
       }
+      
+      // If both dates provided, ensure start is before target
+      if (input.startDate) {
+        const startDate = new Date(input.startDate);
+        if (startDate >= targetDate) {
+          throw new GoalServiceError(
+            'Start date must be before target date',
+            GoalErrorCode.INVALID_TARGET_DATE,
+            { startDate, targetDate }
+          );
+        }
+      }
     }
 
-    // Validate status if provided
-    if (input.status && !['DRAFT', 'ACTIVE'].includes(input.status)) {
-      throw new GoalServiceError(
-        'Invalid status: new goals can only be created as DRAFT or ACTIVE',
-        GoalErrorCode.INVALID_STATUS,
-        { 
-          status: input.status, 
-          allowedValues: ['DRAFT', 'ACTIVE']
-        }
-      );
-    }
+    // Remove status validation as goals are always created as ACTIVE
   }
 
   /**
@@ -248,6 +266,26 @@ export class GoalService {
         };
       }
       throw error;
+    }
+
+    // Check if team already has an active goal
+    const existingActiveGoal = await this.prisma.teamGoal.findFirst({
+      where: {
+        teamId,
+        status: GoalStatus.ACTIVE,
+      },
+    });
+
+    if (existingActiveGoal) {
+      throw new GoalServiceError(
+        'Team already has an active goal. Only one active goal is allowed per team. Please complete or fail the current goal before creating a new one.',
+        GoalErrorCode.TEAM_HAS_ACTIVE_GOAL,
+        { 
+          teamId,
+          activeGoalId: existingActiveGoal.id,
+          activeGoalName: existingActiveGoal.name
+        }
+      );
     }
 
     // Verify team exists and user has permission
@@ -302,20 +340,23 @@ export class GoalService {
       const defaultEndDate = new Date(now);
       defaultEndDate.setMonth(defaultEndDate.getMonth() + 3); // Default to 3 months from now
 
-      // Determine goal status with enhanced draft support
-      const goalStatus = input.status === 'ACTIVE' ? GoalStatus.ACTIVE : GoalStatus.DRAFT;
-      
-      // For draft goals, we allow more flexible validation
-      const isDraftGoal = goalStatus === GoalStatus.DRAFT;
+      // Goals are always created as ACTIVE
+      const goalStatus = GoalStatus.ACTIVE;
       
       // Set appropriate start and end dates based on status
       let endDate = input.targetDate ? new Date(input.targetDate) : defaultEndDate;
       
-      // For active goals, start date is now
-      // For draft goals, start date can be in the future (when they plan to start)
-      const startDate = goalStatus === GoalStatus.ACTIVE 
-        ? now 
-        : (input.targetDate ? new Date(input.targetDate) : defaultEndDate);
+      // Use user-provided start date if available, otherwise use defaults
+      let startDate: Date;
+      if (input.startDate) {
+        startDate = new Date(input.startDate);
+      } else if (goalStatus === GoalStatus.ACTIVE) {
+        // For active goals without explicit start date, start now
+        startDate = now;
+      } else {
+        // For draft goals without explicit start date, default to now
+        startDate = now;
+      }
       
       const goal = await this.prisma.teamGoal.create({
         data: {
@@ -435,9 +476,9 @@ export class GoalService {
     }
 
     // Check if goal is in a state that allows updates
-    if (existingGoal.status === 'COMPLETED') {
+    if (existingGoal.status === 'PASSED' || existingGoal.status === 'FAILED') {
       throw new GoalServiceError(
-        'Cannot update a completed goal',
+        `Cannot update a ${existingGoal.status.toLowerCase()} goal`,
         GoalErrorCode.GOAL_COMPLETED,
         { goalId, status: existingGoal.status }
       );
@@ -523,28 +564,25 @@ export class GoalService {
 
       // Handle status changes
       if (input.status) {
-        // Validate status transition
-        if (existingGoal.status === 'DRAFT' && input.status === 'COMPLETED') {
+        // Only allow ACTIVE -> PASSED or ACTIVE -> FAILED transitions
+        if (existingGoal.status !== 'ACTIVE') {
           throw new GoalServiceError(
-            'Cannot complete a draft goal directly. Please activate it first.',
-            GoalErrorCode.UNKNOWN_ERROR,
+            `Cannot change status of a ${existingGoal.status.toLowerCase()} goal`,
+            GoalErrorCode.INVALID_STATUS,
+            { currentStatus: existingGoal.status, requestedStatus: input.status }
+          );
+        }
+
+        if (input.status !== 'PASSED' && input.status !== 'FAILED') {
+          throw new GoalServiceError(
+            'Invalid status transition. Active goals can only be marked as PASSED or FAILED',
+            GoalErrorCode.INVALID_STATUS,
             { currentStatus: existingGoal.status, requestedStatus: input.status }
           );
         }
 
         updateData.status = input.status;
-        
-        // Set timestamps based on status changes
-        const now = new Date();
-        if (input.status === 'ACTIVE' && existingGoal.status === 'DRAFT') {
-          updateData.startDate = now;
-          // Also update startDate if it's in the past
-          if (existingGoal.startDate < now) {
-            updateData.startDate = now;
-          }
-        } else if (input.status === 'COMPLETED' && existingGoal.status === 'ACTIVE') {
-          updateData.completedAt = now;
-        }
+        updateData.completedAt = new Date();
       }
 
       const updatedGoal = await this.prisma.teamGoal.update({
@@ -869,6 +907,49 @@ export class GoalService {
         { originalError: error }
       );
     }
+  }
+
+  /**
+   * Delete a team goal
+   * Only admins can delete goals
+   */
+  async deleteTeamGoal(goalId: string, userId: string): Promise<void> {
+    // Verify goal exists and user has admin permission
+    const goal = await this.prisma.teamGoal.findFirst({
+      where: {
+        id: goalId,
+        team: {
+          members: {
+            some: {
+              userId,
+              leftAt: null,
+              role: 'ADMIN',
+            },
+          },
+        },
+      },
+      include: {
+        team: true,
+      },
+    });
+
+    if (!goal) {
+      throw new GoalServiceError(
+        'Goal not found or user does not have permission to delete',
+        GoalErrorCode.GOAL_NOT_FOUND,
+        { goalId, userId }
+      );
+    }
+
+    // Delete associated progress records first
+    await this.prisma.teamProgress.deleteMany({
+      where: { goalId },
+    });
+
+    // Delete the goal
+    await this.prisma.teamGoal.delete({
+      where: { id: goalId },
+    });
   }
 
   /**

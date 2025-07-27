@@ -39,9 +39,16 @@ export interface ActivityUpdateInput {
   isPrivate?: boolean;
 }
 
-export interface ActivityListItem extends Activity {
-  // Activities are now team-agnostic
-  // This interface may be extended in the future with list-specific properties
+export interface ActivityListItem {
+  id: string;
+  distance: number;
+  duration: number;
+  pace: number;
+  timestamp: string;
+  notes: string | null;
+  isPrivate: boolean;
+  source: ActivitySource;
+  createdAt: string;
 }
 
 export interface ActivityStats {
@@ -49,11 +56,21 @@ export interface ActivityStats {
   totalActivities: number;
   totalDuration: number;
   averageDistance: number;
-  averageDuration: number;
+  averagePace: number;
   currentStreak: number;
   longestStreak: number;
-  /** ISO 8601 date-time string in UTC of the last activity, undefined if no activities */
-  lastActivityAt?: string;
+  /** ISO 8601 date-time string in UTC of the last activity, null if no activities */
+  lastActivityDate: string | null;
+  weeklyStats: {
+    distance: number;
+    duration: number;
+    activities: number;
+  };
+  monthlyStats: {
+    distance: number;
+    duration: number;
+    activities: number;
+  };
 }
 
 export interface ActivityFilters {

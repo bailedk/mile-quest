@@ -24,6 +24,17 @@ export const goalValidation = {
       errors.teamId = 'Please select a team';
     }
 
+    // Validate start date
+    if (formData.startDate) {
+      const startDate = new Date(formData.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (startDate < today) {
+        errors.startDate = 'Start date cannot be in the past';
+      }
+    }
+
     // Validate target date
     if (formData.targetDate) {
       const targetDate = new Date(formData.targetDate);
@@ -32,6 +43,14 @@ export const goalValidation = {
       
       if (targetDate < today) {
         errors.targetDate = 'Target date must be in the future';
+      }
+      
+      // If both dates provided, ensure start is before target
+      if (formData.startDate) {
+        const startDate = new Date(formData.startDate);
+        if (startDate >= targetDate) {
+          errors.targetDate = 'Target date must be after start date';
+        }
       }
     }
 

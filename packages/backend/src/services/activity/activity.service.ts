@@ -208,6 +208,7 @@ export class ActivityService {
       timestamp: activity.timestamp,
       notes: activity.notes,
       isPrivate: activity.isPrivate,
+      source: activity.source,
       createdAt: activity.createdAt,
     }));
 
@@ -317,10 +318,25 @@ export class ActivityService {
     if (cached) {
       return cached;
     }
-    // Get user stats from the UserStats table
-    const userStats = await this.prisma.userStats.findUnique({
+    // Get user stats from the UserStats table, create if doesn't exist
+    let userStats = await this.prisma.userStats.findUnique({
       where: { userId },
     });
+    
+    // If no UserStats record exists, create one with default values
+    if (!userStats) {
+      userStats = await this.prisma.userStats.create({
+        data: {
+          userId,
+          totalDistance: 0,
+          totalActivities: 0,
+          totalDuration: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          lastActivityAt: null,
+        },
+      });
+    }
 
     // Get weekly stats (last 7 days)
     const weekAgo = new Date();

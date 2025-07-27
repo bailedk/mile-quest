@@ -7,17 +7,60 @@ import { TouchCard, TouchButton, PullToRefresh } from '@/components/mobile/Touch
 import { Card } from '@/components/patterns/Card';
 import { Button } from '@/components/patterns/Button';
 import { useAuthStore } from '@/store/auth.store';
-import { useUser } from '@/utils/optimizedFetching';
+import { useUser, optimizedFetch } from '@/utils/optimizedFetching';
+import { AuthUser } from '@mile-quest/shared';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, signOut } = useAuthStore();
-  const { refetch: refetchUser, isRefetching } = useUser();
+  const { data: userData, refetch: refetchUser, isRefetching } = useUser();
   const { isMobile } = useMobileLayout();
   const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Use fetched user data if available, otherwise fall back to auth store
+  const currentUser = userData || user;
 
   const handleRefresh = async () => {
     await refetchUser();
+  };
+
+  const handleEdit = () => {
+    setEditedName(currentUser?.name || '');
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedName('');
+  };
+
+  const handleSave = async () => {
+    if (!editedName.trim() || editedName === currentUser?.name) {
+      handleCancel();
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedUser = await optimizedFetch<AuthUser>('/api/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ name: editedName.trim() }),
+      });
+
+      // Update the auth store with new user data
+      useAuthStore.setState({ user: updatedUser });
+
+      setIsEditing(false);
+      setEditedName('');
+      await refetchUser(); // Refresh the cached data
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -35,11 +78,6 @@ export default function ProfilePage() {
   const notAuthenticatedContent = (
     <div className={isMobile ? "flex items-center justify-center min-h-screen -mt-20" : "container mx-auto px-4 py-8"}>
       <div className="text-center px-6 max-w-md mx-auto">
-        <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-          <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Sign In Required
         </h2>
@@ -69,7 +107,7 @@ export default function ProfilePage() {
     </div>
   );
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated || !currentUser) {
     return isMobile ? (
       <MobileLayout title="Profile">
         {notAuthenticatedContent}
@@ -82,31 +120,83 @@ export default function ProfilePage() {
       {/* Profile Header */}
       <div className={isMobile ? "bg-gradient-to-b from-gray-50 to-white -mx-4 -mt-6 px-4 pt-8 pb-6" : "bg-white rounded-lg shadow-sm p-8 mb-6"}>
         <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-sm">
-            <span className="text-3xl font-bold text-gray-700">
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
-            </span>
-          </div>
-          <h1 className={`font-bold text-gray-900 ${isMobile ? "text-2xl" : "text-3xl"}`}>{user.name || 'User'}</h1>
-          <p className="text-gray-600 mt-1">{user.email}</p>
-          {isMobile ? (
-            <TouchButton
-              onClick={() => setIsEditing(!isEditing)}
-              variant="secondary"
-              size="sm"
-              className="mt-4"
-            >
-              Edit Profile
-            </TouchButton>
+          {isEditing ? (
+            <div className="max-w-sm mx-auto">
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 mb-3 ${isMobile ? "text-lg" : "text-xl"} text-center`}
+                placeholder="Enter your name"
+                disabled={isSaving}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-center">
+                {isMobile ? (
+                  <>
+                    <TouchButton
+                      onClick={handleSave}
+                      variant="primary"
+                      size="sm"
+                      disabled={isSaving || !editedName.trim() || editedName === currentUser.name}
+                    >
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </TouchButton>
+                    <TouchButton
+                      onClick={handleCancel}
+                      variant="secondary"
+                      size="sm"
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </TouchButton>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={handleSave}
+                      variant="primary"
+                      size="sm"
+                      disabled={isSaving || !editedName.trim() || editedName === currentUser.name}
+                    >
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button
+                      onClick={handleCancel}
+                      variant="secondary"
+                      size="sm"
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           ) : (
-            <Button
-              onClick={() => setIsEditing(!isEditing)}
-              variant="secondary"
-              size="sm"
-              className="mt-4"
-            >
-              Edit Profile
-            </Button>
+            <>
+              <h1 className={`font-bold text-gray-900 ${isMobile ? "text-2xl" : "text-3xl"}`}>{currentUser.name || 'User'}</h1>
+              <p className="text-gray-600 mt-1">{currentUser.email}</p>
+              {isMobile ? (
+                <TouchButton
+                  onClick={handleEdit}
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4"
+                >
+                  Edit Profile
+                </TouchButton>
+              ) : (
+                <Button
+                  onClick={handleEdit}
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4"
+                >
+                  Edit Profile
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -127,7 +217,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center">
                 <span className="text-sm font-medium text-gray-700">
-                  {user.preferredUnits === 'kilometers' ? 'Kilometers' : 'Miles'}
+                  {currentUser.preferredUnits === 'kilometers' ? 'Kilometers' : 'Miles'}
                 </span>
                 <svg className="w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -146,7 +236,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center">
                 <span className="text-sm font-medium text-gray-700">
-                  {user.preferredUnits === 'kilometers' ? 'Kilometers' : 'Miles'}
+                  {currentUser.preferredUnits === 'kilometers' ? 'Kilometers' : 'Miles'}
                 </span>
                 <svg className="w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

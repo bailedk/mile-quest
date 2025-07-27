@@ -8,10 +8,9 @@ export const TeamRole = {
 } as const;
 
 export const GoalStatus = {
-  DRAFT: 'DRAFT',
   ACTIVE: 'ACTIVE',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
+  PASSED: 'PASSED',
+  FAILED: 'FAILED',
 } as const;
 
 export const ActivitySource = {
@@ -65,6 +64,7 @@ export const CreateActivitySchema = z.object({
 export const CreateTeamGoalSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
+  startDate: z.string().datetime().optional(),
   targetDate: z.string().datetime().optional(),
   waypoints: z.array(z.object({
     name: z.string(),
@@ -245,7 +245,6 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  avatarUrl?: string;
   emailVerified: boolean;
   preferredUnits?: 'miles' | 'kilometers';
   timezone?: string;

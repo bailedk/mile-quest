@@ -9,28 +9,30 @@ datasource db {
 }
 
 model User {
-  id                      String                   @id @default(uuid())
-  email                   String                   @unique
-  name                    String
-  avatarUrl               String?
-  emailVerified           Boolean                  @default(false)
-  cognitoId               String                   @unique
-  preferredUnits          String                   @default("miles")
-  timezone                String                   @default("UTC")
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
-  deletedAt               DateTime?
-  activities              Activity[]
-  createdGoals            TeamGoal[]               @relation("GoalCreator")
-  sentInvites             TeamInvite[]             @relation("InviteSender")
-  receivedInvites         TeamInvite[]             @relation("InviteRecipient")
-  teamMemberships         TeamMember[]
-  createdTeams            Team[]                   @relation("TeamCreator")
-  achievements            UserAchievement[]
-  stats                   UserStats?
+  id              String            @id @default(uuid())
+  email           String            @unique
+  name            String
+  avatarUrl       String?
+  emailVerified   Boolean           @default(false)
+  cognitoId       String            @unique
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  preferredUnits  String            @default("miles")
+  timezone        String            @default("UTC")
+  activities      Activity[]
+  createdGoals    TeamGoal[]        @relation("GoalCreator")
+  sentInvites     TeamInvite[]      @relation("InviteSender")
+  receivedInvites TeamInvite[]      @relation("InviteRecipient")
+  teamMemberships TeamMember[]
+  createdTeams    Team[]            @relation("TeamCreator")
+  achievements    UserAchievement[]
+  stats           UserStats?
 
   @@index([email])
   @@index([cognitoId])
+  @@index([cognitoId], map: "idx_users_cognito_id")
+  @@index([email], map: "idx_users_email")
   @@map("users")
 }
 
@@ -72,9 +74,11 @@ model TeamMember {
   @@index([teamId])
   @@index([userId, leftAt, joinedAt(sort: Desc)])
   @@index([teamId, userId, role])
+  @@index([teamId, userId, role], map: "idx_team_members_team_user_role")
   @@map("team_members")
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model TeamGoal {
   id             String        @id @default(uuid())
   teamId         String
@@ -89,7 +93,7 @@ model TeamGoal {
   waypoints      Json[]
   routePolyline  String
   routeData      Json
-  status         GoalStatus    @default(DRAFT)
+  status         GoalStatus    @default(ACTIVE)
   createdById    String
   completedAt    DateTime?
   createdAt      DateTime      @default(now())
@@ -103,6 +107,8 @@ model TeamGoal {
   @@index([teamId, status])
   @@index([startDate, endDate])
   @@index([teamId, status, createdAt(sort: Desc)], map: "idx_team_goals_team_status_created")
+  @@index([startDate, endDate], map: "idx_team_goals_dates")
+  @@index([teamId, status], map: "idx_team_goals_team_status")
   @@map("team_goals")
 }
 
@@ -129,6 +135,7 @@ model Activity {
   @@index([userId, timestamp(sort: Desc)])
   @@index([userId, timestamp, isPrivate])
   @@index([createdAt(sort: Desc), id])
+  @@index([userId, timestamp(sort: Desc)], map: "idx_activities_user_date")
   @@map("activities")
 }
 
@@ -199,6 +206,7 @@ model Achievement {
   userAchievements UserAchievement[]
 
   @@index([category])
+  @@index([category], map: "idx_achievements_category")
   @@map("achievements")
 }
 
@@ -226,10 +234,9 @@ enum TeamRole {
 }
 
 enum GoalStatus {
-  DRAFT
   ACTIVE
-  COMPLETED
-  CANCELLED
+  PASSED
+  FAILED
 }
 
 enum ActivitySource {
@@ -253,4 +260,3 @@ enum AchievementCategory {
   TEAM
   SPECIAL
 }
-

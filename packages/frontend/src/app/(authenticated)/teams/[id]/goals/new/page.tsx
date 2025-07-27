@@ -186,6 +186,26 @@ export default function GoalCreationPage() {
           />
         </div>
 
+        {/* Start Date */}
+        <div>
+          <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+            Start Date
+          </label>
+          <input
+            id="startDate"
+            type="date"
+            value={formData.startDate || ''}
+            onChange={(e) => updateField('startDate', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+              validationErrors.startDate ? 'border-red-300' : 'border-gray-300'
+            }`}
+          />
+          {validationErrors.startDate && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.startDate}</p>
+          )}
+        </div>
+
         {/* Target Date */}
         <div>
           <label htmlFor="targetDate" className="block text-sm font-medium text-gray-700 mb-1">
@@ -196,7 +216,7 @@ export default function GoalCreationPage() {
             type="date"
             value={formData.targetDate || ''}
             onChange={(e) => updateField('targetDate', e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+            min={formData.startDate || new Date().toISOString().split('T')[0]}
             className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
               validationErrors.targetDate ? 'border-red-300' : 'border-gray-300'
             }`}

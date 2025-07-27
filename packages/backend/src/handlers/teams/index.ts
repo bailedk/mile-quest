@@ -395,6 +395,10 @@ router.post('/:id/goals', async (event, context, params) => {
           statusCode = 422;
           errorCode = 'ROUTE_ERROR';
           break;
+        case GoalErrorCode.TEAM_HAS_ACTIVE_GOAL:
+          statusCode = 409;
+          errorCode = 'CONFLICT';
+          break;
         default:
           statusCode = 500;
       }
@@ -618,6 +622,64 @@ router.get('/goals/:goalId/progress', async (event, context, params) => {
   }
 });
 
+// Delete team goal
+router.delete('/:id/goals/:goalId', async (event, context, params) => {
+  try {
+    const user = getUserFromEvent(event);
+    
+    await goalService.deleteTeamGoal(params.goalId, user.id);
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        message: 'Goal deleted successfully',
+      },
+    };
+  } catch (error: any) {
+    if (isAuthError(error)) {
+      return {
+        statusCode: 401,
+        body: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: error.message || 'Authentication required',
+          },
+        },
+      };
+    }
+    
+    // Handle GoalServiceError
+    if (error instanceof GoalServiceError) {
+      const statusCode = error.code === GoalErrorCode.GOAL_NOT_FOUND ? 404 : 403;
+      return {
+        statusCode,
+        body: {
+          success: false,
+          error: {
+            code: error.code === GoalErrorCode.GOAL_NOT_FOUND ? 'NOT_FOUND' : 'FORBIDDEN',
+            message: error.message,
+            details: error.details,
+          },
+        },
+      };
+    }
+
+    console.error('Error deleting team goal:', error);
+    return {
+      statusCode: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to delete team goal',
+        },
+      },
+    };
+  }
+});
+
 // Update team goal
 router.patch('/goals/:goalId', async (event, context, params) => {
   try {
@@ -677,6 +739,10 @@ router.patch('/goals/:goalId', async (event, context, params) => {
         case GoalErrorCode.NO_ROUTE_FOUND:
           statusCode = 422;
           errorCode = 'ROUTE_ERROR';
+          break;
+        case GoalErrorCode.TEAM_HAS_ACTIVE_GOAL:
+          statusCode = 409;
+          errorCode = 'CONFLICT';
           break;
         default:
           statusCode = 500;

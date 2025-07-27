@@ -166,6 +166,10 @@ export const activityService = {
  * Convert meters to miles or kilometers based on user preference
  */
 export function formatDistance(meters: number, unit: 'miles' | 'kilometers' = 'miles'): string {
+  if (!meters || isNaN(meters)) {
+    return '0.00 mi';
+  }
+  
   if (unit === 'miles') {
     const miles = meters * 0.000621371;
     return `${miles.toFixed(2)} mi`;
@@ -196,10 +200,14 @@ export function formatDuration(seconds: number): string {
  * Calculate pace (min/mile or min/km)
  */
 export function calculatePace(meters: number, seconds: number, unit: 'miles' | 'kilometers' = 'miles'): string {
-  if (seconds === 0) return '0:00';
+  if (!seconds || seconds === 0 || !meters || meters === 0) return '0:00';
   
   const distance = unit === 'miles' ? meters * 0.000621371 : meters / 1000;
+  if (distance === 0) return '0:00';
+  
   const minutesPerUnit = seconds / 60 / distance;
+  
+  if (!isFinite(minutesPerUnit)) return '0:00';
   
   const paceMinutes = Math.floor(minutesPerUnit);
   const paceSeconds = Math.round((minutesPerUnit - paceMinutes) * 60);

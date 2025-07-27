@@ -4,6 +4,7 @@ export interface GoalFormData {
   name: string;
   description: string;
   teamId: string;
+  startDate?: string;
   targetDate?: string;
   waypoints: Waypoint[];
   routeData?: RouteData;
@@ -18,6 +19,7 @@ export interface GoalValidationErrors {
   name?: string;
   description?: string;
   teamId?: string;
+  startDate?: string;
   targetDate?: string;
   waypoints?: string;
   general?: string;

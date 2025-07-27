@@ -66,8 +66,25 @@ export async function optimizedFetch<T>(
     timeout = 10000,
     retries = 2,
     retryDelay = 1000,
+    headers = {},
     ...fetchOptions
   } = options;
+
+  // Get auth token from localStorage if available
+  let authHeaders = { ...headers };
+  if (typeof window !== 'undefined') {
+    try {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const authData = JSON.parse(authStorage);
+        if (authData?.state?.tokens?.accessToken) {
+          authHeaders['Authorization'] = `Bearer ${authData.state.tokens.accessToken}`;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get auth token:', error);
+    }
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -75,6 +92,7 @@ export async function optimizedFetch<T>(
   try {
     const response = await fetch(url, {
       ...fetchOptions,
+      headers: authHeaders,
       signal: controller.signal,
     });
 
@@ -175,7 +193,7 @@ export function usePrefetch() {
 
   const prefetchUserProfile = useCallback(() => {
     prefetchQuery(queryKeys.userProfile(), () =>
-      optimizedFetch('/api/users/profile')
+      optimizedFetch('/api/users/me')
     );
   }, [prefetchQuery]);
 
@@ -306,7 +324,7 @@ export function createDataTransformer<TInput, TOutput>(
 export const useUser = (userId?: string) => {
   return useOptimizedQuery(
     queryKeys.user(userId || 'current'),
-    () => optimizedFetch(`/api/users/${userId || 'profile'}`),
+    () => optimizedFetch(`/api/users/${userId || 'me'}`),
     {
       enabled: !!userId || typeof userId === 'undefined',
       staleTime: 10 * 60 * 1000, // User data changes less frequently

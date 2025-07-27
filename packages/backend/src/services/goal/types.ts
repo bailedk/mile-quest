@@ -22,8 +22,9 @@ export interface CreateGoalInput {
   startLocation: Position & { address?: string };
   endLocation: Position & { address?: string };
   waypoints?: Waypoint[];
+  startDate?: Date;
   targetDate?: Date;
-  status?: 'DRAFT' | 'ACTIVE'; // Allow creating goals as draft or active
+  // Status is always ACTIVE when creating
 }
 
 export interface UpdateGoalInput {
@@ -33,7 +34,7 @@ export interface UpdateGoalInput {
   endLocation?: Position & { address?: string };
   waypoints?: Waypoint[];
   targetDate?: Date;
-  status?: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  status?: 'ACTIVE' | 'PASSED' | 'FAILED';
 }
 
 export interface GoalProgressInfo {
@@ -136,6 +137,7 @@ export enum GoalErrorCode {
   GOAL_NOT_FOUND = 'GOAL_NOT_FOUND',
   GOAL_ALREADY_ACTIVE = 'GOAL_ALREADY_ACTIVE',
   GOAL_COMPLETED = 'GOAL_COMPLETED',
+  TEAM_HAS_ACTIVE_GOAL = 'TEAM_HAS_ACTIVE_GOAL',
   
   // Route calculation errors
   ROUTE_CALCULATION_FAILED = 'ROUTE_CALCULATION_FAILED',

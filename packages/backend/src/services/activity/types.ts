@@ -27,6 +27,7 @@ export interface ActivityListItem {
   timestamp: Date;
   notes: string | null;
   isPrivate: boolean;
+  source: ActivitySource;
   createdAt: Date;
 }
 
