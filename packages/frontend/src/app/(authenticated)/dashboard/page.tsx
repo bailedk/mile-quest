@@ -126,16 +126,10 @@ function DashboardPage() {
         />
         
         {/* Personal Stats Card */}
-        {personalStats && (
-          <MobileCard>
-            <PersonalStatsCard
-              totalDistance={personalStats.totalDistance}
-              weekDistance={personalStats.weekDistance}
-              bestDay={personalStats.bestDay}
-              userPreferredUnits={userPreferredUnits}
-            />
-          </MobileCard>
-        )}
+        <PersonalStatsCard
+          personalStats={personalStats}
+          userPreferredUnits={userPreferredUnits}
+        />
         
         {/* Team Selector and Leaderboard */}
         {teams.length > 0 && (
