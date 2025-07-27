@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { useHydration } from '@/contexts/HydrationContext';
 import { Header } from '@/components/layout/Header';
 import { BottomNavigation, defaultNavItems, useBottomNavigation } from '@/components/mobile/BottomNavigation';
+import { useMediaQuery } from '@/utils/hydration';
 
 export function AuthenticatedLayoutClient({
   children,
@@ -17,6 +18,7 @@ export function AuthenticatedLayoutClient({
   const { isHydrated, isAuthInitialized } = useHydration();
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
   const { shouldShow: shouldShowBottomNav } = useBottomNavigation();
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   useEffect(() => {
     if (!isHydrated || !isAuthInitialized) return;
@@ -64,11 +66,12 @@ export function AuthenticatedLayoutClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className={`flex-1 ${shouldShowBottomNav ? 'pb-20' : ''}`}>
+      {/* Only show Header on non-mobile screens to avoid duplicate headers */}
+      {!isMobile && <Header />}
+      <main className={`flex-1 ${shouldShowBottomNav && !isMobile ? 'pb-20' : ''}`}>
         {children}
       </main>
-      {shouldShowBottomNav && <BottomNavigation items={defaultNavItems} />}
+      {shouldShowBottomNav && !isMobile && <BottomNavigation items={defaultNavItems} />}
     </div>
   );
 }
