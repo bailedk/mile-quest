@@ -54,7 +54,8 @@ export function createHandler(
     validateBody = false,
     functionName = 'unknown-function',
     enableOptimization = true,
-    enableCompression = true,
+    // Disable compression in local development to avoid conflicts with SAM Local
+    enableCompression = process.env.NODE_ENV === 'production',
     enableRateLimit = false,
     rateLimitConfig,
     compressionConfig,

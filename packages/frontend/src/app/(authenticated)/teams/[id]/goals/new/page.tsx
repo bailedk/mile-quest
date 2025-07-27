@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useGoalCreation } from '@/hooks/useGoalCreation';
 import { teamService } from '@/services/team.service';
-import { goalService } from '@/services/goal.service';
 import { mapService } from '@/services/map';
 import { Button } from '@/components/patterns/Button';
 import { Team } from '@/types/team.types';
@@ -103,15 +102,23 @@ export default function GoalCreationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
-
     try {
-      await goalService.createGoal(teamId, formData);
-      router.push(`/teams/${teamId}`);
+      await submit();
     } catch (error) {
       console.error('Failed to create goal:', error);
     }
   };
+
+  // Debug logging
+  console.log('Form validation state:', {
+    isValid,
+    isSubmitting,
+    isCalculatingRoute,
+    formData,
+    totalDistance,
+    validationErrors,
+    hasValidationErrors,
+  });
 
   if (!user || isLoading) {
     return (
@@ -190,8 +197,13 @@ export default function GoalCreationPage() {
             value={formData.targetDate || ''}
             onChange={(e) => updateField('targetDate', e.target.value)}
             min={new Date().toISOString().split('T')[0]}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+              validationErrors.targetDate ? 'border-red-300' : 'border-gray-300'
+            }`}
           />
+          {validationErrors.targetDate && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.targetDate}</p>
+          )}
         </div>
 
         {/* Waypoints */}

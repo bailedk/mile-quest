@@ -22,6 +22,7 @@ export default function TeamDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<UpdateTeamInput>({});
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const currentUserMember = team?.members.find(m => m.user.email === user?.email);
   const isAdmin = currentUserMember?.role === 'ADMIN';
@@ -33,19 +34,27 @@ export default function TeamDetailPage() {
     }
 
     loadTeam();
+    
+    // Cleanup on unmount
+    return () => {
+      if (abortController) {
+        abortController.abort();
+      }
+    };
   }, [user, router, teamId]);
 
   // Reload goals when navigating back from goal creation
   useEffect(() => {
     const handleFocus = () => {
-      if (team) {
+      // Only reload if team is loaded and not currently loading goals
+      if (team && !isLoadingGoals) {
         loadGoals();
       }
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [team]);
+  }, [team, isLoadingGoals]);
 
   const loadTeam = async () => {
     try {
@@ -69,22 +78,36 @@ export default function TeamDetailPage() {
   };
 
   const loadGoals = async () => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingGoals) return;
+    
+    // Cancel any existing request
+    if (abortController) {
+      abortController.abort();
+    }
+    
+    // Create new abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+    
     try {
       setIsLoadingGoals(true);
-      console.log('Loading goals for team:', teamId); // Debug log
       const teamGoals = await goalService.getTeamGoals(teamId);
-      console.log('Loaded goals:', teamGoals); // Debug log
-      setGoals(teamGoals);
+      
+      // Only update state if the request wasn't aborted
+      if (!controller.signal.aborted) {
+        setGoals(teamGoals);
+      }
     } catch (err: any) {
-      console.error('Failed to load goals for team', teamId, ':', err);
-      console.error('Error details:', {
-        message: err.message,
-        status: err.status,
-        response: err.response?.data
-      });
-      // Don't show error for goals, just log it
+      // Ignore abort errors
+      if (err.name !== 'AbortError') {
+        console.error('Failed to load goals:', err);
+      }
     } finally {
-      setIsLoadingGoals(false);
+      if (!controller.signal.aborted) {
+        setIsLoadingGoals(false);
+        setAbortController(null);
+      }
     }
   };
 

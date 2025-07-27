@@ -234,9 +234,10 @@ export function useGoalCreation(options: UseGoalCreationOptions = {}) {
   // Create goal mutation
   const createGoalMutation = useMutation({
     mutationFn: async (data: GoalFormData) => {
-      // The goalService.createGoal is called in the component
-      // This mutation is just for tracking state
-      return { id: generateId().replace('draft-', 'goal-') };
+      // Import goalService at the top of the file
+      const { goalService } = await import('@/services/goal.service');
+      const result = await goalService.createGoal(data.teamId, data);
+      return result;
     },
     onSuccess: (result) => {
       clearDraft();
@@ -250,12 +251,17 @@ export function useGoalCreation(options: UseGoalCreationOptions = {}) {
 
   // Submit form
   const submit = useCallback(async () => {
+    // Prevent double submission
+    if (createGoalMutation.isPending) {
+      return;
+    }
+
     if (!validate()) {
       showToast('Please fix validation errors', 'error');
       return;
     }
 
-    if (!state.formData.routeData) {
+    if (!state.formData.routeData && state.totalDistance === 0) {
       showToast('Please wait for route calculation to complete', 'error');
       return;
     }
@@ -272,7 +278,13 @@ export function useGoalCreation(options: UseGoalCreationOptions = {}) {
     validationErrors: state.validationErrors,
     isDirty: state.isDirty,
     hasValidationErrors: goalValidation.hasErrors(state.validationErrors),
-    isValid: goalValidation.isFormValid(state.formData) && !!state.formData.routeData,
+    isValid: (() => {
+      const formValid = goalValidation.isFormValid(state.formData);
+      const hasWaypoints = state.formData.waypoints.length >= 2;
+      const hasDistance = state.totalDistance > 0;
+      console.log('isValid calculation:', { formValid, hasWaypoints, hasDistance, waypoints: state.formData.waypoints.length, distance: state.totalDistance });
+      return formValid && hasWaypoints && hasDistance;
+    })(),
     
     // Actions
     updateField,

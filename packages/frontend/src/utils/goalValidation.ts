@@ -49,7 +49,7 @@ export const goalValidation = {
    * Check if the form has any validation errors
    */
   hasErrors: (errors: GoalValidationErrors): boolean => {
-    return Object.keys(errors).length > 0;
+    return Object.keys(errors).some(key => errors[key as keyof GoalValidationErrors] !== undefined);
   },
 
   /**
@@ -57,7 +57,9 @@ export const goalValidation = {
    */
   isFormValid: (formData: GoalFormData): boolean => {
     const errors = goalValidation.validateForm(formData);
-    return !goalValidation.hasErrors(errors);
+    const hasErrors = goalValidation.hasErrors(errors);
+    console.log('isFormValid check:', { errors, hasErrors });
+    return !hasErrors;
   },
 
   /**

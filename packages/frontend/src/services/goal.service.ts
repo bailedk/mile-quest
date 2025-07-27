@@ -42,10 +42,7 @@ class GoalService {
   }
 
   async getTeamGoals(teamId: string): Promise<TeamGoal[]> {
-    const url = `/teams/${teamId}/goals`;
-    console.log('Making API call to:', url); // Debug log
-    const response = await apiClient.get(url);
-    console.log('API response:', response); // Debug log
+    const response = await apiClient.get(`/teams/${teamId}/goals`);
     return response.data;
   }
 
