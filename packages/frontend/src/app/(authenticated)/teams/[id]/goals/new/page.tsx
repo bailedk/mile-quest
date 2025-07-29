@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { useGoalCreation } from '@/hooks/useGoalCreation';
 import { teamService } from '@/services/team.service';
 import { mapService } from '@/services/map';
+import { formatDistance } from '@/services/activity.service';
 import { Button } from '@/components/patterns/Button';
 import { Team } from '@/types/team.types';
 import { Waypoint } from '@mile-quest/shared';
@@ -22,6 +23,9 @@ export default function GoalCreationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<MapSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // User preferences
+  const userPreferredUnits = user?.preferredUnits || 'kilometers';
 
   const {
     formData,
@@ -309,7 +313,7 @@ export default function GoalCreationPage() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 mb-2">Route Summary</h4>
             <p className="text-blue-800">
-              Total Distance: <span className="font-bold">{totalDistance.toFixed(1)} miles</span>
+              Total Distance: <span className="font-bold">{formatDistance(totalDistance, userPreferredUnits)}</span>
             </p>
             <p className="text-sm text-blue-700 mt-1">
               (straight-line distance between waypoints)

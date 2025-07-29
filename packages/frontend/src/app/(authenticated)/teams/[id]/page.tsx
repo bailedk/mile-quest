@@ -34,7 +34,7 @@ export default function TeamDetailPage() {
 
   const currentUserMember = team?.members.find(m => m.user.email === user?.email);
   const isAdmin = currentUserMember?.role === 'ADMIN';
-  const userPreferredUnits = 'miles'; // TODO: Get from user preferences
+  const userPreferredUnits = user?.preferredUnits || 'kilometers';
 
   useEffect(() => {
     if (!user) {
@@ -512,7 +512,7 @@ export default function TeamDetailPage() {
                           {metrics.percentComplete.toFixed(0)}%
                         </span>
                         <span className="text-sm text-gray-600">
-                          {formatDistance(goal.currentDistance * 1609.34, userPreferredUnits)} / {formatDistance(goal.totalDistance * 1609.34, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'}
+                          {formatDistance(goal.currentDistance, userPreferredUnits)} / {formatDistance(goal.totalDistance, userPreferredUnits)}
                         </span>
                       </div>
                       <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -529,7 +529,7 @@ export default function TeamDetailPage() {
                         )}
                       </div>
                       <div className="mt-1 flex justify-between text-xs text-gray-600">
-                        <span>{formatDistance(metrics.distanceLeft * 1609.34, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'} remaining</span>
+                        <span>{formatDistance(metrics.distanceLeft, userPreferredUnits)} remaining</span>
                         {metrics.daysRemaining !== null && (
                           <span className={metrics.isOnTrack ? 'text-green-600' : 'text-orange-600'}>
                             {metrics.isOnTrack ? 'On Track' : 'Behind Schedule'}
@@ -543,7 +543,7 @@ export default function TeamDetailPage() {
                       <div className="bg-white/70 rounded-lg p-2">
                         <div className="text-xs text-gray-600">Your Contribution</div>
                         <div className="text-sm font-bold text-indigo-700">
-                          {formatDistance(metrics.userContribution, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'}
+                          {formatDistance(metrics.userContribution, userPreferredUnits)}
                         </div>
                         <div className="text-xs text-indigo-600">
                           {metrics.contributionPercentage.toFixed(1)}% of goal
@@ -557,7 +557,7 @@ export default function TeamDetailPage() {
                         </div>
                         {metrics.dailyPaceNeeded > 0 && metrics.daysRemaining && metrics.daysRemaining > 0 && (
                           <div className="text-xs text-gray-600">
-                            {formatDistance(metrics.dailyPaceNeeded * 1609.34, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'}/day needed
+                            {formatDistance(metrics.dailyPaceNeeded, userPreferredUnits)}/day needed
                           </div>
                         )}
                       </div>

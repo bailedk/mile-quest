@@ -12,6 +12,7 @@ interface RouteProgressProps {
   segmentProgress: number;
   compact?: boolean;
   className?: string;
+  userPreferredUnits?: 'miles' | 'kilometers';
 }
 
 export function RouteProgress({
@@ -22,6 +23,7 @@ export function RouteProgress({
   segmentProgress,
   compact = false,
   className = '',
+  userPreferredUnits = 'miles',
 }: RouteProgressProps) {
   const { waypoints, segments } = routeData;
 
@@ -167,7 +169,7 @@ export function RouteProgress({
                       : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {segment.distance.toFixed(1)} miles
+                  {formatDistance(segment.distance, userPreferredUnits)}
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">

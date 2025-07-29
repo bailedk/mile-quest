@@ -26,6 +26,9 @@ function ActivitiesContent() {
   const [stats, setStats] = useState<ActivityStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // User preferences
+  const userPreferredUnits = user?.preferredUnits || 'kilometers';
 
   const loadActivities = async () => {
     try {
@@ -136,7 +139,7 @@ function ActivitiesContent() {
               <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">Total Distance</p>
                 <p className="text-xl font-bold">
-                  {formatDistance(stats.totalDistance)}
+                  {formatDistance(stats.totalDistance, userPreferredUnits)}
                 </p>
               </TouchCard>
               <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
@@ -150,7 +153,7 @@ function ActivitiesContent() {
               <TouchCard className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <p className="text-sm text-gray-600 mb-1">Average Distance</p>
                 <p className="text-xl font-bold">
-                  {formatDistance(stats.averageDistance)}
+                  {formatDistance(stats.averageDistance, userPreferredUnits)}
                 </p>
               </TouchCard>
             </>
@@ -159,7 +162,7 @@ function ActivitiesContent() {
               <Card padding="sm">
                 <p className="text-sm text-gray-600 mb-1">Total Distance</p>
                 <p className="text-2xl font-bold">
-                  {formatDistance(stats.totalDistance)}
+                  {formatDistance(stats.totalDistance, userPreferredUnits)}
                 </p>
               </Card>
               <Card padding="sm">
@@ -173,7 +176,7 @@ function ActivitiesContent() {
               <Card padding="sm">
                 <p className="text-sm text-gray-600 mb-1">Average Distance</p>
                 <p className="text-2xl font-bold">
-                  {formatDistance(stats.averageDistance)}
+                  {formatDistance(stats.averageDistance, userPreferredUnits)}
                 </p>
               </Card>
             </>
@@ -230,7 +233,7 @@ function ActivitiesContent() {
         <div className="flex-1">
           <div className="flex items-center gap-4 mb-2">
             <h3 className="font-semibold text-lg">
-              {formatDistance(activity.distance)}
+              {formatDistance(activity.distance, userPreferredUnits)}
             </h3>
             {activity.isPrivate && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
