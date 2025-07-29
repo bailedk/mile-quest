@@ -1,31 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Team, UpdateTeamInput } from '@/types/team.types';
 import { TeamGoal } from '@mile-quest/shared';
 import { teamService } from '@/services/team.service';
 import { goalService } from '@/services/goal.service';
+import { activityService, formatDistance } from '@/services/activity.service';
 import { Button } from '@/components/patterns/Button';
 import { useAuthStore } from '@/store/auth.store';
+import { useToastContext } from '@/contexts/ToastContext';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 
 export default function TeamDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { showToast } = useToastContext();
   const teamId = params.id as string;
 
   const [team, setTeam] = useState<Team | null>(null);
   const [goals, setGoals] = useState<TeamGoal[]>([]);
+  const [userContributions, setUserContributions] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingGoals, setIsLoadingGoals] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<UpdateTeamInput>({});
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [cancelGoalId, setCancelGoalId] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const currentUserMember = team?.members.find(m => m.user.email === user?.email);
   const isAdmin = currentUserMember?.role === 'ADMIN';
+  const userPreferredUnits = 'miles'; // TODO: Get from user preferences
 
   useEffect(() => {
     if (!user) {
@@ -97,6 +106,27 @@ export default function TeamDetailPage() {
       // Only update state if the request wasn't aborted
       if (!controller.signal.aborted) {
         setGoals(teamGoals);
+        
+        // Load user contributions for active goals
+        const activeGoals = teamGoals.filter(g => g.status === 'ACTIVE');
+        if (activeGoals.length > 0 && user) {
+          const contributions: Record<string, number> = {};
+          for (const goal of activeGoals) {
+            try {
+              const totalDistance = await activityService.getUserTotalDistance(
+                user.id,
+                teamId,
+                goal.startDate ? new Date(goal.startDate) : undefined,
+                goal.targetDate ? new Date(goal.targetDate) : new Date()
+              );
+              contributions[goal.id] = totalDistance;
+            } catch (err) {
+              console.error(`Failed to load contribution for goal ${goal.id}:`, err);
+              contributions[goal.id] = 0;
+            }
+          }
+          setUserContributions(contributions);
+        }
       }
     } catch (err: any) {
       // Ignore abort errors
@@ -170,6 +200,77 @@ export default function TeamDetailPage() {
     } catch (err: any) {
       setError(err.message || 'Failed to delete team');
     }
+  };
+
+  const handleCancelGoal = async () => {
+    if (!cancelGoalId) return;
+
+    setIsCancelling(true);
+    try {
+      await goalService.updateGoal(teamId, cancelGoalId, {
+        status: 'FAILED',
+      });
+      showToast('Goal cancelled successfully', 'success');
+      setShowCancelDialog(false);
+      setCancelGoalId(null);
+      loadGoals(); // Reload goals
+    } catch (error) {
+      console.error('Failed to cancel goal:', error);
+      showToast('Failed to cancel goal', 'error');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Calculate goal metrics
+  const getGoalMetrics = (goal: TeamGoal) => {
+    const now = new Date();
+    const startDate = goal.startDate ? new Date(goal.startDate) : null;
+    const endDate = goal.targetDate ? new Date(goal.targetDate) : null;
+    
+    const isUpcoming = startDate && startDate > now;
+    const daysUntilStart = isUpcoming && startDate
+      ? Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    
+    const percentComplete = goal.totalDistance > 0
+      ? Math.min(100, (goal.currentDistance / goal.totalDistance) * 100)
+      : 0;
+    
+    const daysRemaining = endDate && endDate > now
+      ? Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    
+    const distanceLeft = Math.max(0, goal.totalDistance - goal.currentDistance);
+    const dailyPaceNeeded = daysRemaining && daysRemaining > 0
+      ? distanceLeft / daysRemaining
+      : 0;
+    
+    const userContribution = userContributions[goal.id] || 0;
+    const contributionPercentage = goal.totalDistance > 0
+      ? (userContribution / goal.totalDistance) * 100
+      : 0;
+    
+    // Check if on track
+    let isOnTrack = true;
+    if (startDate && endDate && !isUpcoming && daysRemaining !== null) {
+      const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const elapsedDays = totalDays - daysRemaining;
+      const expectedProgress = (elapsedDays / totalDays) * 100;
+      isOnTrack = percentComplete >= expectedProgress * 0.9; // 90% of expected progress
+    }
+    
+    return {
+      isUpcoming,
+      daysUntilStart,
+      percentComplete,
+      daysRemaining,
+      distanceLeft,
+      dailyPaceNeeded,
+      userContribution,
+      contributionPercentage,
+      isOnTrack,
+    };
   };
 
   if (!user) {
@@ -346,69 +447,171 @@ export default function TeamDetailPage() {
           </div>
         ) : goals.length > 0 ? (
           <div className="space-y-4">
-            {goals.map((goal) => (
+            {goals.map((goal) => {
+              const metrics = getGoalMetrics(goal);
+              const progressColor = metrics.percentComplete >= 100 
+                ? 'bg-green-500' 
+                : metrics.isOnTrack 
+                  ? 'bg-blue-500' 
+                  : 'bg-orange-500';
+              
+              const statusColor = metrics.isUpcoming
+                ? 'text-purple-600 bg-purple-100'
+                : goal.status === 'PASSED' 
+                  ? 'text-green-600 bg-green-100' 
+                  : goal.status === 'ACTIVE'
+                    ? 'text-blue-600 bg-blue-100'
+                    : goal.status === 'FAILED'
+                      ? 'text-red-600 bg-red-100'
+                      : 'text-gray-600 bg-gray-100';
+              
+              return (
               <div 
                 key={goal.id} 
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-br from-white to-gray-50"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 
-                    className="text-lg font-medium text-gray-900 cursor-pointer hover:text-blue-600"
-                    onClick={() => router.push(`/teams/${team.id}/goals/${goal.id}`)}
-                  >
-                    {goal.name}
-                  </h3>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    goal.status === 'PASSED' 
-                      ? 'bg-green-100 text-green-800' 
-                      : goal.status === 'ACTIVE'
-                      ? 'bg-blue-100 text-blue-800'
-                      : goal.status === 'FAILED'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {goal.status}
-                  </span>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 
+                      className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => router.push(`/teams/${team.id}/goals/${goal.id}`)}
+                    >
+                      {goal.name}
+                    </h3>
+                    {goal.description && (
+                      <p className="text-gray-600 text-sm mt-1 line-clamp-2">{goal.description}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
+                      {metrics.isUpcoming ? 'UPCOMING' : goal.status}
+                    </span>
+                    {isAdmin && goal.status === 'ACTIVE' && (
+                      <button
+                        onClick={() => {
+                          setCancelGoalId(goal.id);
+                          setShowCancelDialog(true);
+                        }}
+                        className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
+                        title="Cancel goal"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
-                {goal.description && (
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{goal.description}</p>
+                {/* Progress Section */}
+                {metrics.isUpcoming ? (
+                  <div className="bg-purple-50 rounded-lg p-3 mb-3">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-purple-600">
+                        Starting in {metrics.daysUntilStart} {metrics.daysUntilStart === 1 ? 'day' : 'days'}
+                      </div>
+                      <div className="text-sm text-purple-500 mt-1">
+                        {goal.startDate && new Date(goal.startDate).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Progress Bar with Personal Contribution */}
+                    <div className="mb-3">
+                      <div className="flex justify-between items-baseline mb-1">
+                        <span className="text-2xl font-bold text-gray-900">
+                          {metrics.percentComplete.toFixed(0)}%
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          {formatDistance(goal.currentDistance * 1609.34, userPreferredUnits)} / {formatDistance(goal.totalDistance * 1609.34, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'}
+                        </span>
+                      </div>
+                      <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`absolute left-0 top-0 h-full ${progressColor} transition-all duration-500 ease-out`}
+                          style={{ width: `${Math.min(100, metrics.percentComplete)}%` }}
+                        />
+                        {/* Personal contribution overlay */}
+                        {metrics.contributionPercentage > 0 && (
+                          <div
+                            className="absolute left-0 top-0 h-full bg-indigo-600 opacity-40"
+                            style={{ width: `${Math.min(100, metrics.contributionPercentage)}%` }}
+                          />
+                        )}
+                      </div>
+                      <div className="mt-1 flex justify-between text-xs text-gray-600">
+                        <span>{formatDistance(metrics.distanceLeft * 1609.34, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'} remaining</span>
+                        {metrics.daysRemaining !== null && (
+                          <span className={metrics.isOnTrack ? 'text-green-600' : 'text-orange-600'}>
+                            {metrics.isOnTrack ? 'On Track' : 'Behind Schedule'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/70 rounded-lg p-2">
+                        <div className="text-xs text-gray-600">Your Contribution</div>
+                        <div className="text-sm font-bold text-indigo-700">
+                          {formatDistance(metrics.userContribution, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'}
+                        </div>
+                        <div className="text-xs text-indigo-600">
+                          {metrics.contributionPercentage.toFixed(1)}% of goal
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white/70 rounded-lg p-2">
+                        <div className="text-xs text-gray-600">Time Remaining</div>
+                        <div className="text-sm font-bold text-gray-900">
+                          {metrics.daysRemaining !== null ? `${metrics.daysRemaining} days` : 'No deadline'}
+                        </div>
+                        {metrics.dailyPaceNeeded > 0 && metrics.daysRemaining && metrics.daysRemaining > 0 && (
+                          <div className="text-xs text-gray-600">
+                            {formatDistance(metrics.dailyPaceNeeded * 1609.34, userPreferredUnits)} {userPreferredUnits === 'kilometers' ? 'km' : 'mi'}/day needed
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
                 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm mt-3 pt-3 border-t border-gray-200">
                   <div className="flex items-center gap-4 text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      {goal.totalDistance.toFixed(1)} miles
-                    </span>
-                    {goal.targetDate && (
+                    {goal.startDate && (
                       <span className="flex items-center gap-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        {new Date(goal.targetDate).toLocaleDateString()}
+                        {new Date(goal.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
+                    {goal.targetDate && (
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        {new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
                   </div>
                   
-                  {/* Progress Bar */}
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-600 transition-all duration-300"
-                        style={{ width: `${Math.min(100, (goal.currentDistance / goal.totalDistance) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-600 font-medium">
-                      {Math.round((goal.currentDistance / goal.totalDistance) * 100)}%
-                    </span>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => router.push(`/teams/${team.id}/goals/${goal.id}`)}
+                  >
+                    View Details
+                  </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-gray-600 text-center py-8">
@@ -509,6 +712,19 @@ export default function TeamDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Cancel Goal Confirmation Dialog */}
+      <AlertDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        title="Cancel Team Goal"
+        description="Are you sure you want to cancel this goal? This action cannot be undone and all progress will be marked as incomplete."
+        confirmText="Cancel Goal"
+        cancelText="Keep Goal"
+        onConfirm={handleCancelGoal}
+        isDestructive
+        isLoading={isCancelling}
+      />
     </div>
   );
 }
