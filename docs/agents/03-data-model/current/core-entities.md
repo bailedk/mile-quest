@@ -33,7 +33,6 @@ Walking challenge teams.
 - `description` (String?)
 - `avatarUrl` (String?) - Team picture
 - `isPublic` (Boolean) - Whether team is discoverable
-- `maxMembers` (Int) - Maximum team size (default 50)
 - `createdById` (UUID) - User who created team
 - `createdAt` (DateTime)
 - `updatedAt` (DateTime)
@@ -243,13 +242,12 @@ erDiagram
 ## Data Integrity Rules
 
 1. **User cannot join same team twice** (active membership)
-2. **Team cannot exceed maxMembers**
-3. **Activity distance must be positive and <= 1000 miles**
-4. **Activity duration must be positive**
-5. **Team names must be unique**
-6. **At least one ADMIN per team**
-7. **Cannot delete team with active members**
-8. **Soft delete for audit trail**
+2. **Activity distance must be positive and <= 1000 miles**
+3. **Activity duration must be positive**
+4. **Team names must be unique**
+5. **At least one ADMIN per team**
+6. **Cannot delete team with active members**
+7. **Soft delete for audit trail**
 
 ## Performance Considerations
 

@@ -22,7 +22,6 @@ export interface Team {
   description?: string;
   avatarUrl?: string;
   isPublic: boolean;
-  maxMembers: number;
   createdById: string;
   /** ISO 8601 date-time string in UTC when the team was created */
   createdAt: string;
@@ -50,7 +49,6 @@ export interface CreateTeamInput {
   description?: string;
   avatarUrl?: string;
   isPublic?: boolean;
-  maxMembers?: number;
 }
 
 export interface UpdateTeamInput {
@@ -58,7 +56,6 @@ export interface UpdateTeamInput {
   description?: string;
   avatarUrl?: string;
   isPublic?: boolean;
-  maxMembers?: number;
 }
 
 export interface JoinTeamInput {

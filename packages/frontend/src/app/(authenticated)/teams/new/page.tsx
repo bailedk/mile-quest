@@ -17,7 +17,6 @@ export default function CreateTeamPage() {
     name: '',
     description: '',
     isPublic: true,
-    maxMembers: 50,
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -37,11 +36,6 @@ export default function CreateTeamPage() {
       errors.description = 'Description must be less than 500 characters';
     }
 
-    if (formData.maxMembers! < 2) {
-      errors.maxMembers = 'Team must allow at least 2 members';
-    } else if (formData.maxMembers! > 100) {
-      errors.maxMembers = 'Team cannot have more than 100 members';
-    }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -53,9 +47,7 @@ export default function CreateTeamPage() {
 
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : 
-              name === 'maxMembers' ? parseInt(value) || 50 : 
-              value
+      [name]: type === 'checkbox' ? checked : value
     }));
 
     // Clear validation error when user starts typing
@@ -147,30 +139,6 @@ export default function CreateTeamPage() {
           <p className="mt-1 text-sm text-gray-500">
             {formData.description?.length || 0}/500 characters
           </p>
-        </div>
-
-        <div className="mb-6">
-          <label htmlFor="maxMembers" className="block text-sm font-medium text-gray-700 mb-2">
-            Maximum Members
-          </label>
-          <select
-            id="maxMembers"
-            name="maxMembers"
-            value={formData.maxMembers}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              validationErrors.maxMembers ? 'border-red-500' : 'border-gray-300'
-            }`}
-          >
-            <option value={10}>10 members</option>
-            <option value={25}>25 members</option>
-            <option value={50}>50 members</option>
-            <option value={75}>75 members</option>
-            <option value={100}>100 members</option>
-          </select>
-          {validationErrors.maxMembers && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.maxMembers}</p>
-          )}
         </div>
 
         <div className="mb-6">

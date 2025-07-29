@@ -150,7 +150,6 @@ model Team {
   description String?
   avatarUrl   String?
   isPublic    Boolean      @default(true)
-  maxMembers  Int          @default(50)
   createdById String
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

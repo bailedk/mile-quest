@@ -94,10 +94,6 @@ export function PullToRefresh({
       const currentY = e.touches[0].clientY;
       const distance = Math.max(0, currentY - startY);
       setPullDistance(Math.min(distance, threshold * 1.5));
-      
-      if (distance > 0) {
-        e.preventDefault();
-      }
     }
   };
 
@@ -120,10 +116,13 @@ export function PullToRefresh({
   return (
     <div
       ref={containerRef}
-      className={`relative ${className}`}
+      className={`relative ${className} ${pullDistance > 0 ? 'overflow-hidden' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      style={{
+        touchAction: pullDistance > 0 ? 'none' : 'auto'
+      }}
     >
       {/* Pull-to-refresh indicator */}
       {shouldShowIndicator && (
@@ -392,24 +391,12 @@ export function useAdvancedSwipeGesture(
   }, []);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (preventScroll && touchStart) {
-      const currentX = e.targetTouches[0].clientX;
-      const currentY = e.targetTouches[0].clientY;
-      const distanceX = Math.abs(currentX - touchStart.x);
-      const distanceY = Math.abs(currentY - touchStart.y);
-      
-      // Prevent scroll if there's significant horizontal movement
-      if (distanceX > distanceY && distanceX > 10) {
-        e.preventDefault();
-      }
-    }
-    
     setTouchEnd({
       x: e.targetTouches[0].clientX,
       y: e.targetTouches[0].clientY,
       time: Date.now()
     });
-  }, [touchStart, preventScroll]);
+  }, []);
 
   const onTouchEnd = useCallback(() => {
     if (!touchStart || !touchEnd) return;

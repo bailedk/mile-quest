@@ -26,7 +26,6 @@ erDiagram
         string description
         string avatarUrl
         boolean isPublic
-        int maxMembers
         uuid createdById FK
         datetime createdAt
         datetime updatedAt
@@ -299,7 +298,6 @@ erDiagram
    - Team must have at least one ADMIN
    - User cannot join same team twice (while active)
    - Activity distance must be positive
-   - Team size cannot exceed maxMembers
    - Notifications respect user preferences
    - Private activities excluded from public feeds
 

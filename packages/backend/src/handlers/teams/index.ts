@@ -314,7 +314,6 @@ router.post('/join', async (event, context, params) => {
       'Invalid or expired invite code',
       'Team not found or is not public',
       'User is already a member of this team',
-      'Team has reached maximum member limit',
     ];
 
     if (isAuthError(error)) {

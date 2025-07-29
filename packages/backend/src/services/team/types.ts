@@ -14,7 +14,6 @@ export interface CreateTeamInput {
   description?: string;
   avatarUrl?: string;
   isPublic?: boolean;
-  maxMembers?: number;
   goal?: {
     name: string;
     description?: string;
@@ -47,7 +46,6 @@ export interface UpdateTeamInput {
   description?: string;
   avatarUrl?: string;
   isPublic?: boolean;
-  maxMembers?: number;
 }
 
 export interface JoinTeamInput {

@@ -75,7 +75,6 @@ export default function TeamDetailPage() {
         name: teamData.name,
         description: teamData.description || '',
         isPublic: teamData.isPublic,
-        maxMembers: teamData.maxMembers,
       });
       // Load goals after team is loaded
       loadGoals();
@@ -343,28 +342,15 @@ export default function TeamDetailPage() {
               rows={3}
               placeholder="Team description..."
             />
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={editFormData.isPublic}
-                  onChange={(e) => setEditFormData({ ...editFormData, isPublic: e.target.checked })}
-                  className="mr-2 text-blue-600"
-                />
-                Public Team
-              </label>
-              <label className="flex items-center">
-                <span className="mr-2">Max Members:</span>
-                <input
-                  type="number"
-                  value={editFormData.maxMembers || 50}
-                  onChange={(e) => setEditFormData({ ...editFormData, maxMembers: parseInt(e.target.value) || 50 })}
-                  className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
-                  min="2"
-                  max="100"
-                />
-              </label>
-            </div>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={editFormData.isPublic}
+                onChange={(e) => setEditFormData({ ...editFormData, isPublic: e.target.checked })}
+                className="mr-2 text-blue-600"
+              />
+              Public Team
+            </label>
             <div className="flex gap-2">
               <Button onClick={handleUpdateTeam}>Save Changes</Button>
               <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
@@ -382,8 +368,6 @@ export default function TeamDetailPage() {
                   <span>{team.members.length} {team.members.length === 1 ? 'member' : 'members'}</span>
                   <span className="hidden sm:inline px-2">•</span>
                   <span>{team.isPublic ? 'Public' : 'Private'} team</span>
-                  <span className="hidden sm:inline px-2">•</span>
-                  <span>Max {team.maxMembers} members</span>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">

@@ -172,7 +172,6 @@ export class ProductionTeamService {
         description: string | null;
         avatarUrl: string | null;
         isPublic: boolean;
-        maxMembers: number;
         createdById: string;
         createdAt: Date;
         updatedAt: Date;
@@ -391,15 +390,14 @@ export class ProductionTeamService {
           description: string | null;
           avatarUrl: string | null;
           isPublic: boolean;
-          maxMembers: number;
           createdById: string;
           createdAt: Date;
           updatedAt: Date;
         }>>`
           WITH new_team AS (
-            INSERT INTO teams (name, description, "avatarUrl", "isPublic", "maxMembers", "createdById")
+            INSERT INTO teams (name, description, "avatarUrl", "isPublic", "createdById")
             VALUES (${input.name}, ${input.description || null}, ${input.avatarUrl || null}, 
-                   ${input.isPublic ?? true}, ${input.maxMembers || 50}, ${userId})
+                   ${input.isPublic ?? true}, ${userId})
             RETURNING *
           ),
           new_membership AS (

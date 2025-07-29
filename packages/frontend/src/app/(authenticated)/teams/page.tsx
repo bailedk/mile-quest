@@ -1,30 +1,5 @@
 'use client';
 
-// Add custom animations
-const fadeInAnimation = `
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .animate-fade-in > * {
-    animation: fadeIn 0.5s ease-out forwards;
-  }
-  
-  .animate-fade-in > *:nth-child(1) { animation-delay: 0ms; }
-  .animate-fade-in > *:nth-child(2) { animation-delay: 50ms; }
-  .animate-fade-in > *:nth-child(3) { animation-delay: 100ms; }
-  .animate-fade-in > *:nth-child(4) { animation-delay: 150ms; }
-  .animate-fade-in > *:nth-child(5) { animation-delay: 200ms; }
-  .animate-fade-in > *:nth-child(6) { animation-delay: 250ms; }
-`;
-
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -62,7 +37,6 @@ export default function TeamsPage() {
 
   return (
     <>
-      <style jsx global>{fadeInAnimation}</style>
       <MobileLayout title="My Teams">
       <PullToRefresh onRefresh={reloadTeams} disabled={isLoading}>
         <div className="pb-20">
@@ -114,7 +88,7 @@ export default function TeamsPage() {
       )}
 
       {!isLoading && !error && teams.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-fade-in">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map((team) => (
             <Link
               key={team.id}
@@ -169,7 +143,7 @@ export default function TeamsPage() {
                 
                 {/* Team Progress Indicator */}
                 {(() => {
-                  const teamProgress = dashboardData?.teams.find(t => t.id === team.id)?.progress;
+                  const teamProgress = dashboardData?.teams?.find(t => t.id === team.id)?.progress;
                   if (!teamProgress || !teamProgress.goalId) return null;
                   
                   return (

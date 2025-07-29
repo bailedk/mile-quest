@@ -354,21 +354,6 @@ export class TeamService {
       throw new Error('User is already a member of this team');
     }
 
-    // Check team member limit
-    const memberCount = await this.prisma.teamMember.count({
-      where: {
-        teamId,
-        leftAt: null,
-      },
-    });
-
-    const team = await this.prisma.team.findUnique({
-      where: { id: teamId },
-    });
-
-    if (team && memberCount >= team.maxMembers) {
-      throw new Error('Team has reached maximum member limit');
-    }
 
     // Add user to team
     await this.prisma.teamMember.create({

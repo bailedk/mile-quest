@@ -248,9 +248,6 @@ async function addTeamMember(teamId: string, userId: string, role: TeamRole) {
       }
     });
 
-    if (team._count.members >= team.maxMembers) {
-      throw new Error('Team is full');
-    }
 
     // Add member
     return await tx.teamMember.create({

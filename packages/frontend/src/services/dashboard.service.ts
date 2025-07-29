@@ -49,7 +49,14 @@ export class DashboardService {
       
       // Parse dates from string format with null checks
       const parsedData: DashboardData = {
-        teams: response.data.teams || [],
+        teams: (response.data.teams || []).map(team => ({
+          ...team,
+          progress: team.progress ? {
+            ...team.progress,
+            startDate: team.progress.startDate ? new Date(team.progress.startDate) : null,
+            endDate: team.progress.endDate ? new Date(team.progress.endDate) : null,
+          } : null,
+        })),
         recentActivities: (response.data.recentActivities || []).map(activity => ({
           ...activity,
           timestamp: new Date(activity.timestamp),

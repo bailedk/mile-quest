@@ -10,16 +10,16 @@ export interface DashboardTeam {
   memberCount: number;
   role: string;
   progress: {
-    goalId: string | null;
-    goalName: string | null;
+    goalId: string;
+    goalName: string;
     currentDistance: number;
     targetDistance: number;
     percentComplete: number;
     daysRemaining: number | null;
     isOnTrack: boolean | null;
-    startDate?: Date | string;
-    endDate?: Date | string;
-    status?: string;
+    startDate: Date | string | null;
+    endDate: Date | string | null;
+    status: string;
   } | null;
 }
 

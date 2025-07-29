@@ -167,7 +167,8 @@ export const activityService = {
  */
 export function formatDistance(meters: number, unit: 'miles' | 'kilometers' = 'miles'): string {
   if (!meters || isNaN(meters)) {
-    return '0.00 mi';
+    // Return 0 with the correct unit suffix
+    return unit === 'miles' ? '0.00 mi' : '0.00 km';
   }
   
   if (unit === 'miles') {

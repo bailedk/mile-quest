@@ -37,13 +37,16 @@ interface DashboardTeam {
   memberCount: number;
   role: string;
   progress: {
-    goalId: string | null;
-    goalName: string | null;
+    goalId: string;
+    goalName: string;
     currentDistance: number;
     targetDistance: number;
     percentComplete: number;
     daysRemaining: number | null;
     isOnTrack: boolean | null;
+    startDate: Date | null;
+    endDate: Date | null;
+    status: string;
   } | null;
 }
 
@@ -52,7 +55,7 @@ interface DashboardActivity {
   distance: number;
   duration: number;
   pace: number;
-  activityDate: Date;
+  timestamp: Date;
   note: string | null;
   teamName: string;
   userName: string;
@@ -201,9 +204,9 @@ router.get('/', async (event, context, params) => {
     console.log('Dashboard: Found activities:', recentActivities.length);
 
     // Get user's personal stats
-    console.log('Dashboard: Getting personal stats');
+    console.log('Dashboard: Getting personal stats for userId:', user.id);
     const personalStats = await getUserPersonalStats(user.id);
-    console.log('Dashboard: Personal stats:', personalStats);
+    console.log('Dashboard: Personal stats result:', JSON.stringify(personalStats, null, 2));
 
     // Get team leaderboards (top 5 members per team)
     console.log('Dashboard: Getting team leaderboards');
@@ -315,7 +318,7 @@ async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]
       distance: activity.distance,
       duration: activity.duration,
       pace: calculatePace(activity.distance, activity.duration),
-      activityDate: activity.timestamp,
+      timestamp: activity.timestamp,
       note: activity.notes,
       teamName: teamInfo?.teamName || 'Unknown Team',
       userName: activity.user.name,
@@ -324,57 +327,117 @@ async function getRecentActivitiesForDashboard(userId: string, teamIds: string[]
   });
 }
 
-// Helper function to get user's personal stats (optimized with materialized views)
+// Helper function to get user's personal stats with direct queries
 async function getUserPersonalStats(userId: string): Promise<PersonalStats> {
-  // Try to get optimized stats from materialized view first
-  try {
-    const mvStats = await materializedViewsService.getUserActivityStats(userId);
-    
-    if (mvStats) {
-      return {
-        totalDistance: Number(mvStats.total_distance),
-        totalActivities: Number(mvStats.total_activities),
-        currentStreak: 0, // Will be calculated separately if needed
-        bestDay: {
-          date: mvStats.last_activity_date,
-          distance: Number(mvStats.best_distance),
-        },
-        thisWeek: {
-          distance: Number(mvStats.week_distance),
-          activities: Number(mvStats.week_activities),
-        },
-        thisMonth: {
-          distance: Number(mvStats.month_distance),
-          activities: Number(mvStats.month_activities),
-        },
-      };
-    }
-  } catch (error) {
-    console.warn('Failed to get stats from materialized view, falling back to original method:', error);
-  }
-
-  // Fallback to original method if materialized view fails
-  const userStats = await activityService.getUserStats(userId);
+  console.log('getUserPersonalStats: Starting for user:', userId);
   
-  // Get best day distance
-  const bestDayActivity = await prisma.activity.findFirst({
-    where: { userId },
-    orderBy: { distance: 'desc' },
-    select: {
-      distance: true,
-      timestamp: true,
-    },
-  });
-
-  // Handle case where userStats might be null/undefined
-  if (!userStats) {
+  // Direct queries to activities table for accurate real-time stats
+  try {
+    // Debug: Check if there are any activities at all
+    const allActivities = await prisma.activity.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        distance: true,
+        timestamp: true,
+        userId: true,
+      },
+    });
+    console.log('getUserPersonalStats: All activities for user:', allActivities);
+    // Get total stats
+    const totalStats = await prisma.activity.aggregate({
+      where: { userId },
+      _sum: { distance: true },
+      _count: true,
+    });
+    
+    console.log('getUserPersonalStats: Total stats:', {
+      distance: totalStats._sum.distance,
+      count: totalStats._count
+    });
+    
+    // Get best day
+    const bestDayActivity = await prisma.activity.findFirst({
+      where: { userId },
+      orderBy: { distance: 'desc' },
+      select: {
+        distance: true,
+        timestamp: true,
+      },
+    });
+    
+    console.log('getUserPersonalStats: Best day:', bestDayActivity);
+    
+    // Get this week's stats (last 7 days)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    const weekStats = await prisma.activity.aggregate({
+      where: {
+        userId,
+        timestamp: { gte: weekAgo },
+      },
+      _sum: { distance: true },
+      _count: true,
+    });
+    
+    console.log('getUserPersonalStats: Week stats:', {
+      distance: weekStats._sum.distance,
+      count: weekStats._count
+    });
+    
+    // Get this month's stats (last 30 days)
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    
+    const monthStats = await prisma.activity.aggregate({
+      where: {
+        userId,
+        timestamp: { gte: monthAgo },
+      },
+      _sum: { distance: true },
+      _count: true,
+    });
+    
+    console.log('getUserPersonalStats: Month stats:', {
+      distance: monthStats._sum.distance,
+      count: monthStats._count
+    });
+    
+    // Calculate current streak
+    const currentStreak = await calculateCurrentStreak(userId);
+    
+    const result: PersonalStats = {
+      totalDistance: totalStats._sum.distance || 0,
+      totalActivities: totalStats._count || 0,
+      currentStreak: currentStreak,
+      bestDay: {
+        date: bestDayActivity?.timestamp || null,
+        distance: bestDayActivity?.distance || 0,
+      },
+      thisWeek: {
+        distance: weekStats._sum.distance || 0,
+        activities: weekStats._count || 0,
+      },
+      thisMonth: {
+        distance: monthStats._sum.distance || 0,
+        activities: monthStats._count || 0,
+      },
+    };
+    
+    console.log('getUserPersonalStats: Final result:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('getUserPersonalStats: Error getting stats:', error);
+    // Return empty stats on error
     return {
       totalDistance: 0,
       totalActivities: 0,
       currentStreak: 0,
       bestDay: {
-        date: bestDayActivity?.timestamp || null,
-        distance: bestDayActivity?.distance || 0,
+        date: null,
+        distance: 0,
       },
       thisWeek: {
         distance: 0,
@@ -386,24 +449,59 @@ async function getUserPersonalStats(userId: string): Promise<PersonalStats> {
       },
     };
   }
+}
 
-  return {
-    totalDistance: userStats.totalDistance || 0,
-    totalActivities: userStats.totalActivities || 0,
-    currentStreak: userStats.currentStreak || 0,
-    bestDay: {
-      date: bestDayActivity?.timestamp || null,
-      distance: bestDayActivity?.distance || 0,
-    },
-    thisWeek: {
-      distance: userStats.weeklyStats?.distance || 0,
-      activities: userStats.weeklyStats?.activities || 0,
-    },
-    thisMonth: {
-      distance: userStats.monthlyStats?.distance || 0,
-      activities: userStats.monthlyStats?.activities || 0,
-    },
-  };
+// Helper function to calculate current streak
+async function calculateCurrentStreak(userId: string): Promise<number> {
+  try {
+    // Get all activities ordered by date
+    const activities = await prisma.activity.findMany({
+      where: { userId },
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true },
+    });
+    
+    if (activities.length === 0) return 0;
+    
+    // Group by date and check consecutive days
+    const dates = new Set(
+      activities.map(a => a.timestamp.toISOString().split('T')[0])
+    );
+    
+    const sortedDates = Array.from(dates).sort().reverse();
+    const today = new Date().toISOString().split('T')[0];
+    
+    // If no activity today or yesterday, streak is broken
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    if (!dates.has(today) && !dates.has(yesterdayStr)) {
+      return 0;
+    }
+    
+    // Count consecutive days
+    let streak = 0;
+    let currentDate = new Date();
+    
+    for (let i = 0; i < sortedDates.length && i < 365; i++) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      if (dates.has(dateStr)) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else if (i > 0) {
+        // Allow one day gap only for today
+        break;
+      } else {
+        currentDate.setDate(currentDate.getDate() - 1);
+      }
+    }
+    
+    return streak;
+  } catch (error) {
+    console.error('calculateCurrentStreak: Error:', error);
+    return 0;
+  }
 }
 
 // Helper function to get team leaderboards (optimized with materialized views)

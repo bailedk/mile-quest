@@ -111,7 +111,6 @@ export class TeamService {
         description: true,
         avatarUrl: true,
         isPublic: true,
-        maxMembers: true,
         createdById: true,
         createdAt: true,
         updatedAt: true,
@@ -202,7 +201,6 @@ export class TeamService {
         description: true,
         avatarUrl: true,
         isPublic: true,
-        maxMembers: true,
         createdById: true,
         createdAt: true,
         updatedAt: true,
@@ -400,13 +398,6 @@ export class TeamService {
       },
     });
 
-    const team = await this.prisma.team.findUnique({
-      where: { id: teamId },
-    });
-
-    if (team && memberCount >= team.maxMembers) {
-      throw new Error('Team has reached maximum member limit');
-    }
 
     // Add user to team
     await this.prisma.teamMember.create({

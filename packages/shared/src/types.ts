@@ -38,7 +38,6 @@ export const CreateTeamSchema = z.object({
   name: z.string().min(1).max(50),
   description: z.string().max(500).optional(),
   isPublic: z.boolean().default(true),
-  maxMembers: z.number().int().min(2).max(100).default(50),
 });
 
 export const CreateActivitySchema = z.object({

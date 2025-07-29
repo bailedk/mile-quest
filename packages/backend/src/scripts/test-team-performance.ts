@@ -94,7 +94,6 @@ async function generateTestData() {
         name: `${faker.company.name()} ${faker.datatype.number({ min: 1000, max: 9999 })}`,
         description: faker.company.catchPhrase(),
         isPublic: faker.datatype.boolean({ probability: 0.7 }),
-        maxMembers: faker.helpers.arrayElement([10, 25, 50, 100]),
         createdById: creatorId,
         members: {
           create: {

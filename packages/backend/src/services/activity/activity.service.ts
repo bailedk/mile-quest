@@ -14,12 +14,15 @@ import {
 } from './types';
 import { cache, cacheKeys, cacheTTL } from '../../utils/cache';
 import { LeaderboardService } from '../leaderboard/leaderboard.service';
+import { MaterializedViewsService } from '../materialized-views/materialized-views.service';
 
 export class ActivityService {
   private leaderboardService: LeaderboardService;
+  private materializedViewsService: MaterializedViewsService;
 
   constructor(private prisma: PrismaClient) {
     this.leaderboardService = new LeaderboardService(prisma);
+    this.materializedViewsService = new MaterializedViewsService(prisma);
   }
 
   async createActivity(
@@ -89,6 +92,17 @@ export class ActivityService {
         activity: activityWithRelations,
       };
     });
+
+    // Refresh materialized views after successful activity creation
+    // This ensures dashboard shows updated stats immediately
+    try {
+      await this.materializedViewsService.refreshView('mv_user_activity_stats');
+      // Clear the materialized view cache as well
+      cache.delete(`mv_user_stats:${userId}`);
+    } catch (error) {
+      console.error('Failed to refresh materialized views after activity creation:', error);
+      // Don't fail the activity creation if view refresh fails
+    }
 
     return result;
   }

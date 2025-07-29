@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useResponsive } from '@/utils/responsiveUtils';
@@ -14,7 +14,6 @@ import { ChartsSection } from '@/components/dashboard/ChartsSection';
 import { TeamSelector } from '@/components/dashboard/TeamSelector';
 import { EnhancedRecentActivities } from '@/components/dashboard/EnhancedRecentActivities';
 import { TeamGoalCard } from '@/components/dashboard/TeamGoalCard';
-import { formatDistance } from '@/services/activity.service';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { PullToRefresh, TouchButton } from '@/components/mobile/TouchInteractions';
 import { MobileCard } from '@/components/mobile/MobileCard';
@@ -49,7 +48,7 @@ function DashboardPage() {
   
   
   // Auth state
-  const { user, isAuthenticated } = useAuthStore();
+  const { user } = useAuthStore();
   
   // Dashboard data management
   const {
@@ -76,8 +75,6 @@ function DashboardPage() {
 
   // Simplified callback handlers without WebSocket
   const {
-    handleActivityUpdate,
-    handleActivityError,
     handleRefresh,
   } = useDashboardCallbacks({
     refresh,
@@ -86,10 +83,11 @@ function DashboardPage() {
   // Force refresh function that clears cache
   const forceRefresh = useCallback(() => {
     // Clear the dashboard service cache
-    const { dashboardService } = require('@/services/dashboard.service');
-    dashboardService.clearCache();
-    // Then refresh
-    refresh();
+    import('@/services/dashboard.service').then(({ dashboardService }) => {
+      dashboardService.clearCache();
+      // Then refresh
+      refresh();
+    });
   }, [refresh]);
 
   // User preferences

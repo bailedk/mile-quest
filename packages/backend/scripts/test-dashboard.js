@@ -34,7 +34,6 @@ async function main() {
         description: 'Test team for dashboard endpoint',
         createdById: testUser.id,
         isPublic: true,
-        maxMembers: 10,
       },
     });
     console.log('✅ Test team created:', testTeam.name);
