@@ -8,23 +8,34 @@ const nextConfig = {
   
   // Enable experimental features for better performance
   experimental: {
-    optimizeCss: true,
-    scrollRestoration: true,
+    // Temporarily disable some experimental features to fix build issues
+    // optimizeCss: true,
+    // scrollRestoration: true,
     optimizePackageImports: ['@heroicons/react', 'recharts', 'date-fns'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+    // turbo: {
+    //   rules: {
+    //     '*.svg': {
+    //       loaders: ['@svgr/webpack'],
+    //       as: '*.js',
+    //     },
+    //   },
+    // },
   },
   
   // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    // Production optimizations
-    if (!dev) {
+  webpack: (config, { dev, isServer, webpack }) => {
+    // Temporarily disable complex optimizations to fix SSR issues
+    // The self reference error is coming from the vendors chunk
+    if (!dev && isServer) {
+      // Disable code splitting for server builds to avoid the self reference issue
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: false
+      };
+    }
+
+    // Production optimizations for client-side builds only
+    if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
