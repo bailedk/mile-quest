@@ -50,7 +50,7 @@ expect.extend({
 
   toHaveBeenCalledWithValidToken(received: jest.MockedFunction<any>) {
     const calls = received.mock.calls;
-    const pass = calls.some(call => {
+    const pass = calls.some((call: any) => {
       const token = call[0];
       // Basic JWT structure check
       return typeof token === 'string' && token.split('.').length === 3;
@@ -69,13 +69,9 @@ beforeAll(async () => {
   process.env.NODE_ENV = 'test';
   process.env.LOG_LEVEL = 'error'; // Reduce log noise in tests
   
-  // Mock external service configurations
+// Mock external service configurations (environment variables only)
   process.env.COGNITO_USER_POOL_ID = 'test-user-pool';
   process.env.COGNITO_CLIENT_ID = 'test-client-id';
-  process.env.PUSHER_APP_ID = 'test-pusher-app';
-  process.env.PUSHER_KEY = 'test-pusher-key';
-  process.env.PUSHER_SECRET = 'test-pusher-secret';
-  process.env.PUSHER_CLUSTER = 'test-cluster';
   process.env.MAPBOX_ACCESS_TOKEN = 'test-mapbox-token';
   process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-purposes-only';
   
@@ -90,16 +86,14 @@ beforeEach(() => {
   // Reset timers
   jest.clearAllTimers();
   
-  // Reset console spies if any
-  if (jest.isMockFunction(console.log)) {
-    console.log.mockClear();
-  }
-  if (jest.isMockFunction(console.error)) {
-    console.error.mockClear();
-  }
-  if (jest.isMockFunction(console.warn)) {
-    console.warn.mockClear();
-  }
+  // Reset console spies if any - fix TypeScript errors
+  const consoleMethods = ['log', 'error', 'warn'] as const;
+  consoleMethods.forEach(method => {
+    const consoleFn = console[method] as any;
+    if (consoleFn && typeof consoleFn.mockClear === 'function') {
+      consoleFn.mockClear();
+    }
+  });
 });
 
 afterEach(() => {
@@ -137,38 +131,28 @@ jest.mock('@aws-sdk/client-cognito-identity-provider', () => ({
   AdminConfirmSignUpCommand: jest.fn(),
 }));
 
-// Mock Pusher
-jest.mock('pusher', () => {
-  return jest.fn().mockImplementation(() => ({
-    trigger: jest.fn().mockResolvedValue({}),
-    triggerBatch: jest.fn().mockResolvedValue({}),
-    authenticate: jest.fn().mockReturnValue({ auth: 'test-auth' }),
-    authorizeChannel: jest.fn().mockReturnValue({ auth: 'test-auth' }),
-  }));
-});
-
-// Mock Mapbox SDK
+// Mock Mapbox SDK (exists in backend dependencies)  
 jest.mock('@mapbox/mapbox-sdk', () => {
   return jest.fn(() => ({
     geocoding: {
-      forwardGeocode: jest.fn().mockResolvedValue({
+      forwardGeocode: jest.fn().mockImplementation(() => Promise.resolve({
         body: {
           features: [{
             center: [-74.0060, 40.7128],
             place_name: 'New York, NY, USA',
           }],
         },
-      }),
-      reverseGeocode: jest.fn().mockResolvedValue({
+      })),
+      reverseGeocode: jest.fn().mockImplementation(() => Promise.resolve({
         body: {
           features: [{
             place_name: 'New York, NY, USA',
           }],
         },
-      }),
+      })),
     },
     directions: {
-      getDirections: jest.fn().mockResolvedValue({
+      getDirections: jest.fn().mockImplementation(() => Promise.resolve({
         body: {
           routes: [{
             distance: 10000,
@@ -176,7 +160,7 @@ jest.mock('@mapbox/mapbox-sdk', () => {
             geometry: 'encoded-polyline-string',
           }],
         },
-      }),
+      })),
     },
   }));
 });
@@ -225,7 +209,7 @@ jest.mock('@aws-lambda-powertools/tracer', () => ({
   Tracer: jest.fn().mockImplementation(() => ({
     captureAWS: jest.fn((service) => service),
     captureHTTPS: jest.fn((https) => https),
-    captureAsyncFunc: jest.fn((name, fn) => fn()),
+    captureAsyncFunc: jest.fn((name: string, fn: () => any) => fn()),
     annotateColdStart: jest.fn(),
     addServiceNameAnnotation: jest.fn(),
   })),

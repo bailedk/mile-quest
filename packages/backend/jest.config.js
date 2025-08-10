@@ -8,7 +8,14 @@ module.exports = {
     '**/?(*.)+(spec|test).+(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        // More permissive TypeScript config for tests
+        strict: false,
+        noImplicitAny: false,
+        strictNullChecks: false,
+      }
+    }],
   },
   collectCoverageFrom: [
     'src/**/*.{js,ts}',

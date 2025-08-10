@@ -11,7 +11,9 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Shared package linting not configured yet'",
+    "test": "echo 'Shared package tests not configured yet'"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
