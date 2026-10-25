@@ -7,12 +7,15 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/vercel-build.mjs",
     "build:analyze": "ANALYZE=true next build",
     "build:performance": "npm run build && npm run analyze:bundle",
     "start": "next start",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit -p tsconfig.core.json",
+    "type-check": "node scripts/prisma-generate.mjs && tsc --noEmit -p tsconfig.core.json",
+    "db:generate": "node scripts/prisma-generate.mjs",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
@@ -23,16 +26,19 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@mile-quest/shared": "^1.0.0",
+    "@prisma/client": "5.22.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
     "@tanstack/react-query": "^5.14.0",
     "amazon-cognito-identity-js": "^6.3.6",
+    "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.3",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.6",
     "idb": "^7.1.1",
+    "jose": "^6.2.13",
     "next": "^16.4.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -57,9 +63,14 @@
     "lighthouse": "^12.0.0",
     "playwright": "^1.54.1",
     "postcss": "^8",
+    "prisma": "5.22.0",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.5",
     "webpack-bundle-analyzer": "^4.10.1"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

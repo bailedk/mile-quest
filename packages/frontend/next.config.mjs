@@ -30,7 +30,6 @@ const nextConfig = {
   },
 
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
     NEXT_PUBLIC_APP_NAME: 'Mile Quest',
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version || '1.0.0',
   },

@@ -7,12 +7,16 @@ import {
   retryWithBackoff 
 } from '@/utils/error-handling';
 
-class ApiClient {
-  private baseUrl: string;
+export function apiUrl(path: string): string {
+  const configured = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const withApi = normalized.startsWith('/api/') || normalized === '/api'
+    ? normalized
+    : `/api${normalized}`;
+  return `${configured}${withApi}`;
+}
 
-  constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  }
+class ApiClient {
 
   private async getAuthHeaders(): Promise<HeadersInit> {
     const { tokens } = useAuthStore.getState();
@@ -88,7 +92,7 @@ class ApiClient {
     const headers = await this.getAuthHeaders();
     
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
+      const response = await fetch(apiUrl(path), {
         method: 'GET',
         headers,
       });
@@ -99,7 +103,7 @@ class ApiClient {
       if (error.message === 'retry') {
         // Retry with new token
         const retryHeaders = await this.getAuthHeaders();
-        const response = await fetch(`${this.baseUrl}${path}`, {
+        const response = await fetch(apiUrl(path), {
           method: 'GET',
           headers: retryHeaders,
         });
@@ -120,7 +124,7 @@ class ApiClient {
     const headers = await this.getAuthHeaders();
     
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
+      const response = await fetch(apiUrl(path), {
         method: 'POST',
         headers,
         body: body ? JSON.stringify(body) : undefined,
@@ -132,7 +136,7 @@ class ApiClient {
       if (error.message === 'retry') {
         // Retry with new token
         const retryHeaders = await this.getAuthHeaders();
-        const response = await fetch(`${this.baseUrl}${path}`, {
+        const response = await fetch(apiUrl(path), {
           method: 'POST',
           headers: retryHeaders,
           body: body ? JSON.stringify(body) : undefined,
@@ -148,7 +152,7 @@ class ApiClient {
     const headers = await this.getAuthHeaders();
     
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
+      const response = await fetch(apiUrl(path), {
         method: 'PATCH',
         headers,
         body: body ? JSON.stringify(body) : undefined,
@@ -160,7 +164,7 @@ class ApiClient {
       if (error.message === 'retry') {
         // Retry with new token
         const retryHeaders = await this.getAuthHeaders();
-        const response = await fetch(`${this.baseUrl}${path}`, {
+        const response = await fetch(apiUrl(path), {
           method: 'PATCH',
           headers: retryHeaders,
           body: body ? JSON.stringify(body) : undefined,
@@ -176,7 +180,7 @@ class ApiClient {
     const headers = await this.getAuthHeaders();
     
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
+      const response = await fetch(apiUrl(path), {
         method: 'PUT',
         headers,
         body: body ? JSON.stringify(body) : undefined,
@@ -188,7 +192,7 @@ class ApiClient {
       if (error.message === 'retry') {
         // Retry with new token
         const retryHeaders = await this.getAuthHeaders();
-        const response = await fetch(`${this.baseUrl}${path}`, {
+        const response = await fetch(apiUrl(path), {
           method: 'PUT',
           headers: retryHeaders,
           body: body ? JSON.stringify(body) : undefined,
@@ -204,7 +208,7 @@ class ApiClient {
     const headers = await this.getAuthHeaders();
     
     try {
-      const response = await fetch(`${this.baseUrl}${path}`, {
+      const response = await fetch(apiUrl(path), {
         method: 'DELETE',
         headers,
       });
@@ -219,7 +223,7 @@ class ApiClient {
       if (error.message === 'retry') {
         // Retry with new token
         const retryHeaders = await this.getAuthHeaders();
-        const response = await fetch(`${this.baseUrl}${path}`, {
+        const response = await fetch(apiUrl(path), {
           method: 'DELETE',
           headers: retryHeaders,
         });

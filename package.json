@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=packages/frontend",
-    "build": "npm run build --workspace=@mile-quest/shared && npm run build --workspace=@mile-quest/frontend && npm run build --workspace=@mile-quest/backend",
+    "build": "npm run build --workspace=@mile-quest/shared && npm run build --workspace=@mile-quest/frontend",
     "test": "npm run test --if-present --workspaces",
     "lint": "npm run lint --if-present --workspaces",
     "type-check": "npm run type-check --if-present --workspaces",

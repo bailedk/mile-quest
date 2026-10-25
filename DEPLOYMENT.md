@@ -1,5 +1,7 @@
 # Mile Quest Deployment Guide
 
+> Retired. The supported deployment is a single Vercel project plus Neon Postgres. See the "Deploy on Vercel" section in the repository README and `.env.example`. The CDK app, SAM template, and GitHub deploy jobs have been removed. The steps below are historical and will not run.
+
 A comprehensive step-by-step guide for deploying Mile Quest to AWS in production.
 
 ## 📋 **Table of Contents**

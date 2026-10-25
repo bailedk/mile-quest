@@ -5,13 +5,11 @@ import {
   VerifyEmailResponse,
   LogoutResponse 
 } from '@mile-quest/shared';
-
-// Simple API client for auth endpoints (no auth headers needed)
-const AUTH_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { apiUrl } from './api-client';
 
 class AuthApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${AUTH_API_URL}${endpoint}`, {
+    const response = await fetch(apiUrl(endpoint), {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
