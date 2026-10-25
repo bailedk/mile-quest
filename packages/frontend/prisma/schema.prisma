@@ -1,0 +1,210 @@
+// Mile Quest on Neon Postgres.
+// Coordinates are JSON and distances are numbers. The app does not use
+// geography columns or PostGIS functions, so the PostGIS extension is not required.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                        String         @id @default(uuid())
+  email                     String         @unique
+  name                      String
+  avatarUrl                 String?
+  emailVerified             Boolean        @default(false)
+  cognitoId                 String?        @unique
+  passwordHash              String?
+  verificationCodeHash      String?
+  verificationCodeExpiresAt DateTime?
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  deletedAt                 DateTime?
+  preferredUnits            String         @default("miles")
+  timezone                  String         @default("UTC")
+  activities                Activity[]
+  createdGoals              TeamGoal[]     @relation("GoalCreator")
+  sentInvites               TeamInvite[]   @relation("InviteSender")
+  receivedInvites           TeamInvite[]   @relation("InviteRecipient")
+  teamMemberships           TeamMember[]
+  createdTeams              Team[]         @relation("TeamCreator")
+  stats                     UserStats?
+  refreshTokens             RefreshToken[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  avatarUrl   String?
+  isPublic    Boolean      @default(true)
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  goals       TeamGoal[]
+  invites     TeamInvite[]
+  members     TeamMember[]
+  createdBy   User         @relation("TeamCreator", fields: [createdById], references: [id])
+
+  @@index([createdById])
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String    @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole  @default(MEMBER)
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+  @@map("team_members")
+}
+
+model TeamGoal {
+  id             String       @id @default(uuid())
+  teamId         String
+  name           String
+  description    String?
+  targetDistance Float
+  targetDate     DateTime?
+  startDate      DateTime
+  endDate        DateTime
+  startLocation  Json
+  endLocation    Json
+  waypoints      Json[]
+  routePolyline  String
+  routeData      Json
+  status         GoalStatus   @default(ACTIVE)
+  createdById    String
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdBy      User         @relation("GoalCreator", fields: [createdById], references: [id])
+  team           Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  progress       TeamProgress?
+
+  @@index([teamId, status])
+  @@map("team_goals")
+}
+
+model Activity {
+  id         String         @id @default(uuid())
+  userId     String
+  distance   Float
+  duration   Int
+  timestamp  DateTime
+  notes      String?
+  source     ActivitySource @default(MANUAL)
+  externalId String?
+  isPrivate  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([source, externalId])
+  @@index([userId, timestamp])
+  @@index([isPrivate])
+  @@map("activities")
+}
+
+model TeamProgress {
+  id                  String    @id @default(uuid())
+  teamGoalId          String    @unique
+  totalDistance       Float     @default(0)
+  totalActivities     Int       @default(0)
+  totalDuration       Int       @default(0)
+  currentSegmentIndex Int       @default(0)
+  segmentProgress     Float     @default(0)
+  lastActivityAt      DateTime?
+  updatedAt           DateTime  @updatedAt
+  teamGoal            TeamGoal  @relation(fields: [teamGoalId], references: [id], onDelete: Cascade)
+
+  @@map("team_progress")
+}
+
+model UserStats {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  totalDistance   Float     @default(0)
+  totalActivities Int       @default(0)
+  totalDuration   Int       @default(0)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastActivityAt  DateTime?
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_stats")
+}
+
+model TeamInvite {
+  id              String       @id @default(uuid())
+  teamId          String
+  invitedByUserId String
+  email           String?
+  userId          String?
+  code            String       @unique @default(cuid())
+  status          InviteStatus @default(PENDING)
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+  acceptedAt      DateTime?
+  invitedBy       User         @relation("InviteSender", fields: [invitedByUserId], references: [id])
+  team            Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user            User?        @relation("InviteRecipient", fields: [userId], references: [id])
+
+  @@index([code])
+  @@map("team_invites")
+}
+
+enum TeamRole {
+  ADMIN
+  MEMBER
+}
+
+enum GoalStatus {
+  ACTIVE
+  PASSED
+  FAILED
+}
+
+enum ActivitySource {
+  MANUAL
+  STRAVA
+  APPLE_HEALTH
+  GOOGLE_FIT
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}

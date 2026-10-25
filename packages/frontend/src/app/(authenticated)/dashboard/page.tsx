@@ -20,6 +20,7 @@ import { MobileCard } from '@/components/mobile/MobileCard';
 import { useAuthStore } from '@/store/auth.store';
 import { withAuth } from '@/components/auth/withAuth';
 import { DashboardTeam, TeamLeaderboard } from '@/types/dashboard';
+import { transformLeaderboardData } from '@/utils/dashboardDataTransforms';
 
 
 // Custom hooks for clean separation of concerns
@@ -157,10 +158,8 @@ function DashboardPage() {
             {/* Team Leaderboard */}
             {selectedTeamLeaderboard && (
               <SwipeableLeaderboard
-                leaderboard={selectedTeamLeaderboard}
-                teamName={selectedTeam?.name || ''}
+                teamMembers={transformLeaderboardData(selectedTeamLeaderboard.members, user?.id)}
                 userPreferredUnits={userPreferredUnits}
-                currentUserId={user?.id || ''}
               />
             )}
           </>

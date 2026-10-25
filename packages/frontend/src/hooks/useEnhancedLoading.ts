@@ -286,46 +286,81 @@ export function useEnhancedLoading<T>(
 }
 
 // Hook for managing multiple loading states
-export function useMultipleLoadingStates<T extends Record<string, any>>(
+interface KeyedLoadingState<T> {
+  isLoading: boolean;
+  error: Error | null;
+  data: T | null;
+  hasData: boolean;
+}
+
+/**
+ * Runs several independent loaders without calling hooks in a loop.
+ * `options` is reserved for callers that previously passed cache settings.
+ */
+export function useMultipleLoadingStates<T extends Record<string, unknown>>(
   loaders: { [K in keyof T]: () => Promise<T[K]> },
-  options: LoadingOptions = {}
+  _options: LoadingOptions = {}
 ) {
-  const loadingStates = Object.keys(loaders).reduce((acc, key) => {
-    acc[key as keyof T] = useEnhancedLoading(loaders[key as keyof T], {
-      ...options,
-      cacheKey: options.cacheKey ? `${options.cacheKey}_${String(key)}` : undefined
-    });
-    return acc;
-  }, {} as { [K in keyof T]: EnhancedLoadingResult<T[K]> });
+  const loaderRef = useRef(loaders);
+  loaderRef.current = loaders;
+  const keys = Object.keys(loaders) as (keyof T)[];
 
-  const executeAll = useCallback(async () => {
-    await Promise.all(
-      Object.values(loadingStates).map(state => state.execute())
-    );
-  }, [loadingStates]);
+  const [states, setStates] = useState<{ [K in keyof T]: KeyedLoadingState<T[K]> }>(() => {
+    return keys.reduce((acc, key) => {
+      acc[key] = { isLoading: false, error: null, data: null, hasData: false };
+      return acc;
+    }, {} as { [K in keyof T]: KeyedLoadingState<T[K]> });
+  });
 
-  const refreshAll = useCallback(async () => {
-    await Promise.all(
-      Object.values(loadingStates).map(state => state.refresh())
-    );
-  }, [loadingStates]);
+  const runAll = useCallback(async () => {
+    const entries = Object.entries(loaderRef.current) as [keyof T, () => Promise<T[keyof T]>][];
+    await Promise.all(entries.map(async ([key, loader]) => {
+      setStates(prev => ({
+        ...prev,
+        [key]: { ...prev[key], isLoading: true, error: null },
+      }));
+      try {
+        const data = await loader();
+        setStates(prev => ({
+          ...prev,
+          [key]: { isLoading: false, error: null, data, hasData: true },
+        }));
+      } catch (error) {
+        setStates(prev => ({
+          ...prev,
+          [key]: {
+            ...prev[key],
+            isLoading: false,
+            error: error instanceof Error ? error : new Error('Request failed'),
+          },
+        }));
+      }
+    }));
+  }, []);
 
   const resetAll = useCallback(() => {
-    Object.values(loadingStates).forEach(state => state.reset());
-  }, [loadingStates]);
+    setStates(prev => {
+      const next = { ...prev };
+      (Object.keys(next) as (keyof T)[]).forEach(key => {
+        next[key] = { isLoading: false, error: null, data: null, hasData: false };
+      });
+      return next;
+    });
+  }, []);
 
-  const isAnyLoading = Object.values(loadingStates).some(state => state.isLoading);
-  const hasAnyError = Object.values(loadingStates).some(state => state.error);
-  const hasAllData = Object.values(loadingStates).every(state => state.hasData);
+  const stateList = Object.values(states) as KeyedLoadingState<unknown>[];
+  const isAnyLoading = stateList.some(state => state.isLoading);
+  const hasAnyError = stateList.some(state => state.error);
+  const hasAllData = stateList.length > 0 && stateList.every(state => state.hasData);
 
   return {
-    states: loadingStates,
-    executeAll,
-    refreshAll,
+    states,
+    executeAll: runAll,
+    refreshAll: runAll,
     resetAll,
     isAnyLoading,
     hasAnyError,
-    hasAllData
+    hasAllData,
   };
 }
 

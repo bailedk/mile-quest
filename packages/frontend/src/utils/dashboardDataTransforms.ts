@@ -3,21 +3,25 @@
  */
 
 import type { LeaderboardMember } from '@/components/dashboard/SwipeableLeaderboard';
+import type { TeamLeaderboard } from '@/types/dashboard';
 
-// Transform team leaderboard data for SwipeableLeaderboard component
+type ApiLeaderboardMember = TeamLeaderboard['members'][number];
+
+// The dashboard leaderboard is one distance per member (the active goal window).
+// Week and all-time views share that distance until the API splits them.
 export const transformLeaderboardData = (
-  members: any[], 
+  members: ApiLeaderboardMember[] | null | undefined,
   userId?: string
 ): LeaderboardMember[] => {
-  return members.map(member => ({
+  return (members ?? []).map((member, index) => ({
     userId: member.userId,
-    name: member.name,
-    weekDistance: member.distance, // TODO: Add week distance to API
-    totalDistance: member.distance,
-    rank: members.indexOf(member) + 1,
+    name: member.name || 'Walker',
+    weekDistance: member.distance ?? 0,
+    totalDistance: member.distance ?? 0,
+    rank: index + 1,
     isCurrentUser: member.userId === userId,
     avatarUrl: member.avatarUrl || undefined,
-    streakDays: 0, // TODO: Add streak data to API
+    streakDays: 0,
   }));
 };
 

@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true
+  },
+  "include": [
+    "src/utils/goalValidation.ts",
+    "src/utils/date-formatting.ts",
+    "src/utils/date.utils.ts",
+    "src/utils/dateFormatting.ts",
+    "src/types/goal.types.ts",
+    "src/server/**/*.ts",
+    "src/app/api/**/*.ts",
+    "prisma/seed.ts"
+  ],
+  "exclude": ["node_modules"]
+}

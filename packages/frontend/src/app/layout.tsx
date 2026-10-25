@@ -43,8 +43,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: "#2563EB",
 };
@@ -65,15 +63,8 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#2563EB" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
         
-        {/* Performance optimizations */}
-        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//api.mapbox.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
-        {/* Critical resource hints */}
-        <link rel="modulepreload" href="/_next/static/chunks/main.js" />
-        <link rel="modulepreload" href="/_next/static/chunks/pages/_app.js" />
-        
+
         {/* Apple touch icons */}
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon.svg" />
         <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />

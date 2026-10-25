@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/patterns/Button';
@@ -14,6 +15,7 @@ interface LoginFormProps {
 export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
   const router = useRouter();
   const { signIn, isLoading, error, clearError } = useAuthStore();
+  const [notice, setNotice] = useState<string | null>(null);
   
   const {
     values,
@@ -93,9 +95,7 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
           />
           <span className="ml-2 text-sm text-gray-600">Remember me</span>
         </label>
-        <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
-          Forgot password?
-        </Link>
+        <span className="text-sm text-gray-500">Password reset is not available yet</span>
       </div>
 
       <Button
@@ -121,8 +121,7 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
           variant="secondary"
           className="w-full mt-4"
           onClick={() => {
-            // TODO: Implement Google sign-in
-            alert('Google sign-in coming soon!');
+            setNotice('Google sign-in is not available yet. Use your email and password.');
           }}
         >
           <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -145,6 +144,11 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
           </svg>
           Continue with Google
         </Button>
+        {notice && (
+          <p role="status" className="mt-3 text-sm text-center text-gray-600">
+            {notice}
+          </p>
+        )}
       </div>
 
       <p className="mt-6 text-center text-sm text-gray-600">

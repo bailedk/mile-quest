@@ -63,7 +63,7 @@ export function EnhancedRecentActivities({
                 />
               ) : (
                 <span className="text-sm font-medium text-gray-700">
-                  {activity.userName.charAt(0).toUpperCase()}
+                  {(activity.userName || 'Walker').charAt(0).toUpperCase()}
                 </span>
               )}
             </div>

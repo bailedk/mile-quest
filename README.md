@@ -31,7 +31,7 @@ mile-quest/
 
 ### Prerequisites
 
-- Node.js 20.x or later
+- Node.js 22.x or later
 - npm 10.x or later
 - PostgreSQL 14+ (for local development)
 - AWS CLI (for deployment)
@@ -187,39 +187,34 @@ npm run test --workspace=packages/frontend
 npm run test --workspace=packages/backend
 ```
 
-## 🚀 Deployment
+## Deploy on Vercel
 
-For **complete step-by-step deployment instructions**, see: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+One Vercel project serves the Next.js app and the API (`/api/*` route handlers). Data lives in Neon Postgres from the Vercel Marketplace.
 
-The deployment guide covers:
-- ✅ Prerequisites and AWS account setup
-- ✅ Infrastructure deployment with AWS CDK
-- ✅ Backend API deployment with AWS SAM  
-- ✅ Frontend hosting with AWS Amplify
-- ✅ Database setup and migrations
-- ✅ Cost estimates and optimization
-- ✅ Monitoring and troubleshooting
+1. Import the Git repository in Vercel.
+2. Set **Root Directory** to `packages/frontend`. Vercel installs npm workspaces from the repository root, which builds `@mile-quest/shared` on install.
+3. Framework preset: **Next.js**. Node.js **22.x** or newer.
+4. In the Vercel Marketplace, add **Neon Postgres** to the project. Copy the pooled connection string into `DATABASE_URL` and the direct connection string into `DIRECT_URL`.
+5. Add the rest of the variables from [`.env.example`](./.env.example):
+   - `JWT_SECRET` — long random string used to sign access tokens
+   - `NEXT_PUBLIC_MAPBOX_TOKEN` — public browser token for maps
+   - `MAPBOX_ACCESS_TOKEN` — server-only token for walking directions. Leave empty to use great-circle distances
+   - `NEXT_PUBLIC_APP_URL` — the Vercel URL
+   - Leave `NEXT_PUBLIC_API_URL` empty so the browser calls this same app
+6. Deploy. The frontend build generates the Prisma client and runs `next build`.
+7. Apply the schema and optional demo data from a machine that has the Neon URLs:
 
-### Quick Start (Summary)
+```bash
+cd packages/frontend
+npx prisma migrate deploy
+npm run db:seed
+```
 
-1. **Prerequisites:** AWS CLI, SAM CLI, Node.js 20+
-2. **Infrastructure:** `cd infrastructure && npm run deploy:all` (~30 min)
-3. **Backend APIs:** `cd packages/backend && sam deploy --guided` (~10 min)
-4. **Database:** `npm run db:push && npm run db:seed` (~5 min)
-5. **Frontend:** Set up AWS Amplify via console (~15 min)
+Demo seed accounts, after `db:seed`: `alice@example.com` and `bob@example.com`, password `password123`. Set `SEED_RESET=true` to replace existing rows. Email delivery for verification codes is not wired up; seeded users are already verified, and new accounts can still sign in before they verify.
 
-**Total deployment time:** 45-60 minutes (first time)
-**Estimated cost:** $50-80/month (staging), $150-250/month (production)
+PostGIS is not required. Coordinates are JSON and distances are numbers.
 
-### Infrastructure Components
-
-The CDK deploys:
-- **Cognito** - User authentication and management
-- **RDS PostgreSQL** - Database with PostGIS extensions
-- **VPC** - Network isolation with public/private subnets
-- **API Gateway** - REST API endpoints
-- **CloudWatch** - Monitoring, logging, and alerting
-- **SNS** - Notification system for alerts
+The AWS CDK project, SAM template, and deploy workflow have been removed. [DEPLOYMENT.md](./DEPLOYMENT.md) describes that retired path.
 
 ## 📚 Documentation
 

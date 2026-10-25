@@ -12,7 +12,9 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Report the error with comprehensive context
+    // Always print the caught error. reportError does not write to the console,
+    // so production failures were invisible when this boundary swallowed them.
+    console.error(error);
     reportError(error, {
       page: 'app-error-boundary',
       component: 'NextJS-Error-Page',

@@ -17,7 +17,7 @@ export interface LeaderboardMember {
 }
 
 interface SwipeableLeaderboardProps {
-  teamMembers: LeaderboardMember[];
+  teamMembers?: LeaderboardMember[];
   userPreferredUnits: 'miles' | 'kilometers';
   className?: string;
   onMemberSelect?: (member: LeaderboardMember) => void;
@@ -26,7 +26,7 @@ interface SwipeableLeaderboardProps {
 type LeaderboardView = 'week' | 'total' | 'streaks';
 
 export function SwipeableLeaderboard({
-  teamMembers,
+  teamMembers = [],
   userPreferredUnits,
   className = '',
   onMemberSelect

@@ -111,6 +111,35 @@ export const activityService = {
   /**
    * Get user activity statistics
    */
+  /**
+   * Distance, in meters, the signed-in user logged between two dates.
+   * The team page uses this for personal goal contribution.
+   */
+  async getUserTotalDistance(
+    _userId: string,
+    _teamId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<number> {
+    const params = new URLSearchParams({ limit: '50' });
+    if (startDate) params.set('startDate', startDate.toISOString());
+    if (endDate) params.set('endDate', endDate.toISOString());
+
+    let total = 0;
+    for (let page = 0; page < 20; page += 1) {
+      const response = await apiClient.get<{
+        items: ActivityListItem[];
+        nextCursor: string | null;
+        hasMore: boolean;
+      }>(`/users/me/activities?${params.toString()}`);
+      const items = response.data.items ?? [];
+      total += items.reduce((sum, item) => sum + (item.distance || 0), 0);
+      if (!response.data.hasMore || !response.data.nextCursor) break;
+      params.set('cursor', response.data.nextCursor);
+    }
+    return total;
+  },
+
   async getUserStats(): Promise<ActivityStats> {
     const response = await apiClient.get<ActivityStats>('/users/me/stats');
     return response.data;
