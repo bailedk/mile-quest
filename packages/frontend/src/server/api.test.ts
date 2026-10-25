@@ -125,6 +125,7 @@ describe('core API routes', () => {
       isPrivate: true,
     }, ada.tokens.accessToken);
     expect(logged.status).toBe(201);
+    expect(await logged.json()).toMatchObject({ source: 'MANUAL', externalId: null, isPrivate: true });
 
     const board = await call('GET', '/api/dashboard', undefined, grace.tokens.accessToken);
     expect(board.status).toBe(200);
@@ -156,6 +157,48 @@ describe('core API routes', () => {
     expect(own.items).toHaveLength(1);
     expect(own.items[0].isPrivate).toBe(true);
     expect(own.hasMore).toBe(false);
+  });
+
+  it('dedupes a health import for the same user and lets another user import that sample', async () => {
+    const ada = await registerAndLogin('ada@example.com', 'Ada');
+    const walk = {
+      distance: 1600,
+      duration: 1200,
+      timestamp: new Date().toISOString(),
+      source: 'APPLE_HEALTH',
+      externalId: 'workout:abc',
+    };
+    const first = await call('POST', '/api/activities', walk, ada.tokens.accessToken);
+    expect(first.status).toBe(201);
+    const created = await first.json() as { id: string; source: string; externalId: string };
+    expect(created.source).toBe('APPLE_HEALTH');
+    expect(created.externalId).toBe('workout:abc');
+
+    const second = await call('POST', '/api/activities', walk, ada.tokens.accessToken);
+    expect(second.status).toBe(200);
+    const deduped = await second.json() as { id: string; deduped: boolean };
+    expect(deduped).toMatchObject({ id: created.id, deduped: true });
+
+    const stats = await call('GET', '/api/users/me/stats', undefined, ada.tokens.accessToken);
+    expect(await stats.json()).toMatchObject({ totalActivities: 1, totalDistance: 1600 });
+
+    const listed = await call('GET', '/api/users/me/activities?source=APPLE_HEALTH', undefined, ada.tokens.accessToken);
+    const page = await listed.json() as { items: Array<{ externalId: string | null }> };
+    expect(page.items[0]?.externalId).toBe('workout:abc');
+
+    const grace = await registerAndLogin('grace@example.com', 'Grace');
+    const other = await call('POST', '/api/activities', walk, grace.tokens.accessToken);
+    expect(other.status).toBe(201);
+
+    const invalid = await call('POST', '/api/activities', { ...walk, source: 'NOT_A_SOURCE' }, ada.tokens.accessToken);
+    expect(invalid.status).toBe(400);
+
+    const connect = await call('POST', '/api/activities', {
+      ...walk,
+      source: 'HEALTH_CONNECT',
+      externalId: 'distance:1',
+    }, ada.tokens.accessToken);
+    expect(connect.status).toBe(201);
   });
 
   it('lets an admin remove a member and blocks the last admin from being demoted', async () => {

@@ -25,6 +25,7 @@ import type {
   UserRecord,
   UserStatsWrite,
 } from './store';
+import { UniqueActivityError } from './store';
 
 type ActivityRow = Prisma.ActivityGetPayload<{ include: { user: { select: { name: true } } } }>;
 type GoalRow = Prisma.TeamGoalGetPayload<Record<string, never>>;
@@ -350,15 +351,30 @@ export class PrismaStore implements Store {
   }
 
   async createActivity(input: ActivityWrite): Promise<ActivityRecord> {
-    const activity = await this.db.activity.create({
-      data: input,
-      include: activityInclude,
-    });
-    return mapActivity(activity);
+    try {
+      const activity = await this.db.activity.create({
+        data: input,
+        include: activityInclude,
+      });
+      return mapActivity(activity);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new UniqueActivityError();
+      }
+      throw error;
+    }
   }
 
   async findActivity(id: string): Promise<ActivityRecord | null> {
     const activity = await this.db.activity.findUnique({ where: { id }, include: activityInclude });
+    return activity ? mapActivity(activity) : null;
+  }
+
+  async findActivityByExternal(userId: string, source: ActivityWrite['source'], externalId: string): Promise<ActivityRecord | null> {
+    const activity = await this.db.activity.findFirst({
+      where: { userId, source, externalId },
+      include: activityInclude,
+    });
     return activity ? mapActivity(activity) : null;
   }
 

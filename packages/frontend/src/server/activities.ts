@@ -1,5 +1,6 @@
 import { HttpError, json, noContent, readJson } from './errors';
 import { requireUser } from './session';
+import { ACTIVITY_SOURCES, UniqueActivityError } from './store';
 import type { ActivityRecord, ActivitySourceName, Store, UserActivityStamp, UserRecord } from './store';
 import { assertTeamMember } from './teams';
 
@@ -39,6 +40,7 @@ function listItem(activity: ActivityRecord) {
     notes: activity.notes,
     isPrivate: activity.isPrivate,
     source: activity.source,
+    externalId: activity.externalId,
     createdAt: activity.createdAt.toISOString(),
   };
 }
@@ -79,7 +81,25 @@ function readActivityInput(body: Record<string, unknown>) {
     timestamp,
     notes: notes && notes.length > 0 ? notes : null,
     isPrivate: body.isPrivate === true,
+    source: readSource(body.source),
+    externalId: readExternalId(body.externalId),
   };
+}
+
+function readSource(value: unknown): ActivitySourceName {
+  if (value === undefined || value === null || value === '') return 'MANUAL';
+  if (typeof value === 'string' && (ACTIVITY_SOURCES as readonly string[]).includes(value)) {
+    return value as ActivitySourceName;
+  }
+  throw new HttpError(400, 'Invalid activity source', 'VALIDATION');
+}
+
+function readExternalId(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string' || value.length > 200) {
+    throw new HttpError(400, 'External id must be a string up to 200 characters', 'VALIDATION');
+  }
+  return value;
 }
 
 export function summarizeStamps(stamps: UserActivityStamp[]) {
@@ -188,14 +208,26 @@ export async function createActivity(request: Request, store: Store): Promise<Re
   const user = await requireUser(request, store);
   const body = await readJson(request) as Record<string, unknown>;
   const input = readActivityInput(body);
-  const activity = await store.createActivity({ userId: user.id, ...input });
-  await syncUserAggregates(store, user.id);
-  return json(activityResponse(activity), 201);
+  if (input.externalId) {
+    const existing = await store.findActivityByExternal(user.id, input.source, input.externalId);
+    if (existing) return json({ ...activityResponse(existing), deduped: true });
+  }
+  try {
+    const activity = await store.createActivity({ userId: user.id, ...input });
+    await syncUserAggregates(store, user.id);
+    return json(activityResponse(activity), 201);
+  } catch (error) {
+    if (input.externalId && error instanceof UniqueActivityError) {
+      const existing = await store.findActivityByExternal(user.id, input.source, input.externalId);
+      if (existing) return json({ ...activityResponse(existing), deduped: true });
+    }
+    throw error;
+  }
 }
 
 function filtersFromUrl(url: URL) {
   const source = url.searchParams.get('source');
-  const allowed: ActivitySourceName[] = ['MANUAL', 'STRAVA', 'APPLE_HEALTH', 'GOOGLE_FIT'];
+  const allowed: readonly ActivitySourceName[] = ACTIVITY_SOURCES;
   const isPrivate = url.searchParams.get('isPrivate');
   const minDistance = url.searchParams.get('minDistance');
   const maxDistance = url.searchParams.get('maxDistance');

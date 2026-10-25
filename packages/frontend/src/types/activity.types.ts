@@ -2,7 +2,7 @@
  * Activity Types for Mile Quest Frontend
  */
 
-export type ActivitySource = 'MANUAL' | 'STRAVA' | 'APPLE_HEALTH' | 'GOOGLE_FIT';
+export type ActivitySource = 'MANUAL' | 'STRAVA' | 'APPLE_HEALTH' | 'GOOGLE_FIT' | 'HEALTH_CONNECT';
 
 export interface Activity {
   id: string;
@@ -48,6 +48,7 @@ export interface ActivityListItem {
   notes: string | null;
   isPrivate: boolean;
   source: ActivitySource;
+  externalId?: string | null;
   createdAt: string;
 }
 

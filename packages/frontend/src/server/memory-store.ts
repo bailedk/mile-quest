@@ -22,6 +22,7 @@ import type {
   UserRecord,
   UserStatsWrite,
 } from './store';
+import { UniqueActivityError } from './store';
 
 function matchesActivity(activity: ActivityRecord, filter: ActivityFilter): boolean {
   if (filter.userIds && !filter.userIds.includes(activity.userId)) return false;
@@ -297,6 +298,9 @@ export class MemoryStore implements Store {
   }
 
   async createActivity(input: ActivityWrite): Promise<ActivityRecord> {
+    if (input.externalId && await this.findActivityByExternal(input.userId, input.source, input.externalId)) {
+      throw new UniqueActivityError();
+    }
     const now = new Date();
     const user = this.users.find((item) => item.id === input.userId);
     const activity: ActivityRecord = {
@@ -306,8 +310,8 @@ export class MemoryStore implements Store {
       duration: input.duration,
       timestamp: input.timestamp,
       notes: input.notes,
-      source: 'MANUAL',
-      externalId: null,
+      source: input.source,
+      externalId: input.externalId,
       isPrivate: input.isPrivate,
       createdAt: now,
       updatedAt: now,
@@ -319,6 +323,12 @@ export class MemoryStore implements Store {
 
   async findActivity(id: string): Promise<ActivityRecord | null> {
     return this.activities.find((activity) => activity.id === id) ?? null;
+  }
+
+  async findActivityByExternal(userId: string, source: ActivityRecord['source'], externalId: string): Promise<ActivityRecord | null> {
+    return this.activities.find((activity) =>
+      activity.userId === userId && activity.source === source && activity.externalId === externalId,
+    ) ?? null;
   }
 
   async updateActivity(id: string, patch: ActivityPatch): Promise<ActivityRecord> {
