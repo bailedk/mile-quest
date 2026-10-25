@@ -31,7 +31,7 @@ mile-quest/
 
 ### Prerequisites
 
-- Node.js 20.x or later
+- Node.js 22.x or later
 - npm 10.x or later
 - PostgreSQL 14+ (for local development)
 - AWS CLI (for deployment)
@@ -187,9 +187,36 @@ npm run test --workspace=packages/frontend
 npm run test --workspace=packages/backend
 ```
 
-## 🚀 Deployment
+## Deploy on Vercel
 
-For **complete step-by-step deployment instructions**, see: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+The Next.js app in `packages/frontend` is the Vercel project. The AWS Lambda API, Aurora/PostGIS database, and Cognito user pool stay outside this deployment.
+
+1. Import the Git repository in Vercel.
+2. Set **Root Directory** to `packages/frontend`. Vercel installs the npm workspaces from the repository root, which builds `@mile-quest/shared` on install.
+3. Framework preset: **Next.js**. Node.js **22.x** or newer (Node 20 is not available for new Vercel deployments).
+4. Add the environment variables from [`.env.example`](./.env.example). At build time the app needs:
+   - `NEXT_PUBLIC_API_URL` — public origin of the API. Leave the mock auth provider on if that API is not deployed yet; the marketing and sign-in screens still render. Do not point this at `localhost` in production.
+   - `NEXT_PUBLIC_AUTH_PROVIDER` — `mock` or `cognito`
+   - `NEXT_PUBLIC_COGNITO_USER_POOL_ID`, `NEXT_PUBLIC_COGNITO_CLIENT_ID`, and `NEXT_PUBLIC_COGNITO_REGION` when using Cognito
+   - `NEXT_PUBLIC_MAPBOX_TOKEN` — public Mapbox token for goal maps
+   - `NEXT_PUBLIC_APP_URL` — the Vercel URL, for example `https://your-project.vercel.app`
+5. Deploy. `npm run build` in this package runs `next build`.
+
+### Backend pieces that are not on Vercel yet
+
+| Current piece | Vercel-compatible equivalent |
+| --- | --- |
+| AWS Lambda handlers in `packages/backend` | Keep them as a separate API, or move route handlers into the Next.js app later |
+| Aurora PostgreSQL + PostGIS | Vercel Marketplace Postgres (Neon). Enable the PostGIS extension before `prisma migrate` |
+| AWS Cognito | Keep Cognito and set the public pool variables, or stay on `NEXT_PUBLIC_AUTH_PROVIDER=mock` |
+| Mapbox | Same Mapbox tokens; the public token is a frontend env var and the secret token stays on the API |
+| ElastiCache, SQS, EventBridge, SES, Pusher | Not required to boot the Next.js app. Realtime and email stay with the API |
+
+The historical AWS CDK and SAM steps remain in [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+## AWS deployment
+
+For the original Lambda and CDK deployment, see: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 
 The deployment guide covers:
 - ✅ Prerequisites and AWS account setup

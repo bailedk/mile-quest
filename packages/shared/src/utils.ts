@@ -4,6 +4,9 @@
  * Format distance in miles to readable string
  */
 export function formatDistance(miles: number): string {
+  if (!Number.isFinite(miles) || miles <= 0) {
+    return '0 ft';
+  }
   if (miles < 0.1) {
     return `${Math.round(miles * 5280)} ft`;
   }
@@ -27,6 +30,9 @@ export function formatDuration(seconds: number): string {
  * Calculate pace (minutes per mile)
  */
 export function calculatePace(miles: number, seconds: number): string {
+  if (!Number.isFinite(miles) || !Number.isFinite(seconds) || miles <= 0 || seconds < 0) {
+    return '--';
+  }
   const paceMinutes = seconds / 60 / miles;
   const minutes = Math.floor(paceMinutes);
   const secs = Math.round((paceMinutes - minutes) * 60);
@@ -107,7 +113,9 @@ export function generateAvatarColor(id: string): string {
  * Calculate progress percentage
  */
 export function calculateProgress(current: number, target: number): number {
-  if (target === 0) return 0;
+  if (!Number.isFinite(current) || !Number.isFinite(target) || target <= 0 || current <= 0) {
+    return 0;
+  }
   return Math.min(100, Math.round((current / target) * 100));
 }
 

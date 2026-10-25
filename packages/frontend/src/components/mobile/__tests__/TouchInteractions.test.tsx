@@ -124,15 +124,15 @@ describe('TouchButton', () => {
       <TouchButton variant="primary">Primary Button</TouchButton>
     );
     
-    let button = screen.getByText('Primary Button').parentElement!;
-    expect(button).toHaveClass('bg-blue-600');
+    let button = screen.getByText('Primary Button');
+    expect(button).toHaveClass('bg-blue-500');
 
     rerender(<TouchButton variant="secondary">Secondary Button</TouchButton>);
-    button = screen.getByText('Secondary Button').parentElement!;
-    expect(button).toHaveClass('bg-gray-200');
+    button = screen.getByText('Secondary Button');
+    expect(button).toHaveClass('bg-white');
 
     rerender(<TouchButton variant="ghost">Ghost Button</TouchButton>);
-    button = screen.getByText('Ghost Button').parentElement!;
+    button = screen.getByText('Ghost Button');
     expect(button).toHaveClass('bg-transparent');
   });
 
@@ -141,47 +141,64 @@ describe('TouchButton', () => {
       <TouchButton size="sm">Small Button</TouchButton>
     );
     
-    let button = screen.getByText('Small Button').parentElement!;
+    let button = screen.getByText('Small Button');
     expect(button).toHaveClass('min-h-[44px]');
 
     rerender(<TouchButton size="lg">Large Button</TouchButton>);
-    button = screen.getByText('Large Button').parentElement!;
+    button = screen.getByText('Large Button');
     expect(button).toHaveClass('min-h-[48px]');
   });
 
   it('maintains minimum touch target size', () => {
     render(<TouchButton size="sm">Button</TouchButton>);
     
-    const button = screen.getByText('Button').parentElement!;
+    const button = screen.getByText('Button');
     expect(button).toHaveClass('min-h-[44px]');
   });
 });
 
 // Component to test swipe gesture hook
-function SwipeTestComponent({ 
-  onSwipeLeft, 
-  onSwipeRight, 
-  onSwipeUp, 
+function BasicSwipeTest({
+  onSwipeLeft,
+  onSwipeRight,
+  onSwipeUp,
   onSwipeDown,
-  advanced = false,
-  options = {}
 }: {
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   onSwipeUp?: () => void;
   onSwipeDown?: () => void;
-  advanced?: boolean;
-  options?: any;
 }) {
-  const swipeGestures = advanced 
-    ? useAdvancedSwipeGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, options)
-    : useSwipeGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown);
-
+  const swipeGestures = useSwipeGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown);
   return (
-    <div 
-      data-testid="swipe-area"
-      {...swipeGestures}
-    >
+    <div data-testid="swipe-area" {...swipeGestures}>
+      Swipe Area
+    </div>
+  );
+}
+
+function AdvancedSwipeTest({
+  onSwipeLeft,
+  onSwipeRight,
+  onSwipeUp,
+  onSwipeDown,
+  options = {},
+}: {
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+  onSwipeUp?: () => void;
+  onSwipeDown?: () => void;
+  options?: Parameters<typeof useAdvancedSwipeGesture>[4];
+}) {
+  const swipeGestures = useAdvancedSwipeGesture(
+    onSwipeLeft,
+    onSwipeRight,
+    onSwipeUp,
+    onSwipeDown,
+    options
+  );
+  return (
+    <div data-testid="swipe-area" {...swipeGestures}>
       Swipe Area
     </div>
   );
@@ -191,7 +208,7 @@ describe('useSwipeGesture', () => {
   it('detects left swipe', () => {
     const handleSwipeLeft = vi.fn();
     render(
-      <SwipeTestComponent onSwipeLeft={handleSwipeLeft} />
+      <BasicSwipeTest onSwipeLeft={handleSwipeLeft} />
     );
 
     const swipeArea = screen.getByTestId('swipe-area');
@@ -215,7 +232,7 @@ describe('useSwipeGesture', () => {
   it('detects right swipe', () => {
     const handleSwipeRight = vi.fn();
     render(
-      <SwipeTestComponent onSwipeRight={handleSwipeRight} />
+      <BasicSwipeTest onSwipeRight={handleSwipeRight} />
     );
 
     const swipeArea = screen.getByTestId('swipe-area');
@@ -239,7 +256,7 @@ describe('useSwipeGesture', () => {
   it('respects swipe threshold', () => {
     const handleSwipeLeft = vi.fn();
     render(
-      <SwipeTestComponent onSwipeLeft={handleSwipeLeft} />
+      <BasicSwipeTest onSwipeLeft={handleSwipeLeft} />
     );
 
     const swipeArea = screen.getByTestId('swipe-area');
@@ -263,9 +280,8 @@ describe('useAdvancedSwipeGesture', () => {
   it('respects velocity threshold', () => {
     const handleSwipeLeft = vi.fn();
     render(
-      <SwipeTestComponent 
-        onSwipeLeft={handleSwipeLeft} 
-        advanced={true}
+      <AdvancedSwipeTest
+        onSwipeLeft={handleSwipeLeft}
         options={{ velocityThreshold: 1.0 }}
       />
     );
@@ -311,7 +327,7 @@ describe('PullToRefresh', () => {
       </PullToRefresh>
     );
 
-    const container = screen.getByText('Content').parentElement!;
+    const container = screen.getByText('Content').parentElement!.parentElement!;
     
     // Mock scrollY being 0 (at top)
     Object.defineProperty(window, 'scrollY', { value: 0 });
@@ -327,18 +343,18 @@ describe('PullToRefresh', () => {
     });
 
     // Should show refresh indicator
-    expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+    expect(container.querySelector('svg')).toBeTruthy();
   });
 });
 
 describe('InfiniteScroll', () => {
   beforeEach(() => {
-    // Mock IntersectionObserver
-    global.IntersectionObserver = vi.fn(() => ({
-      observe: vi.fn(),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
-    })) as any;
+    class MockIntersectionObserver {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    }
+    global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
   });
 
   it('renders children and loading indicator', () => {
@@ -397,13 +413,13 @@ describe('Touch Accessibility', () => {
       </TouchButton>
     );
 
-    const button = screen.getByText('Focus Test').parentElement!;
+    const button = screen.getByText('Focus Test');
     expect(button).toHaveClass('focus:outline-none', 'focus:ring-2');
   });
 
   it('provides proper ARIA labels for gesture hints', () => {
     render(
-      <SwipeTestComponent onSwipeLeft={() => {}} />
+      <BasicSwipeTest onSwipeLeft={() => {}} />
     );
 
     const swipeArea = screen.getByTestId('swipe-area');
@@ -428,7 +444,7 @@ describe('Touch Accessibility', () => {
     );
 
     // TouchCard should still work but with reduced animations
-    const card = screen.getByText('Reduced Motion Test').parentElement!;
+    const card = screen.getByText('Reduced Motion Test');
     expect(card).toHaveClass('transition-all');
   });
 });

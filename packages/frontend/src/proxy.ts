@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Only handle /api/* requests (excluding internal Next.js API routes)
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Skip our internal analytics route
@@ -17,11 +17,20 @@ export async function middleware(request: NextRequest) {
     // Build the backend URL
     const backendUrl = `${API_URL}/${apiPath}${request.nextUrl.search}`;
 
+    if (process.env.NODE_ENV === 'production' && /localhost|127\.0\.0\.1/.test(API_URL)) {
+      return NextResponse.json(
+        {
+          error: 'API is not configured. Set NEXT_PUBLIC_API_URL to the deployed API.',
+        },
+        { status: 503 }
+      );
+    }
+
     // Get the authorization header from the request
     const authHeader = request.headers.get('authorization');
     
     // If no auth header, try to get it from cookies (for browser requests)
-    let headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 

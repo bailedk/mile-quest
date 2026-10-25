@@ -75,10 +75,7 @@ export const goalValidation = {
    * Check if the form is valid for submission
    */
   isFormValid: (formData: GoalFormData): boolean => {
-    const errors = goalValidation.validateForm(formData);
-    const hasErrors = goalValidation.hasErrors(errors);
-    console.log('isFormValid check:', { errors, hasErrors });
-    return !hasErrors;
+    return !goalValidation.hasErrors(goalValidation.validateForm(formData));
   },
 
   /**

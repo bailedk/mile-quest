@@ -127,13 +127,11 @@ export function LiftCard({
   return (
     <motion.div
       className={`transition-shadow ${className}`}
-      whileHover={{
-        y: -liftHeight,
-        transition: { type: 'spring', stiffness: 300, damping: 20 }
-      }}
       initial={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
       whileHover={{
-        boxShadow: `0 ${liftHeight + 12}px 25px -5px rgba(0, 0, 0, 0.1), 0 ${liftHeight + 8}px 10px -5px rgba(0, 0, 0, 0.04)`
+        y: -liftHeight,
+        boxShadow: `0 ${liftHeight + 12}px 25px -5px rgba(0, 0, 0, 0.1), 0 ${liftHeight + 8}px 10px -5px rgba(0, 0, 0, 0.04)`,
+        transition: { type: 'spring', stiffness: 300, damping: 20 }
       }}
     >
       {children}

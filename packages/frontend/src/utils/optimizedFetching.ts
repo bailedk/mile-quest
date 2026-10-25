@@ -71,7 +71,7 @@ export async function optimizedFetch<T>(
   } = options;
 
   // Get auth token from localStorage if available
-  let authHeaders = { ...headers };
+  const authHeaders = { ...headers };
   if (typeof window !== 'undefined') {
     try {
       const authStorage = localStorage.getItem('auth-storage');

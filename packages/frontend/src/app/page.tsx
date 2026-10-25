@@ -19,9 +19,9 @@ export default function Home() {
           
           {/* Auth Buttons */}
           <div className="space-y-4 max-w-sm mx-auto">
-            <button className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2">
-              <span>Continue with Google</span>
-            </button>
+            <Link href="/signin" className="block w-full bg-white border border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center">
+              Sign in
+            </Link>
             
             <Link href="/signup" className="block w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors text-center">
               Sign up with Email
