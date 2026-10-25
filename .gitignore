@@ -238,3 +238,12 @@ analyze/
 .eslintcache
 .stylelintcache
 .prettiercache
+
+# Expo / React Native
+.expo/
+packages/mobile/ios/
+packages/mobile/android/
+*.jks
+*.p8
+*.p12
+*.mobileprovision

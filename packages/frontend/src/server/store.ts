@@ -1,7 +1,17 @@
 export type TeamRoleName = 'ADMIN' | 'MEMBER';
 export type GoalStatusName = 'ACTIVE' | 'PASSED' | 'FAILED';
-export type ActivitySourceName = 'MANUAL' | 'STRAVA' | 'APPLE_HEALTH' | 'GOOGLE_FIT';
+export const ACTIVITY_SOURCES = ['MANUAL', 'STRAVA', 'APPLE_HEALTH', 'GOOGLE_FIT', 'HEALTH_CONNECT'] as const;
+export type ActivitySourceName = (typeof ACTIVITY_SOURCES)[number];
 export type InviteStatusName = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED';
+
+export class UniqueActivityError extends Error {
+  readonly code = 'UNIQUE_ACTIVITY';
+
+  constructor() {
+    super('Activity external id already exists');
+    this.name = 'UniqueActivityError';
+  }
+}
 
 export interface LocationJson {
   lat: number;
@@ -167,6 +177,8 @@ export interface ActivityWrite {
   timestamp: Date;
   notes: string | null;
   isPrivate: boolean;
+  source: ActivitySourceName;
+  externalId: string | null;
 }
 
 export interface ActivityPatch {
@@ -265,6 +277,7 @@ export interface Store {
 
   createActivity(input: ActivityWrite): Promise<ActivityRecord>;
   findActivity(id: string): Promise<ActivityRecord | null>;
+  findActivityByExternal(userId: string, source: ActivitySourceName, externalId: string): Promise<ActivityRecord | null>;
   updateActivity(id: string, patch: ActivityPatch): Promise<ActivityRecord>;
   deleteActivity(id: string): Promise<void>;
   queryActivities(filter: ActivityFilter): Promise<ActivityRecord[]>;

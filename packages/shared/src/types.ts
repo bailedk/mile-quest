@@ -18,7 +18,16 @@ export const ActivitySource = {
   STRAVA: 'STRAVA',
   APPLE_HEALTH: 'APPLE_HEALTH',
   GOOGLE_FIT: 'GOOGLE_FIT',
+  HEALTH_CONNECT: 'HEALTH_CONNECT',
 } as const;
+
+export const ActivitySourceSchema = z.enum([
+  'MANUAL',
+  'STRAVA',
+  'APPLE_HEALTH',
+  'GOOGLE_FIT',
+  'HEALTH_CONNECT',
+]);
 
 export const InviteStatus = {
   PENDING: 'PENDING',
@@ -48,8 +57,23 @@ export const CreateActivitySchema = z.object({
   startTime: z.string().datetime(),
   endTime: z.string().datetime(),
   notes: z.string().max(500).optional(),
-  source: z.enum(['MANUAL', 'STRAVA', 'APPLE_HEALTH', 'GOOGLE_FIT']).default('MANUAL'),
+  source: ActivitySourceSchema.default('MANUAL'),
   isPrivate: z.boolean().default(false),
+});
+
+/**
+ * Body for POST /api/activities. Distance is meters and duration is seconds,
+ * which is what the API stores. Health imports set source and externalId so a
+ * repeat sync returns the original activity instead of counting the walk twice.
+ */
+export const LogWalkSchema = z.object({
+  distance: z.number().positive().max(100_000),
+  duration: z.number().int().positive().max(86_400),
+  timestamp: z.string().datetime(),
+  notes: z.string().max(2000).optional(),
+  source: ActivitySourceSchema.optional(),
+  externalId: z.string().min(1).max(200).optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 export const CreateTeamGoalSchema = z.object({
