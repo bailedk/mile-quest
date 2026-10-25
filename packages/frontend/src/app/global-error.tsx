@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the critical error
+    console.error(error);
     logError(error, {
       context: 'GlobalError',
       digest: error.digest,
